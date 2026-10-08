@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>流程引擎平台 PRD v1.0</title>
+<style>
+  :root{
+    --paper:#F4F5F2; --surface:#FFFFFF; --surface-2:#EDEFEA;
+    --ink:#141A19; --ink-2:#333D3B; --muted:#5D6A67;
+    --line:#D8DCD5; --line-soft:#E6E9E3;
+    --accent:#1A6357; --accent-2:#12544A; --accent-soft:#E0EBE7;
+    --seal:#9C3A28; --seal-soft:#F3E4E0;
+    --amber:#8A6412; --amber-soft:#F5EBD9;
+    --blue:#28527A; --blue-soft:#E1E9F1;
+    --on-accent:#FFFFFF;
+    --shadow:0 4px 18px rgba(20,26,25,.08);
+    --mono:"JetBrains Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+    --serif:"Songti SC","Source Han Serif SC","Noto Serif SC",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.78;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 32px 96px}
+
+  /* ---------- 封面 ---------- */
+  .masthead{padding:72px 0 36px;border-bottom:2px solid var(--ink);margin-bottom:40px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+  h1{font-family:var(--serif);font-weight:700;font-size:46px;line-height:1.14;letter-spacing:.01em;margin:0 0 14px}
+  .subtitle{font-size:17px;color:var(--ink-2);margin:0 0 28px;max-width:66ch}
+  .metagrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .metagrid div{background:var(--surface);padding:12px 14px}
+  .metagrid .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .metagrid .v{font-size:13.5px;font-weight:600;color:var(--ink)}
+
+  /* ---------- 目录 ---------- */
+  .toc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);padding:22px 26px;margin-bottom:56px}
+  .toc h2{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;font-weight:500}
+  .toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:36px}
+  .toc li{font-size:13.5px;padding:3px 0;break-inside:avoid;color:var(--ink-2)}
+  .toc li b{font-family:var(--mono);color:var(--accent);font-weight:600;margin-right:8px;font-size:12px}
+
+  /* ---------- 章节 ---------- */
+  section{margin-bottom:56px;scroll-margin-top:24px}
+  h2.sec{font-family:var(--serif);font-size:27px;font-weight:700;margin:0 0 20px;padding-bottom:12px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px}
+  h2.sec .num{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:500;letter-spacing:.06em}
+  h3{font-size:17.5px;font-weight:700;margin:34px 0 12px;color:var(--ink)}
+  h4{font-size:14.5px;font-weight:700;margin:22px 0 8px;color:var(--accent-2);font-family:var(--mono);letter-spacing:.02em}
+  p{margin:0 0 13px}
+  ul,ol{margin:0 0 14px;padding-left:22px}
+  li{margin:5px 0}
+  strong{font-weight:700}
+  code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1.5px 5px;border-radius:3px;color:var(--accent-2);border:1px solid var(--line-soft)}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+
+  /* ---------- 表格 ---------- */
+  table{width:100%;border-collapse:collapse;margin:16px 0 20px;font-size:13.5px;background:var(--surface);border:1px solid var(--line)}
+  th{background:var(--surface-2);text-align:left;font-weight:700;font-size:12px;letter-spacing:.04em;color:var(--ink-2);padding:9px 12px;border-bottom:1px solid var(--line);text-transform:uppercase}
+  td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td code{font-size:12px;white-space:nowrap}
+
+  /* ---------- 徽章 ---------- */
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:1.5px 7px;border-radius:3px;vertical-align:1.5px;white-space:nowrap}
+  .b-mvp{background:var(--accent);color:#fff}
+  .b-p1{background:var(--blue-soft);color:var(--blue);border:1px solid #C6D5E4}
+  .b-p2{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+  .b-tbd{background:var(--amber-soft);color:var(--amber);border:1px solid #E7D6B4}
+  .b-must{background:var(--seal);color:#fff}
+
+  /* ---------- 提示块 ---------- */
+  .callout{border:1px solid var(--line);border-left:4px solid var(--blue);background:var(--surface);padding:16px 20px;margin:18px 0}
+  .callout.warn{border-left-color:var(--seal);background:var(--seal-soft)}
+  .callout.dec{border-left-color:var(--accent);background:var(--accent-soft)}
+  .callout.tbd{border-left-color:var(--amber);background:var(--amber-soft)}
+  .callout .ct{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px;color:var(--blue)}
+  .callout.warn .ct{color:var(--seal)}
+  .callout.dec .ct{color:var(--accent-2)}
+  .callout.tbd .ct{color:var(--amber)}
+  .callout p:last-child{margin-bottom:0}
+
+  /* ---------- 代码 ---------- */
+  pre{background:#16211F;color:#DCE6E2;font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:18px 20px;overflow-x:auto;margin:14px 0;border-radius:4px;border:1px solid #0C1312}
+  pre .cm{color:#7C918B}
+  pre .kw{color:#7FC8B4}
+  pre .st{color:#E0B87F}
+  pre .fn{color:#9CC7E8}
+  .caption{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:-6px 0 18px}
+
+  /* ---------- 流程图（纯 CSS） ---------- */
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:16px 0 20px;padding:20px;background:var(--surface);border:1px solid var(--line);font-size:12.5px}
+  .fn{background:var(--accent-soft);border:1.5px solid var(--accent);color:var(--accent-2);padding:7px 11px;border-radius:4px;text-align:center;font-weight:600;line-height:1.35}
+  .fn small{display:block;font-weight:400;color:var(--muted);font-size:10.5px;font-family:var(--mono)}
+  .fn.plain{background:var(--surface-2);border-color:var(--line);color:var(--ink-2)}
+  .fn.gw{background:var(--amber-soft);border-color:#D9BE86;color:var(--amber);transform:rotate(0deg)}
+  .fn.end{background:var(--surface-2);border-color:var(--ink-2);color:var(--ink-2)}
+  .fa{color:var(--muted);font-family:var(--mono);font-size:13px}
+
+  /* ---------- 状态机链 ---------- */
+  .chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 18px;font-size:12px}
+  .st-box{font-family:var(--mono);font-size:11.5px;padding:6px 11px;border:1px solid var(--line);background:var(--surface);border-radius:4px;font-weight:600;color:var(--ink-2)}
+  .st-box.on{border-color:var(--accent);color:var(--accent-2);background:var(--accent-soft)}
+  .st-box.bad{border-color:var(--seal);color:var(--seal);background:var(--seal-soft)}
+  .st-box.dim{border-style:dashed;color:var(--muted)}
+
+  /* ---------- 卡片网格 ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  .card{background:var(--surface);border:1px solid var(--line);padding:16px 18px}
+  .card h5{margin:0 0 8px;font-size:13.5px;font-weight:700;color:var(--accent-2)}
+  .card p{font-size:13px;color:var(--ink-2);margin:0}
+  .card ul{padding-left:18px;margin:6px 0 0;font-size:13px;color:var(--ink-2)}
+
+  .kv{font-size:13.5px}
+  .kv dt{font-weight:700;color:var(--accent-2);margin-top:12px;font-family:var(--mono);font-size:12.5px}
+  .kv dd{margin:2px 0 0 0;color:var(--ink-2)}
+
+  hr.soft{border:none;border-top:1px solid var(--line-soft);margin:32px 0}
+  .foot{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="masthead">
+  <p class="eyebrow">PRD · Product Requirements Document · v1.0</p>
+  <h1>流程引擎平台</h1>
+  <p class="subtitle">面向企业的重要基建：一处定义流程、一键发布版本、按定义批量创建实例。覆盖人工审批（或签／并签／竞签）、并行与分支汇聚、<b>表单引擎（节点×字段权限矩阵）</b>、流程上下文与节点脚本计算，向上服务业务编排，向下托管长跑实例的生命周期。</p>
+  <div class="metagrid">
+    <div><span class="k">文档状态</span><span class="v">草案 / 待评审</span></div>
+    <div><span class="k">日期</span><span class="v">2026-10-08</span></div>
+    <div><span class="k">目标读者</span><span class="v">产品 / 研发 / 测试 / 运维</span></div>
+    <div><span class="k">技术栈</span><span class="v">Python 服务端 + Web 设计器</span></div>
+  </div>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><b>01</b>背景与目标</li>
+    <li><b>02</b>名词与概念模型</li>
+    <li><b>03</b>用户角色与核心场景</li>
+    <li><b>04</b>功能范围与优先级</li>
+    <li><b>05</b>流程建模与设计器</li>
+    <li><b>06</b>发布与版本管理</li>
+    <li><b>07</b>实例生命周期</li>
+    <li><b>08</b>审批与任务（签核体系）</li>
+    <li><b>09</b>网关、并行与汇聚</li>
+    <li><b>10</b>表单引擎</li>
+    <li><b>11</b>流程上下文系统</li>
+    <li><b>12</b>节点脚本与服务节点</li>
+    <li><b>13</b>通知、超时与运维干预</li>
+    <li><b>14</b>开放 API 与 SDK</li>
+    <li><b>15</b>非功能需求</li>
+    <li><b>16</b>数据模型</li>
+    <li><b>17</b>边界与异常清单</li>
+    <li><b>18</b>权限矩阵</li>
+    <li><b>19</b>成功指标</li>
+    <li><b>20</b>里程碑与排期</li>
+    <li><b>21</b>风险与开放问题</li>
+    <li><b>A</b>附录：技术选型结论</li>
+  </ol>
+</nav>
+
+<!-- ============ 01 ============ -->
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>背景与目标</h2>
+
+  <h3>1.1 背景</h3>
+  <p>公司内部流程（报销、采购、入职、合同、发布审批、权限申请等）目前散落在多套自建审批代码与第三方 SaaS 中，存在三类共性问题：</p>
+  <ul>
+    <li><b>不可视</b>——流程逻辑写死在业务代码里，改一个审批人要走发版；业务方无法自助调整。</li>
+    <li><b>不可控</b>——没有统一的实例视图，审批卡在谁那儿、卡了多久、为什么卡，只能翻日志。</li>
+    <li><b>不可复用</b>——并签、竞签、退回、加签、超时这些通用能力，每个业务线各写一遍，语义还不一致。</li>
+  </ul>
+  <p>本平台的目标是提供一层<b>流程基建</b>：业务方在可视化设计器里定义流程 → 发布成不可变版本 → 业务系统调用 API 创建实例 → 引擎驱动节点流转、生成待办、执行脚本与并行分支 → 全过程可追溯、可干预。</p>
+
+  <h3>1.2 产品目标</h3>
+  <ul>
+    <li><b>G1 定义即运行</b>：业务方不写代码即可完成「定义 → 发布 → 创建实例 → 跑通」的闭环。</li>
+    <li><b>G2 长跑可靠</b>：实例可存活数天到数月，跨服务重启、跨版本迭代不丢状态、不重复流转。</li>
+    <li><b>G3 语义统一</b>：签核（或／并／竞）、退回、加签、超时、撤销等企业审批语义，全平台一套定义、一处实现、处处一致。</li>
+    <li><b>G4 可编程</b>：节点内可写脚本做参数计算与条件判断，流程上下文是一等公民，脚本可读可写、可审计。</li>
+    <li><b>G5 可运维</b>：任一实例能回答「现在在哪、谁在等、为什么等、下一步是谁」，并支持人工干预（改派、跳过、终止、回滚）。</li>
+  </ul>
+
+  <h3>1.3 非目标（本期不做）</h3>
+  <ul>
+    <li>不做通用 RPA／爬虫类自动化执行器。</li>
+    <li>不做完整 BPMN 2.0 兼容（不追求全量事件子流程、补偿边界事件等冷门特性，按需裁剪）。</li>
+    <li>不做<b>脱离流程的通用低代码平台</b>。表单引擎只服务流程节点（见第 10 章），不做独立 CRUD 应用、不做通用报表 BI、不做像素级自由布局的页面编排。</li>
+    <li>不做 AI 智能审批决策（预留扩展点，见附录 A）。</li>
+  </ul>
+
+  <h3>1.4 设计原则</h3>
+  <div class="grid2">
+    <div class="card"><h5>定义与实例分离</h5><p>流程定义是「图纸」，实例是「按图纸造出来的东西」。定义改版不影响已跑实例——图纸可换，房子不塌。</p></div>
+    <div class="card"><h5>版本不可变</h5><p>已发布版本只读。任何修改产生新版本，实例永远钉在创建它的那个版本上（长跑实例迁移是显式操作，见 6.4）。</p></div>
+    <div class="card"><h5>令牌驱动</h5><p>实例执行状态用「令牌（Token）」在图上流动来描述，天然支持并行分叉与多令牌汇聚，而非用状态字段硬编码。</p></div>
+    <div class="card"><h5>一切可追溯</h5><p>变量变更、任务动作、节点流转、脚本输出全部落审计流水，任何一次状态改变都能回答「谁、何时、基于什么」。</p></div>
+  </div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>名词与概念模型</h2>
+
+  <h3>2.1 核心名词表</h3>
+  <table>
+    <tr><th style="width:180px">术语</th><th style="width:120px">英文/键</th><th>定义</th></tr>
+    <tr><td><b>流程定义</b></td><td><code>definition</code></td><td>一个流程的稳定标识（如 <code>expense_approval</code>），跨版本不变，是业务系统引用流程的入口。</td></tr>
+    <tr><td><b>流程版本</b></td><td><code>version</code></td><td>定义的一次快照（图结构 + 节点配置 + 脚本 + 变量声明）。发布后<b>不可变</b>，单调递增。</td></tr>
+    <tr><td><b>节点</b></td><td><code>node</code></td><td>版本图上的一个处理单元：审批、脚本、网关、子流程、开始/结束等。</td></tr>
+    <tr><td><b>边</b></td><td><code>edge</code></td><td>节点间的有向连接，携带条件表达式，决定令牌流向。</td></tr>
+    <tr><td><b>令牌</b></td><td><code>token</code></td><td>执行游标。一个实例可同时持有多个令牌（并行），令牌到达节点即触发该节点的激活。</td></tr>
+    <tr><td><b>流程实例</b></td><td><code>instance</code></td><td>流程定义版本的一次运行，绑定业务单号，有独立上下文与生命周期。</td></tr>
+    <tr><td><b>节点实例</b></td><td><code>node_instance</code></td><td>某节点在某实例中的一次激活。并行时同一节点可激活多次（各自独立的局部上下文）。</td></tr>
+    <tr><td><b>任务</b></td><td><code>task</code></td><td>人工节点产生的待办，指派给具体的人/角色/候选人集合，有状态与结论。</td></tr>
+    <tr><td><b>上下文</b></td><td><code>context</code></td><td>实例的变量容器，分流程级、节点局部级、子流程级，脚本与表达式的读写对象。</td></tr>
+    <tr><td><b>签核</b></td><td><code>sign_mode</code></td><td>多人审批时的裁决模式：或签 / 并签（会签）/ 竞签。见第 8 章。</td></tr>
+    <tr><td><b>快照</b></td><td><code>snapshot</code></td><td>流程版本发布时的完整 JSON 图，运行期只读该快照，与设计态解耦。</td></tr>
+  </table>
+
+  <h3>2.2 概念关系图</h3>
+  <div class="flow">
+    <div class="fn plain">流程定义<small>key</small></div><span class="fa">→1:N</span>
+    <div class="fn">流程版本<small>v1 / v2 / v3 …</small></div><span class="fa">→</span>
+    <div class="fn plain">节点 + 边<small>图快照</small></div>
+  </div>
+  <div class="flow">
+    <div class="fn">流程实例<small>钉在某个版本</small></div><span class="fa">→</span>
+    <div class="fn plain">节点实例<small>每次激活一条</small></div><span class="fa">→</span>
+    <div class="fn plain">任务<small>人工节点产出</small></div>
+    <div class="fn" style="margin-left:14px">上下文<small>变量 + 审计流水</small></div>
+  </div>
+
+  <div class="callout dec">
+    <div class="ct">关键设计判断</div>
+    <p><b>节点是「类型 + 配置」，不是「类」。</b>引擎只认识有限的几种节点类型（见 5.3），业务差异全部由「配置 + 脚本」表达。这样新增一种业务审批不需要改引擎、不需要发版，符合基建定位。</p>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>用户角色与核心场景</h2>
+
+  <table>
+    <tr><th style="width:140px">角色</th><th style="width:200px">关心的东西</th><th>典型动作</th></tr>
+    <tr><td><b>流程设计者</b><br><span class="badge b-p2">业务/流程BP</span></td><td>怎么把线下流程画成图，能不能自助改</td><td>拖拽建模、配置节点、写条件表达式、试跑、提交发布</td></tr>
+    <tr><td><b>流程管理员</b><br><span class="badge b-p2">流程Owner</span></td><td>版本、生效范围、谁能发起</td><td>审批发布、灰度、下线、配置发起权限与可见范围</td></tr>
+    <tr><td><b>业务开发者</b><br><span class="badge b-p2">研发</span></td><td>怎么用 API 起流程、怎么接回调、怎么扩展</td><td>调开放 API 创建实例、注册服务节点、处理回调、写脚本</td></tr>
+    <tr><td><b>审批人</b><br><span class="badge b-p2">全员</span></td><td>我要批什么、批完谁接</td><td>对待办做同意/否决/退回/加签/转交</td></tr>
+    <tr><td><b>申请人</b><br><span class="badge b-p2">全员</span></td><td>我的单子到哪了、为什么被打回</td><td>发起、查看进度、撤回、催办、补充材料后重提</td></tr>
+    <tr><td><b>运维/SRE</b><br><span class="badge b-p2">平台</span></td><td>卡住的实例、失败的脚本、积压的待办</td><td>实例检索、人工干预、重跑、补偿、容量观测</td></tr>
+  </table>
+
+  <h3>3.1 端到端核心场景（验收主线）</h3>
+  <div class="callout">
+    <div class="ct">场景 S1：请假审批（主干闭环）</div>
+    <p>员工提交 3 天请假 → 直属主管审批（或签：主管或代理主管任一通过）→ 若天数 &gt; 2 天，并行触发「HR 备案」与「部门总监审批」两条分支 → 两分支汇聚 → 脚本节点计算剩余年假并写回上下文 → 结束并回调 HR 系统。</p>
+  </div>
+  <div class="callout">
+    <div class="ct">场景 S2：采购合同（并签 + 竞签混合）</div>
+    <p>金额 &gt; 50 万走「法务 + 财务 + 风控」三方<b>并签</b>（须全部同意，任一否决则整单否决）；金额 ≤ 50 万走「任一业务负责人<b>竞签</b>」（第一个处理的人定音，其余任务即刻回收）。</p>
+  </div>
+  <div class="callout">
+    <div class="ct">场景 S3：长跑实例 + 版本升级</div>
+    <p>某入职流程实例停留「等待背调结果」节点 12 天。期间流程定义发布了 v3（新增一个节点）。旧实例继续在 v2 上运行到结束，<b>不被强制迁移</b>；管理员可选择对新实例生效 v3。</p>
+  </div>
+  <div class="callout">
+    <div class="ct">场景 S4：同一张表单，不同节点不同权限</div>
+    <p>一张「费用报销单」绑定在流程的 5 个节点上。发起节点：申请人可编辑「金额 / 明细 / 发票附件」，看不到「审批结论」；主管审批节点：金额与明细变为<b>只读</b>，新增可编辑的「主管意见·必填」；HR 备案节点：新增可编辑的「备案号」；总监节点：可编辑「审批结论」。<b>同一张表单，随节点滑动切换字段角色</b>——这是自建表单引擎相对外部表单系统的核心增量。</p>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>功能范围与优先级</h2>
+  <p>优先级口径：<span class="badge b-mvp">MVP</span> 首版必须交付；<span class="badge b-p1">P1</span> 第二个里程碑；<span class="badge b-p2">P2</span> 增强项。</p>
+  <table>
+    <tr><th style="width:60px">编号</th><th style="width:200px">模块</th><th>能力要点</th><th style="width:80px">优先级</th></tr>
+    <tr><td>FR-1</td><td>流程建模与设计器</td><td>可视化拖拽、节点/边配置、校验、试跑、JSON 导入导出</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-2</td><td>发布与版本管理</td><td>草稿→发布→灰度→下线；版本不可变；版本对比</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-3</td><td>实例生命周期</td><td>创建/启动/查询/挂起/恢复/终止；业务单号关联</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-4</td><td>审批与任务</td><td>待办/已办、同意/否决/退回/加签/转交/撤回/催办</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-5</td><td>签核体系</td><td>或签 / 并签（会签）/ 竞签；串行与并行会签</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-6</td><td>网关与分支</td><td>排他网关、并行网关（fork/join）、包容网关</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-7</td><td>流程上下文</td><td>变量作用域、类型、审计、表达式、并发写保护</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-8</td><td>节点脚本</td><td>Python 沙箱、可用 API、超时/异常处理、调试与试算</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-9</td><td>服务节点与集成</td><td>HTTP 调用、MQ 投递、异步等待与回调</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-18</td><td><b>表单引擎</b></td><td>表单设计器、字段类型体系、<b>节点×字段权限矩阵</b>、表单与上下文双向绑定、三层校验</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-19</td><td>表单高级能力</td><td>子表单（明细表）、字段联动、计算字段、数据源、模板库、草稿</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-20</td><td>表单数据与检索</td><td>表单数据存储、可查询字段索引、多维检索、打印与 Excel 导出</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-21</td><td>多端渲染</td><td>PC Web + 移动端（飞书 H5）Schema 驱动动态渲染</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-10</td><td>子流程</td><td>内嵌子流程、调用外部流程（Call Activity）、输入输出映射</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-11</td><td>定时与延时</td><td>定时器节点、延时、超时策略（提醒/自动通过/自动否决/转交）</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-12</td><td>通知</td><td>站内信/飞书/邮件，模板与幂等去重</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-13</td><td>权限与组织</td><td>发起权限、可见范围、审批人解析（组织/角色/汇报线）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-14</td><td>监控与运维</td><td>实例大盘、卡点分析、人工干预、重跑与补偿</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>FR-15</td><td>开放 API / SDK</td><td>REST + Python SDK + Webhook 回调 + 幂等键</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>FR-16</td><td>长跑实例迁移</td><td>版本迁移工具（显式、可预演、可回滚）</td><td><span class="badge b-p2">P2</span></td></tr>
+    <tr><td>FR-17</td><td>多租户</td><td>租户隔离、配额、独立数据范围</td><td><span class="badge b-p2">P2</span></td></tr>
+  </table>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>流程建模与设计器</h2>
+
+  <h3>5.1 建模要求</h3>
+  <ul>
+    <li><b>画布</b>：拖拽节点、连线、对齐吸附、自动布局、缩放平移、撤销重做。</li>
+    <li><b>节点配置面板</b>：右侧抽屉，按节点类型渲染不同配置表单。</li>
+    <li><b>实时校验</b>：图结构校验在保存前实时提示（见 5.5）。</li>
+    <li><b>试跑（Dry Run）</b>：不落真实数据，模拟变量输入，看到流转路径与每个节点的进出，验证分支条件与脚本。</li>
+    <li><b>JSON 双向</b>：设计器 ⇄ 流程 JSON 快照可互转，允许研发用 JSON/YAML 直接定义并导入。</li>
+    <li><b>协作</b>：草稿支持多人编辑与锁定，发布动作单人串行。</li>
+  </ul>
+
+  <h3>5.2 流程定义 JSON 结构（快照）</h3>
+  <pre><span class="cm">// 发布后的不可变快照，实例运行期只读此结构</span>
+{
+  <span class="st">"key"</span>: <span class="st">"expense_approval"</span>,
+  <span class="st">"name"</span>: <span class="st">"费用报销审批"</span>,
+  <span class="st">"version"</span>: 3,
+  <span class="st">"tenant"</span>: <span class="st">"default"</span>,
+  <span class="st">"variables"</span>: [                     <span class="cm">// 变量声明（含类型、默认值、是否必填）</span>
+    { <span class="st">"name"</span>: <span class="st">"amount"</span>,   <span class="st">"type"</span>: <span class="st">"number"</span>, <span class="st">"required"</span>: <span class="kw">true</span> },
+    { <span class="st">"name"</span>: <span class="st">"dept"</span>,     <span class="st">"type"</span>: <span class="st">"string"</span> },
+    { <span class="st">"name"</span>: <span class="st">"trip_days"</span>,<span class="st">"type"</span>: <span class="st">"number"</span>, <span class="st">"default"</span>: 0 }
+  ],
+  <span class="st">"nodes"</span>: [
+    { <span class="st">"id"</span>: <span class="st">"start"</span>,  <span class="st">"type"</span>: <span class="st">"start"</span> },
+    { <span class="st">"id"</span>: <span class="st">"calc"</span>,   <span class="st">"type"</span>: <span class="st">"script"</span>,
+      <span class="st">"scriptRef"</span>: <span class="st">"scripts/calc_allowance.py"</span>,
+      <span class="st">"timeoutMs"</span>: 3000, <span class="st">"onError"</span>: <span class="st">"edge_2_manual"</span> },
+    { <span class="st">"id"</span>: <span class="st">"mgr"</span>,    <span class="st">"type"</span>: <span class="st">"approval"</span>,
+      <span class="st">"assignee"</span>: { <span class="st">"type"</span>: <span class="st">"managerOf"</span>, <span class="st">"expr"</span>: <span class="st">"ctx.applicant_id"</span> },
+      <span class="st">"signMode"</span>: <span class="st">"any"</span>,
+      <span class="st">"rejectStrategy"</span>: <span class="st">"to_start"</span> },
+    { <span class="st">"id"</span>: <span class="st">"fork"</span>,   <span class="st">"type"</span>: <span class="st">"parallel_gateway"</span>, <span class="st">"gatewayDirection"</span>: <span class="st">"fork"</span> },
+    { <span class="st">"id"</span>: <span class="st">"hr"</span>,     <span class="st">"type"</span>: <span class="st">"approval"</span>, <span class="st">"signMode"</span>: <span class="st">"all"</span> },
+    { <span class="st">"id"</span>: <span class="st">"vp"</span>,     <span class="st">"type"</span>: <span class="st">"approval"</span>, <span class="st">"signMode"</span>: <span class="st">"race"</span> },
+    { <span class="st">"id"</span>: <span class="st">"join"</span>,   <span class="st">"type"</span>: <span class="st">"parallel_gateway"</span>, <span class="st">"gatewayDirection"</span>: <span class="st">"join"</span> },
+    { <span class="st">"id"</span>: <span class="st">"end"</span>,    <span class="st">"type"</span>: <span class="st">"end"</span> }
+  ],
+  <span class="st">"edges"</span>: [
+    { <span class="st">"id"</span>: <span class="st">"e1"</span>, <span class="st">"from"</span>: <span class="st">"start"</span>, <span class="st">"to"</span>: <span class="st">"calc"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e2"</span>, <span class="st">"from"</span>: <span class="st">"calc"</span>,  <span class="st">"to"</span>: <span class="st">"mgr"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e3"</span>, <span class="st">"from"</span>: <span class="st">"mgr"</span>,   <span class="st">"to"</span>: <span class="st">"fork"</span>, <span class="st">"condition"</span>: <span class="st">"verdict == 'approve'"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e4"</span>, <span class="st">"from"</span>: <span class="st">"mgr"</span>,   <span class="st">"to"</span>: <span class="st">"end"</span>,  <span class="st">"condition"</span>: <span class="st">"verdict == 'reject'"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e5"</span>, <span class="st">"from"</span>: <span class="st">"fork"</span>,  <span class="st">"to"</span>: <span class="st">"hr"</span>, <span class="st">"condition"</span>: <span class="st">"ctx.trip_days &gt; 2"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e6"</span>, <span class="st">"from"</span>: <span class="st">"fork"</span>,  <span class="st">"to"</span>: <span class="st">"vp"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e7"</span>, <span class="st">"from"</span>: <span class="st">"hr"</span>,    <span class="st">"to"</span>: <span class="st">"join"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e8"</span>, <span class="st">"from"</span>: <span class="st">"vp"</span>,    <span class="st">"to"</span>: <span class="st">"join"</span> },
+    { <span class="st">"id"</span>: <span class="st">"e9"</span>, <span class="st">"from"</span>: <span class="st">"join"</span>,  <span class="st">"to"</span>: <span class="st">"end"</span> }
+  ]
+}</pre>
+  <p class="caption">图 5-1 流程快照结构（节选）。<code>variables</code> 是上下文契约，<code>edges[].condition</code> 是分支表达式。</p>
+
+  <h3>5.3 节点类型清单</h3>
+  <table>
+    <tr><th style="width:150px">类型</th><th style="width:130px">KEY</th><th>行为</th><th style="width:70px">优先级</th></tr>
+    <tr><td>开始节点</td><td><code>start</code></td><td>实例创建即激活，产出初始令牌；可配变量入参校验</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>结束节点</td><td><code>end</code></td><td>令牌汇入即实例完成；可配结束回调与出参</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>审批节点</td><td><code>approval</code></td><td>产生人工任务；支持三种签核模式；绑定表单 + 字段权限矩阵</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td><b>表单节点</b></td><td><code>form</code></td><td>人工填写表单并写回上下文（无同意/否决语义）；绑定表单 + 字段权限矩阵</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>抄送节点</td><td><code>cc</code></td><td>只发通知不阻塞流转（零等待）</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>脚本节点</td><td><code>script</code></td><td>执行 Python 脚本，读写上下文，无人工介入</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>服务节点</td><td><code>service</code></td><td>调用外部 HTTP / MQ，可同步等待或异步回调</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>排他网关</td><td><code>exclusive_gateway</code></td><td>条件分支，只走第一条满足条件的边</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>并行网关</td><td><code>parallel_gateway</code></td><td><code>fork</code> 发多令牌 / <code>join</code> 等全部令牌到达</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>包容网关</td><td><code>inclusive_gateway</code></td><td>按条件走多分支，汇聚时只等「实际走过」的分支</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>定时节点</td><td><code>timer</code></td><td>延时到点 / 定时触发（cron）</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>等待节点</td><td><code>wait</code></td><td>等待外部信号（回调、消息）解除阻塞</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>子流程</td><td><code>sub_process</code></td><td>内嵌子流程（同实例内）或调用外部流程（独立实例）</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>扩展节点</td><td><code>plugin</code></td><td>注册式自定义节点，供平台方扩展</td><td><span class="badge b-p2">P2</span></td></tr>
+  </table>
+
+  <h3>5.4 表单绑定</h3>
+  <p>本平台<b>自带表单引擎</b>（见第 10 章）。人工节点通过 <code>formRef</code> 绑定一张表单，并配置<b>字段级权限矩阵</b>（本节点 × 每个字段 = 隐藏／只读／可编辑／必填）。表单字段名直接映射为上下文变量名，提交即写上下文。</p>
+  <p>同时保留<b>外部表单嵌入</b>通道作为兜底：节点可用 <code>formRef</code> 指向外部表单 URL（历史系统 / 复杂定制表单），以 iframe 或微前端嵌入，平台只负责校验与结果写回。内置表单引擎覆盖 95% 的常规审批场景，外部嵌入用于兜底的长尾。</p>
+
+  <h3>5.5 保存前校验（阻断发布）</h3>
+  <ul>
+    <li>必须有且仅有一个 <code>start</code>；至少一个 <code>end</code>。</li>
+    <li>所有节点必须有入边（start 除外）与出边（end 除外）。</li>
+    <li>分支节点（排他/包容）的默认边必须存在，或有「无匹配则报错」的显式配置。</li>
+    <li>并行 <code>fork</code> 与 <code>join</code> 必须成对且所在分支闭合（结构正确性）。</li>
+    <li>所有表达式中引用的变量必须在 <code>variables</code> 中声明或由上游节点保证产出。</li>
+    <li>脚本语法检查 + 静态引用检查（只允许白名单 API）。</li>
+    <li>审批节点的审批人解析器必须能解析出候选人（配置期做「模拟解析」）。</li>
+  </ul>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>发布与版本管理</h2>
+
+  <h3>6.1 版本状态机</h3>
+  <div class="chain">
+    <span class="st-box">草稿 DRAFT</span><span class="fa">→</span>
+    <span class="st-box on">已发布 PUBLISHED</span><span class="fa">→</span>
+    <span class="st-box dim">已下线 RETIRED</span>
+  </div>
+  <ul>
+    <li><b>草稿</b>：可随意编辑，不进实例。</li>
+    <li><b>已发布</b>：生成不可变快照，版本号自增。可配置生效时间、生效范围（灰度：按租户/发起人/比例）。</li>
+    <li><b>已下线</b>：不再允许新实例使用；已在跑的实例不受影响，继续按原版本执行完毕。</li>
+  </ul>
+
+  <h3>6.2 版本规则（硬约束）</h3>
+  <table>
+    <tr><th style="width:180px">规则</th><th>说明</th></tr>
+    <tr><td>版本不可变</td><td>发布后任何修改都生成新版本，历史版本永久保留，用于审计与回溯。</td></tr>
+    <tr><td>实例钉版本</td><td>实例创建时记录 <code>version_id</code>，运行期只读该版本快照，绝不随定义更新而改变行为。</td></tr>
+    <tr><td>默认版本</td><td>每个 definition 有且仅有一个「当前默认版本」，业务系统按 key 起流程时使用；可手动切换。</td></tr>
+    <tr><td>版本对比</td><td>提供图级 diff：新增/删除/修改的节点、边、变量、脚本。</td></tr>
+    <tr><td>下线保护</td><td>若仍有运行中实例钉在该版本，下线只阻断新实例并给出提示，不回收旧实例。</td></tr>
+  </table>
+
+  <h3>6.3 发布流程</h3>
+  <div class="flow">
+    <div class="fn plain">提交发布<small>设计者</small></div><span class="fa">→</span>
+    <div class="fn plain">自动校验<small>结构+脚本+变量</small></div><span class="fa">→</span>
+    <div class="fn plain">试跑回归<small>用例集</small></div><span class="fa">→</span>
+    <div class="fn">审批发布<small>流程管理员</small></div><span class="fa">→</span>
+    <div class="fn">生效<small>灰度/全量</small></div>
+  </div>
+  <p>支持配置「无需审批直接发布」的快捷通道（用于低风险测试流程），但生产租户默认强制走审批。</p>
+
+  <h3>6.4 长跑实例迁移 <span class="badge b-p2">P2</span></h3>
+  <div class="callout warn">
+    <div class="ct">这是流程引擎最难的问题，也是最有价值的积累</div>
+    <p>默认策略是<b>不迁移</b>——旧实例跑完旧版本，这是最安全也最常规的做法。当业务确实需要（如旧版本有 bug 需紧急修复）时，提供显式迁移工具：</p>
+  </div>
+  <ul>
+    <li><b>可预演</b>：给定版本 A → 版本 B，计算所有受影响实例，输出「哪些实例的当前节点在 B 中已不存在／语义已变」的冲突报告。</li>
+    <li><b>活动映射（Activity Mapping）</b>：为每个冲突节点指定迁移目标（等价节点 / 跳过 / 回退到某节点）。</li>
+    <li><b>可回滚</b>：迁移前对实例打全量快照，迁移失败可一键回滚。</li>
+    <li><b>灰度</b>：按实例白名单先迁 1 个，验证通过再批量。</li>
+    <li>迁移全过程落审计；迁移后的实例带 <code>migrated_from</code> 标记，时间线上可见。</li>
+  </ul>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>实例生命周期</h2>
+
+  <h3>7.1 实例状态机</h3>
+  <div class="chain">
+    <span class="st-box dim">待启动 CREATED</span><span class="fa">→</span>
+    <span class="st-box on">运行中 RUNNING</span><span class="fa">⇄</span>
+    <span class="st-box">挂起 SUSPENDED</span><span class="fa">→</span>
+    <span class="st-box on">已完成 COMPLETED</span>
+  </div>
+  <div class="chain">
+    <span class="st-box on">运行中 RUNNING</span><span class="fa">→</span>
+    <span class="st-box bad">已终止 TERMINATED</span>
+    <span class="st-box bad" style="margin-left:14px">执行失败 FAILED</span>
+  </div>
+  <table>
+    <tr><th style="width:130px">状态</th><th>含义</th><th style="width:200px">可执行动作</th></tr>
+    <tr><td>CREATED</td><td>实例已创建但未启动（用于「先建单后提交」场景）</td><td>启动 / 删除</td></tr>
+    <tr><td>RUNNING</td><td>有令牌在流动或在等人工任务</td><td>挂起 / 终止 / 干预</td></tr>
+    <tr><td>SUSPENDED</td><td>暂停推进，待办任务冻结不可操作</td><td>恢复 / 终止</td></tr>
+    <tr><td>COMPLETED</td><td>所有令牌到达结束节点</td><td>查看 / 归档</td></tr>
+    <tr><td>TERMINATED</td><td>被人为终止；在途任务全部回收</td><td>查看 / 归档</td></tr>
+    <tr><td>FAILED</td><td>脚本/服务节点不可恢复失败且无兜底路径</td><td>重试 / 人工修复后继续 / 终止</td></tr>
+  </table>
+
+  <h3>7.2 实例与业务单的关系</h3>
+  <ul>
+    <li>创建实例时必须携带 <code>businessKey</code>（业务单号），平台侧保证 <code>(definition_key, businessKey)</code> 唯一，天然防重复提交。</li>
+    <li>实例可携带 <code>title</code>（待办列表展示用）与 <code>initiator</code>（发起人）。</li>
+    <li>业务系统可通过 <code>businessKey</code> 反查实例状态；平台也可回调业务系统（Webhook）。</li>
+  </ul>
+
+  <h3>7.3 实例时间线</h3>
+  <p>每个实例提供一条不可篡改的时间线，按时间倒序展示：节点激活、任务创建/认领/完成、变量变更、脚本执行与输出、并行分叉/汇聚、异常与重试、人工干预。这是排障与审计的主入口。</p>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>审批与任务（签核体系）</h2>
+  <p>这是本平台最核心、也最容易被做歪的部分。签核语义必须一次定义清楚，避免各业务线各写一套。</p>
+
+  <h3>8.1 三种签核模式</h3>
+  <table>
+    <tr><th style="width:110px">模式</th><th style="width:90px">KEY</th><th>裁决规则</th><th>典型场景</th></tr>
+    <tr>
+      <td><b>或签</b></td><td><code>any</code></td>
+      <td>N 个候选人同时收到任务；<b>任意一人「同意」即节点通过</b>，其余任务立即作废。若有人否决，节点<b>不结束</b>，仍等其他人处理（否决只是记录意见）。</td>
+      <td>主管或代理主管任一审批；值班人轮值审批</td>
+    </tr>
+    <tr>
+      <td><b>并签</b><br>（会签）</td><td><code>all</code></td>
+      <td>N 个候选人<b>全部完成</b>节点才结束。通过条件可配：<b>全部同意</b>／<b>同意比例 ≥ X%</b>／<b>一票否决</b>。支持<b>并行会签</b>（同时发）与<b>串行会签</b>（按顺序逐个发）。</td>
+      <td>法务+财务+风控三方会签；委员会投票</td>
+    </tr>
+    <tr>
+      <td><b>竞签</b></td><td><code>race</code></td>
+      <td>N 个候选人同时收到任务；<b>第一个处理的人的决定即为节点结论</b>（同意或否决都算数），其余任务立即回收作废。</td>
+      <td>抢单式审批；多个负责人谁先有空谁定；竞价/抢标</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <div class="ct">或签 vs 竞签：一句话说清区别</div>
+    <p><b>或签</b>是「谁先同意算谁赢」——否决不终结，别人还能救；<b>竞签</b>是「谁先出手谁定音」——第一个人的结论就是最终结论，哪怕是否决。两者都只产生一个有效结论，区别在于「否决是否终止流程」。</p>
+  </div>
+
+  <h3>8.2 加签与动态调整</h3>
+  <table>
+    <tr><th style="width:130px">动作</th><th>语义</th><th style="width:110px">权限</th></tr>
+    <tr><td>前加签</td><td>在当前审批人之前插入新的审批人，新审批人先批</td><td>当前审批人 / 管理员</td></tr>
+    <tr><td>后加签</td><td>在当前审批人之后追加审批人（当前批完再流转给新增人）</td><td>当前审批人 / 管理员</td></tr>
+    <tr><td>会签加签</td><td>向并签节点追加一个审批人，纳入同一裁决集合</td><td>管理员</td></tr>
+    <tr><td>转交</td><td>把任务转给别人，原审批人失去该任务（一次性）</td><td>当前审批人</td></tr>
+    <tr><td>委托</td><td>设置代理期，期间所有任务自动抄送/指派给代理人</td><td>本人设置，需审批</td></tr>
+    <tr><td>改派</td><td>管理员强制把任务指派给他人</td><td>管理员</td></tr>
+  </table>
+  <p><b>加签后签核语义</b>：加签产生的任务纳入当前节点的裁决集合，遵循原签核模式（如竞签节点加签后仍是「先处理者定音」）。</p>
+
+  <h3>8.3 退回（Reject）与撤销</h3>
+  <table>
+    <tr><th style="width:150px">策略</th><th>KEY</th><th>说明</th></tr>
+    <tr><td>退回发起人</td><td><code>to_start</code></td><td>整单回到开始节点，申请人改完重提，<b>从头再走</b>（可配「跳过已通过的节点」）</td></tr>
+    <tr><td>退回上一节点</td><td><code>to_prev</code></td><td>回到上一个审批节点，重新审批</td></tr>
+    <tr><td>退回指定节点</td><td><code>to_node</code></td><td>退回到图上任一指定位（需配置白名单，避免乱退）</td></tr>
+    <tr><td>否决终止</td><td><code>terminate</code></td><td>直接结束实例为「否决」</td></tr>
+  </table>
+  <p><b>重提语义（关键）</b>：退回后重提，默认「保留已通过的审批结果、仅重走被退回及之后的节点」；可配置为「全部重走」。两种语义必须显式选择，不允许隐式默认导致歧义。</p>
+  <p><b>撤回</b>：发起人在「无人处理前」可撤回整单，实例终止或回到草稿。撤回时间窗可配置（如：首个人工任务被处理前）。</p>
+
+  <h3>8.4 任务状态机</h3>
+  <div class="chain">
+    <span class="st-box dim">待认领 CREATED</span><span class="fa">→</span>
+    <span class="st-box">已认领 CLAIMED</span><span class="fa">→</span>
+    <span class="st-box on">已完成 COMPLETED</span>
+  </div>
+  <div class="chain">
+    <span class="st-box dim">待认领 CREATED</span><span class="fa">→</span>
+    <span class="st-box bad">已取消 CANCELLED</span>
+    <span class="st-box bad" style="margin-left:10px">已超时 EXPIRED</span>
+    <span class="st-box bad" style="margin-left:10px">已转交 DELEGATED</span>
+  </div>
+  <p>结论字段 <code>verdict</code>：<code>approve</code> / <code>reject</code> / <code>return</code>。任务完成时写审计：操作人、时间、意见、附件、耗时。</p>
+
+  <h3>8.5 审批人解析器</h3>
+  <p>审批节点的 <code>assignee</code> 是一个<b>解析器</b>而非静态名单，运行期求值。内置解析器：</p>
+  <table>
+    <tr><th style="width:170px">解析器</th><th>含义</th></tr>
+    <tr><td><code>user(id)</code></td><td>指定用户</td></tr>
+    <tr><td><code>role(code)</code></td><td>某角色下所有人（展开后按签核模式裁决）</td></tr>
+    <tr><td><code>managerOf(userId, level)</code></td><td>某人的 N 级主管（沿汇报线）</td></tr>
+    <tr><td><code>deptLeader(deptId)</code></td><td>部门负责人</td></tr>
+    <tr><td><code>initiator</code></td><td>流程发起人</td></tr>
+    <tr><td><code>expr(expression)</code></td><td>自定义表达式（可引用上下文变量）</td></tr>
+    <tr><td><code>script(fn)</code></td><td>脚本解析（复杂场景，如按金额动态选审批层级）</td></tr>
+  </table>
+  <div class="callout warn">
+    <div class="ct">审批人为空怎么办（高频事故点）</div>
+    <p>解析结果为空时必须按显式配置处理：<b>自动通过</b> / <b>指派给管理员</b> / <b>报错挂起</b>。默认策略是<b>指派给流程管理员</b>，绝不静默自动通过。配置期即提示「该解析器可能产生空集」。</p>
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="s9">
+  <h2 class="sec"><span class="num">09</span>网关、并行与汇聚</h2>
+
+  <h3>9.1 排他网关（XOR）</h3>
+  <p>按出边条件顺序求值，<b>只走第一条满足条件的边</b>。必须有默认边（条件恒真的兜底），否则运行期无匹配时报错。</p>
+  <pre><span class="cm"># 出边条件示例（自上而下求值，命中即停）</span>
+<span class="st">"ctx.amount &gt; 500000"</span>                       <span class="cm"># 大额</span>
+<span class="st">"ctx.amount &gt; 50000 and ctx.dept == 'RD'"</span>   <span class="cm"># 中额且研发</span>
+<span class="kw">true</span>                                        <span class="cm"># 默认边（兜底，必填）</span></pre>
+
+  <h3>9.2 并行网关（AND）与令牌汇聚</h3>
+  <ul>
+    <li><b>Fork</b>：一条入令牌 → 全部出边各产生一条令牌，无条件全部激活（出边上的条件被忽略或禁止配置）。</li>
+    <li><b>Join</b>：等待该网关<b>所有入边</b>各到达一条令牌，才合并为一条继续。未到齐则阻塞。</li>
+    <li>同一并行分支内可嵌套并行（令牌数指数增长，需限制嵌套深度，默认 ≤ 3 层）。</li>
+    <li><b>死锁保护</b>：若某个 Join 因分支被条件跳过而永远等不齐，引擎在令牌空闲超阈值时告警，并提示结构性问题。</li>
+  </ul>
+
+  <h3>9.3 包容网关（OR）<span class="badge b-p1">P1</span></h3>
+  <p>Fork 时按条件激活<b>一条或多条</b>分支（至少一条）；Join 时只等「实际被激活过」的分支到齐。用于「满足条件的都走」类场景，比并行网关更灵活但也更易踩坑，需在 Join 处显式标记匹配范围。</p>
+
+  <h3>9.4 并行分支示例</h3>
+  <div class="flow">
+    <div class="fn plain">审批通过</div><span class="fa">→</span>
+    <div class="fn gw">并行 Fork<small>+</small></div><span class="fa">→</span>
+    <div class="fn">HR 备案<small>并签</small></div>
+    <div class="fn">总监审批<small>或签</small></div>
+    <span class="fa">→</span>
+    <div class="fn gw">并行 Join<small>=</small></div><span class="fa">→</span>
+    <div class="fn plain">脚本：算年假</div><span class="fa">→</span>
+    <div class="fn end">结束</div>
+  </div>
+
+  <h3>9.5 循环与步数保护</h3>
+  <p>图允许回环（如「补充材料 → 重新提交」），但必须设<b>实例最大步数</b>（默认 1000）与<b>单节点最大激活次数</b>（默认 100），超限即挂起并告警，防止死循环打爆系统。</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <h2 class="sec"><span class="num">10</span>表单引擎</h2>
+  <p>流程里的「人」要干活，就得有地方填东西：申请人填报销单、审批人填意见、HR 填备案号。表单不是流程的附属功能，而是<b>流程上下文的人机接口</b>——用户在表单上敲的每一个字，就是上下文里的一次变量写入。</p>
+
+  <h3>10.1 定位与边界</h3>
+  <div class="callout dec">
+    <div class="ct">一句话定位</div>
+    <p><b>表单引擎是「流程驱动的表单」，不是「通用低代码平台」。</b>它存在的意义是让每个节点上的人知道「我现在该填什么、能看什么」，而不是让人去搭一套独立的 CRUD 应用。</p>
+  </div>
+  <table>
+    <tr><th style="width:200px">做</th><th>不做</th></tr>
+    <tr>
+      <td>流程节点上挂表单，字段与上下文变量打通；字段级权限随节点变化；子表单录入明细；数据随实例归档与检索。</td>
+      <td>脱离流程的独立数据应用；完整的报表 BI 能力；复杂的前端页面编排（自定义组件、自由布局像素级拖拽）；通用工作流之外的业务系统建模。</td>
+    </tr>
+  </table>
+
+  <h3>10.2 表单与流程的关系（本章核心）</h3>
+  <p>一个流程版本绑定一组表单：<b>发起表单</b>（start 节点）+ 各<b>人工节点的表单</b>。同一张表单可被多个流程、多个节点复用（表单是独立可复用资产，不与某个流程耦合死）。</p>
+
+  <h4>字段级权限矩阵 —— 流程表单的灵魂</h4>
+  <p>同一张表单，在不同节点上呈现给不同的人，<b>每个字段的可见性与可编辑性由「节点 × 字段」决定</b>。这是流程表单区别于普通表单的核心，也是审批场景的硬需求：申请人填的金额，审批人只能看不能改；审批人的意见，申请人看不到。</p>
+  <table>
+    <tr><th style="width:150px">字段</th><th>发起节点</th><th>主管审批</th><th>HR 备案</th><th>总监审批</th><th>结束归档</th></tr>
+    <tr><td>报销金额</td><td><b>可编辑·必填</b></td><td>只读</td><td>只读</td><td>只读</td><td>只读</td></tr>
+    <tr><td>费用明细</td><td><b>可编辑</b></td><td>只读</td><td>只读</td><td>只读</td><td>只读</td></tr>
+    <tr><td>主管意见</td><td>隐藏</td><td><b>可编辑·必填</b></td><td>只读</td><td>只读</td><td>只读</td></tr>
+    <tr><td>HR 备案号</td><td>隐藏</td><td>隐藏</td><td><b>可编辑·必填</b></td><td>只读</td><td>只读</td></tr>
+    <tr><td>总监批注</td><td>隐藏</td><td>隐藏</td><td>隐藏</td><td><b>可编辑</b></td><td>只读</td></tr>
+    <tr><td>审批结论</td><td>隐藏</td><td>只读</td><td>只读</td><td><b>可编辑·必填</b></td><td>只读</td></tr>
+  </table>
+  <p class="caption">表 10-1 字段级权限矩阵示例。「隐藏」= 字段根本不渲染；「只读」= 展示但灰化；「可编辑」= 可填写。</p>
+  <p>权限粒度<b>到字段</b>，而非到表单。一个节点若未配置某字段，则该字段按「继承上一节点」或「默认只读」处理（可配，默认只读）。</p>
+
+  <h4>表单字段 = 上下文变量</h4>
+  <p>表单字段名直接映射为上下文变量名。用户在表单提交的瞬间，字段值写入流程上下文；脚本节点修改上下文后，表单再次渲染时展示的是新值。这条<b>双向绑定</b>让「表单」和「上下文」成为同一份数据的两种视角，避免了两套数据模型对不上的经典问题。</p>
+
+  <h3>10.3 字段类型清单</h3>
+  <table>
+    <tr><th style="width:130px">分类</th><th>字段类型</th><th style="width:70px">优先级</th></tr>
+    <tr><td>基础</td><td>单行文本、多行文本、数字、金额（decimal）、日期、日期时间、开关、单选、多选、下拉选择、评分</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>组织</td><td>人员选择（单选/多选）、部门选择、角色选择</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>数据</td><td>数据字典下拉、级联选择（省市区）、关联业务对象（引用其他系统实体）</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>附件</td><td>文件上传、图片上传、富文本</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>高级</td><td>计算字段、只读展示字段、<b>子表单（明细表）</b></td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>布局</td><td>分组、分栏、折叠面板、标签页、说明文字</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>系统</td><td>审批意见、附件（系统内置，与业务字段区分）、操作人、操作时间</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>扩展</td><td>手写签名、定位、二维码/条码扫描</td><td><span class="badge b-p2">P2</span></td></tr>
+  </table>
+
+  <h3>10.4 子表单（明细表）</h3>
+  <p>企业表单的重头戏——一次报销有多条费用明细，一次出差有多个行程段。子表单是「字段内嵌一个表格」，每行是一组同构字段。</p>
+  <ul>
+    <li>支持增删行、行内校验、行内计算、列合计（如金额汇总）。</li>
+    <li>行数上限，默认 200 行，超限拒绝并提示（防打爆）。</li>
+    <li>脚本可读写子表行（按行索引或整体数组）。</li>
+    <li><b>子表不能直接作为流转条件</b>——网关条件只认标量。需先用计算字段聚合（如「明细总额」「明细行数」）再判断。这是设计约束，不是缺陷：避免条件表达式里塞复杂度。</li>
+  </ul>
+
+  <h3>10.5 字段联动与计算</h3>
+  <ul>
+    <li><b>联动规则</b>：字段 A 变化 → 触发 B 的取值 / 显隐 / 必填 / 选项变化。例：选择员工 → 自动带出部门、职级、直属主管。</li>
+    <li><b>计算字段</b>：金额 = 单价 × 数量。前端实时计算仅用于展示体验，<b>服务端在提交时复算并以服务端结果为准</b>（前端可被篡改）。</li>
+    <li><b>数据源</b>：静态字典 / 接口动态拉取（带缓存与超时）/ 级联数据源。</li>
+    <li>联动与计算的逻辑若复杂，落脚本：脚本节点统一处理上下文，表单只负责展示。</li>
+  </ul>
+
+  <h3>10.6 三层校验体系</h3>
+  <table>
+    <tr><th style="width:150px">层次</th><th>时机</th><th>作用</th></tr>
+    <tr><td>前端即时校验</td><td>输入时 / 失焦</td><td>体验：立刻提示格式错误，减少无效提交</td></tr>
+    <tr><td>服务端提交校验</td><td>提交表单时</td><td><b>可信防线</b>：前端可绕过，服务端必须复校验</td></tr>
+    <tr><td>流转前校验</td><td>节点完成、令牌流转前</td><td>守门：关键字段缺失或非法时阻断流转</td></tr>
+  </table>
+  <p>校验规则：必填、类型、长度、正则、数值范围、唯一性（如同名不可重复）、跨字段校验（表达式或脚本）、自定义异步校验（如「该发票号已被报销过」需查库）。校验失败返回<b>结构化错误</b>，定位到具体字段与行，前端高亮。</p>
+
+  <h3>10.7 数据存储与检索</h3>
+  <ul>
+    <li>表单数据存 <code>wf_form_data</code>（结构化 JSON + 实例关联），与流程实例同生命周期，实例归档时一并归档。</li>
+    <li>字段可声明<b>「可查询」</b>：被标记的字段抽出为独立索引列（或入 ES），供实例列表检索、报表与外部查询。未标记的字段只存 JSON，不建索引，避免全字段索引拖垮写入。</li>
+    <li>敏感字段（如银行卡号）加密存储 + 脱敏展示 + 访问审计。</li>
+  </ul>
+
+  <h3>10.8 草稿与暂存</h3>
+  <ul>
+    <li>申请人可分多次填写，<b>草稿态</b>保存不启动流程实例。</li>
+    <li>草稿可丢弃、可继续编辑、可复制上一条单据快速填。</li>
+    <li>草稿数据与正式提交隔离，草稿不产生待办、不发通知。</li>
+  </ul>
+
+  <h3>10.9 渲染与多端</h3>
+  <ul>
+    <li><b>Schema 驱动动态渲染</b>：表单以 JSON Schema 描述，前端解析渲染，不为每张表单写页面。</li>
+    <li><b>PC Web + 移动端</b>（飞书 H5 / 小程序），同一 Schema 两套适配渲染器。</li>
+    <li><b>打印/导出</b>：表单 PDF 打印（含审批流转记录、意见、手写签名）；表单数据导出 Excel（需数据权限）。</li>
+  </ul>
+
+  <h3>10.10 表单设计器</h3>
+  <ul>
+    <li>拖拽建字段、右侧属性面板、实时预览、移动端预览切换。</li>
+    <li>表单 Schema 可导入导出（JSON），研发可代码化定义与版本管理。</li>
+    <li><b>表单模板库</b>：常用表单（报销单、请假单、采购申请）沉淀为模板，新流程直接套用。</li>
+    <li>表单与流程版本的绑定关系可视化：哪些节点用了哪张表单、字段权限矩阵一目了然。</li>
+  </ul>
+
+  <h3>10.11 表单 API</h3>
+  <table>
+    <tr><th style="width:80px">方法</th><th style="width:280px">路径</th><th>说明</th></tr>
+    <tr><td>GET</td><td><code>/api/v1/instances/{id}/form</code></td><td>获取当前节点表单 Schema + 数据 + 字段权限（已按当前用户过滤）</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/instances/{id}/form/draft</code></td><td>保存草稿</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/tasks/{id}/submit-form</code></td><td>提交表单并完成任务（校验 + 写上下文 + 流转）</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/instances?form.<i>field</i>=</code></td><td>按可查询字段检索实例</td></tr>
+  </table>
+  <p>关键：<b>表单提交与任务完成是同一个事务</b>——校验通过、写上下文、写表单数据、完成任务、流转令牌，要么全成功要么全失败。不存在「表单存了但流程没走」的中间态。</p>
+
+  <h3>10.12 与签核的交互</h3>
+  <ul>
+    <li><b>并签</b>：每个审批人各自提交自己的意见字段（如「法务意见」「财务意见」），字段权限按角色统一；所有人提交完节点才结束。</li>
+    <li><b>竞签</b>：第一个提交者的表单数据即生效，其余人的任务回收，其填了一半的数据作废。</li>
+    <li><b>退回</b>：退回后申请人能编辑的字段由权限矩阵决定（通常是发起节点可编辑的字段）。</li>
+    <li><b>审批意见</b>是系统内置字段，与业务字段分开存储与展示，便于统一生成流转记录。</li>
+  </ul>
+</section>
+
+<section id="s11">
+  <h2 class="sec"><span class="num">11</span>流程上下文系统</h2>
+
+  <h3>10.1 作用域</h3>
+  <table>
+    <tr><th style="width:150px">作用域</th><th style="width:150px">可见范围</th><th>生命周期</th></tr>
+    <tr><td><b>流程级</b> <code>ctx</code></td><td>全实例可见</td><td>实例创建 → 实例结束</td></tr>
+    <tr><td><b>节点局部</b> <code>local</code></td><td>仅当前节点实例</td><td>节点激活 → 节点结束（并行各分支独立）</td></tr>
+    <tr><td><b>子流程级</b></td><td>子流程内可见</td><td>子流程实例生命周期</td></tr>
+    <tr><td><b>只读全局</b> <code>env</code></td><td>全平台只读引用</td><td>配置驱动（如组织架构、字典）</td></tr>
+  </table>
+  <p>子流程通过 <b>输入映射（in）</b>与<b>输出映射（out）</b>与父上下文交互，默认<b>不共享</b>变量（隔离优先），共享需显式声明。</p>
+
+  <h3>10.2 变量类型与契约</h3>
+  <table>
+    <tr><th style="width:120px">类型</th><th>说明</th><th>备注</th></tr>
+    <tr><td><code>string</code> / <code>number</code> / <code>bool</code></td><td>基础类型</td><td>number 含精度配置（金额建议 decimal）</td></tr>
+    <tr><td><code>date</code> / <code>datetime</code></td><td>时间</td><td>存储 UTC，展示按用户时区</td></tr>
+    <tr><td><code>json</code> / <code>object</code></td><td>结构化数据</td><td>支持 JSON Schema 校验</td></tr>
+    <tr><td><code>array</code></td><td>列表</td><td>可配元素类型</td></tr>
+    <tr><td><code>file</code></td><td>附件引用</td><td>只存对象存储 key，不存内容</td></tr>
+    <tr><td><code>user</code> / <code>org</code></td><td>人员/组织引用</td><td>存 ID，展示时解析名称</td></tr>
+  </table>
+  <p>变量在流程定义的 <code>variables</code> 中<b>声明</b>：名称、类型、是否必填、默认值、是否敏感（脱敏展示）、是否只读。未声明的变量写入时按宽松模式允许但记审计，或按严格模式拒绝（可配，默认宽松）。</p>
+
+  <h3>10.3 变更审计</h3>
+  <p>每一次变量写入落一条流水：<code>instance_id</code>、<code>variable</code>、<code>old_value</code>、<code>new_value</code>、<code>actor</code>（脚本/用户/系统）、<code>node_instance_id</code>、<code>timestamp</code>。敏感变量在审计中脱敏。这是「为什么金额被改成这样」的唯一真相来源。</p>
+
+  <h3>10.4 并发写保护</h3>
+  <div class="callout warn">
+    <div class="ct">并行分支同时写同一变量 = 数据竞争</div>
+    <p>并行分支各自持局部变量，写回流程级变量时采用 <b>写时快照 + 版本号乐观锁</b>：若变量在读取后已被其他分支修改，本次写入失败并按配置处理（重试 / 报错挂起 / last-write-wins 记告警）。流程设计器对「多分支写同一变量」给出<b>结构性告警</b>。推荐模式：各分支写自己的局部变量，在 Join 后的脚本节点统一汇总写回。</p>
+  </div>
+
+  <h3>10.5 表达式语言</h3>
+  <p>边条件与轻量计算使用受限表达式语言（类 SpEL/EL 的子集），支持：变量引用、比较、布尔运算、<code>in</code>、简单内置函数（<code>len</code>/<code>contains</code>/<code>daysBetween</code> 等）。表达式<b>不产生副作用</b>，只读。复杂逻辑一律落到脚本节点。</p>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="s12">
+  <h2 class="sec"><span class="num">12</span>节点脚本与服务节点</h2>
+
+  <h3>11.1 脚本节点能力</h3>
+  <ul>
+    <li><b>语言</b>：Python（主）。表达式语言覆盖简单场景，脚本覆盖复杂场景。</li>
+    <li><b>入口约定</b>：脚本定义 <code>def run(ctx, local, env, logger, now)</code>，返回 <code>None</code> 或 <code>dict</code>（增量写回局部变量）。</li>
+    <li><b>可用 API</b>（白名单，沙箱注入）：<code>ctx.get/set</code>、<code>local.get/set</code>、<code>env.get</code>、<code>logger.info</code>、<code>now()</code>、<code>user(id)</code>、<code>org(id)</code>、<code>json</code>、<code>datetime</code>、<code>decimal</code>、<code>math</code>、<code>re</code>。</li>
+    <li><b>禁止</b>：网络访问、文件系统、import 非白名单模块、随机数（除非用注入的 <code>rand(seed)</code>）、读系统时间（用注入的 <code>now</code> 保证可重放）。</li>
+    <li><b>资源限制</b>：超时（默认 3s）、内存上限（默认 256MB）、CPU 时间上限。</li>
+  </ul>
+
+  <h3>11.2 脚本示例</h3>
+  <pre><span class="cm"># 节点：计算差旅补贴并决定是否需要总监审批</span>
+<span class="kw">def</span> <span class="fn">run</span>(ctx, local, env, logger, now):
+    days  = ctx.get(<span class="st">"trip_days"</span>, 0)
+    level = user(ctx.get(<span class="st">"applicant_id"</span>)).level
+    rate  = {<span class="st">"P5"</span>: 300, <span class="st">"P6"</span>: 500, <span class="st">"P7"</span>: 800}.get(level, 200)
+
+    allowance = days * rate
+    need_vp   = allowance &gt; 5000
+
+    logger.info(<span class="st">f"allowance={allowance} need_vp={need_vp}"</span>)
+    <span class="kw">return</span> {<span class="st">"allowance"</span>: allowance, <span class="st">"need_vp"</span>: need_vp}</pre>
+  <p class="caption">图 11-1 脚本节点示例。返回值增量写回局部变量，由节点显式映射到流程级变量。</p>
+
+  <h3>11.3 异常与重试</h3>
+  <table>
+    <tr><th style="width:150px">策略</th><th>行为</th></tr>
+    <tr><td>重试</td><td>可配次数与退避（如 3 次，指数退避）；幂等由运行时保证</td></tr>
+    <tr><td>onError 边</td><td>失败走指定出边（如转到人工处理节点）</td></tr>
+    <tr><td>挂起</td><td>无兜底时实例置 <code>FAILED</code>，等运维修复后重跑该节点</td></tr>
+    <tr><td>忽略</td><td>仅对非关键脚本允许（显式配置）</td></tr>
+  </table>
+
+  <h3>11.4 服务节点 <span class="badge b-p1">P1</span></h3>
+  <ul>
+    <li><b>HTTP 调用</b>：URL 模板、方法、Header、Body 映射（上下文 → 请求体）、响应映射（响应 → 上下文）。超时、重试、熔断。</li>
+    <li><b>MQ 投递</b>：向指定 topic 投消息，可选同步等待回执。</li>
+    <li><b>异步等待</b>：服务节点发起后挂起，等外部回调（带签名校验的 Webhook）唤醒，超时则走超时策略。</li>
+    <li><b>幂等</b>：所有对外调用带幂等键（实例+节点实例+尝试次数），下游需支持。</li>
+  </ul>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="s13">
+  <h2 class="sec"><span class="num">13</span>通知、超时与运维干预</h2>
+
+  <h3>12.1 通知</h3>
+  <ul>
+    <li>渠道：站内信、飞书（机器人/卡片）、邮件、短信（可扩展）。</li>
+    <li>触发点：任务创建、任务被转交、超时提醒、流程结束、被退回。</li>
+    <li>去重：同一任务同一事件的通知幂等（防止重复轰炸）。</li>
+    <li>模板：支持变量插值，模板与流程解耦、可运营配置。</li>
+  </ul>
+
+  <h3>12.2 超时策略</h3>
+  <table>
+    <tr><th style="width:150px">策略</th><th>行为</th></tr>
+    <tr><td>提醒</td><td>N 小时后催办，可多次、可升级到上级</td></tr>
+    <tr><td>自动通过</td><td>超时视为同意（需显式开启，默认关闭）</td></tr>
+    <tr><td>自动否决</td><td>超时视为否决</td></tr>
+    <tr><td>自动转交</td><td>转给代理人或上级</td></tr>
+    <tr><td>仅告警</td><td>只通知管理员，不自动动作</td></tr>
+  </table>
+  <p>超时计时<b>暂停语义</b>：实例挂起或非工作时段是否计时，按节点配置；支持工作日历（跳过周末/节假日）。</p>
+
+  <h3>12.3 运维干预</h3>
+  <table>
+    <tr><th style="width:150px">操作</th><th>说明</th><th style="width:100px">影响</th></tr>
+    <tr><td>强制通过/否决</td><td>管理员代为完成当前任务</td><td>记审计</td></tr>
+    <tr><td>跳过节点</td><td>跳过当前节点直接流转</td><td>记审计</td></tr>
+    <tr><td>跳转到节点</td><td>把令牌移动到任意节点（危险操作）</td><td>需二次确认+审计</td></tr>
+    <tr><td>重跑节点</td><td>重新执行失败的脚本/服务节点</td><td>幂等保护</td></tr>
+    <tr><td>终止实例</td><td>回收所有令牌与在途任务</td><td>终态</td></tr>
+    <tr><td>修改变量</td><td>直接改上下文变量（危险操作）</td><td>需审批+审计</td></tr>
+  </table>
+  <p>所有干预操作走二次确认，写审计流水，可配置是否需要「第二人复核」（四眼原则）。</p>
+</section>
+
+<!-- ============ 13 ============ -->
+<section id="s14">
+  <h2 class="sec"><span class="num">14</span>开放 API 与 SDK</h2>
+
+  <h3>13.1 核心 REST 接口</h3>
+  <table>
+    <tr><th style="width:80px">方法</th><th style="width:280px">路径</th><th>说明</th></tr>
+    <tr><td>POST</td><td><code>/api/v1/instances</code></td><td>创建（并启动）实例，需 businessKey + 变量，带幂等键</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/instances/{id}</code></td><td>查询实例状态与当前节点</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/instances?businessKey=</code></td><td>按业务键反查</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/instances/{id}/suspend</code> \ <code>/resume</code></td><td>挂起 / 恢复</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/instances/{id}/terminate</code></td><td>终止</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/tasks?assignee=&amp;status=</code></td><td>待办/已办查询</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/tasks/{id}/complete</code></td><td>完成（可带 verdict 与变量增量）</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/tasks/{id}/delegate</code> \ <code>/add-sign</code> \ <code>/return</code></td><td>转交 / 加签 / 退回</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/definitions/{key}/versions</code></td><td>版本列表</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/definitions/{key}/publish</code></td><td>发布版本</td></tr>
+  </table>
+
+  <h3>13.2 幂等与回调</h3>
+  <ul>
+    <li>所有写接口支持 <code>Idempotency-Key</code> 头；同键重复请求返回首次结果，不产生副作用。</li>
+    <li>Webhook 回调：实例状态变更、任务创建/完成、实例结束等事件推送给订阅方，带签名与重试（指数退避，最多 N 次）。</li>
+    <li>回调投递走 <b>Outbox 模式</b>：事件先落库，再由投递器异步推送，保证「不全丢、可重放」。</li>
+  </ul>
+
+  <h3>13.3 Python SDK</h3>
+  <pre><span class="kw">from</span> workflow <span class="kw">import</span> Client
+
+client = Client(base_url=<span class="st">"https://wf.internal/api/v1"</span>, token=<span class="st">"..."</span>)
+
+inst = client.instances.create(
+    key=<span class="st">"expense_approval"</span>,
+    business_key=<span class="st">"EXP-2026-000123"</span>,
+    initiator=<span class="st">"u_10086"</span>,
+    title=<span class="st">"张三的差旅报销 ¥6,800"</span>,
+    variables={<span class="st">"amount"</span>: 6800, <span class="st">"dept"</span>: <span class="st">"RD"</span>, <span class="st">"trip_days"</span>: 4},
+    idempotency_key=<span class="st">"EXP-2026-000123"</span>,
+)
+
+status = client.instances.get(inst.id)
+<span class="kw">for</span> t <span class="kw">in</span> client.tasks.list(assignee=<span class="st">"u_20001"</span>, status=<span class="st">"pending"</span>):
+    t.complete(verdict=<span class="st">"approve"</span>, comment=<span class="st">"同意"</span>)</pre>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="s15">
+  <h2 class="sec"><span class="num">15</span>非功能需求</h2>
+
+  <h3>14.1 一致性</h3>
+  <ul>
+    <li><b>状态与事件同事务</b>：节点流转、任务生成、变量写入、事件入 Outbox 在<b>同一数据库事务</b>内完成，杜绝「任务生成了但事件没发」。</li>
+    <li><b>幂等</b>：所有状态转移以「节点实例 + 尝试序号」为幂等键，重复投递不产生重复流转。</li>
+    <li><b>仅一次语义（近似）</b>：人工任务严格一次；脚本节点至少一次 + 幂等保证效果等价于一次；外部调用依赖下游幂等键。</li>
+  </ul>
+
+  <h3>14.2 性能目标</h3>
+  <table>
+    <tr><th style="width:280px">指标</th><th style="width:150px">目标</th><th>口径</th></tr>
+    <tr><td>实例创建吞吐</td><td>≥ 1000 / 秒</td><td>集群峰值，含事务与事件落库</td></tr>
+    <tr><td>实例创建延迟</td><td>P99 &lt; 300ms</td><td>同步返回实例 ID</td></tr>
+    <tr><td>任务完成到下一步激活</td><td>P99 &lt; 500ms</td><td>含脚本执行</td></tr>
+    <tr><td>待办列表查询</td><td>P99 &lt; 200ms</td><td>按 assignee 索引</td></tr>
+    <tr><td>单实例并发令牌</td><td>≤ 100</td><td>超限告警</td></tr>
+    <tr><td>在跑实例量</td><td>百万级</td><td>需分区与归档</td></tr>
+  </table>
+
+  <h3>14.3 高可用与可扩展</h3>
+  <ul>
+    <li>无状态服务节点，可水平扩展；调度与执行分离（调度器扫描待办触发器，Worker 执行节点）。</li>
+    <li>数据库为主存储；热数据与历史数据分离（完成的实例定期归档）。</li>
+    <li>故障恢复：进程崩溃后，未完成的事务回滚，已提交的事务由幂等保证不重复；定时器持久化，重启后继续。</li>
+  </ul>
+
+  <h3>14.4 可观测</h3>
+  <ul>
+    <li><b>Trace</b>：从 API 请求 → 实例 → 节点 → 脚本，<code>traceId</code> 全链路贯穿。</li>
+    <li><b>Metrics</b>：实例数/状态分布、节点耗时分布、任务积压、脚本错误率、超时率、回调失败率。</li>
+    <li><b>日志</b>：结构化日志，含 instance_id / node_instance_id / task_id。</li>
+    <li><b>告警</b>：实例卡住（同一节点停留超阈值）、脚本错误率突增、待办积压、回调堆积。</li>
+  </ul>
+
+  <h3>14.5 安全</h3>
+  <ul>
+    <li><b>鉴权</b>：API 走 Token/服务身份；审批操作校验「该任务确实指派给当前用户」。</li>
+    <li><b>数据权限</b>：申请人只看自己的单，审批人只看待办/已办，管理员按租户/部门范围看。</li>
+    <li><b>脚本沙箱</b>：见 12.1，禁网络/文件/危险 import，资源限额。</li>
+    <li><b>审计</b>：所有状态变更与干预永久留存，不可篡改（append-only）。</li>
+    <li><b>敏感数据</b>：标注为敏感的变量脱敏展示、加密存储。</li>
+  </ul>
+
+  <h3>14.6 多租户 <span class="badge b-p2">P2</span></h3>
+  <p>租户维度隔离定义、实例、变量与权限；共享引擎与调度集群，按租户配配额（并发实例数、日创建量）。存储行级隔离，管理端可跨租户运维。</p>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="s16">
+  <h2 class="sec"><span class="num">16</span>数据模型</h2>
+  <p>表名以 <code>wf_</code> 前缀。核心表如下（字段为要点，非全量）：</p>
+  <table>
+    <tr><th style="width:200px">表</th><th>关键字段</th><th>说明</th></tr>
+    <tr><td><code>wf_definition</code></td><td>id, key, name, tenant, category, current_version_id, status</td><td>流程定义（稳定标识）</td></tr>
+    <tr><td><code>wf_version</code></td><td>id, definition_id, version, snapshot_json, status, published_at, published_by</td><td>版本快照，不可变</td></tr>
+    <tr><td><code>wf_instance</code></td><td>id, definition_id, version_id, business_key, initiator, title, status, started_at, ended_at</td><td>流程实例；<code>(definition_id, business_key)</code> 唯一</td></tr>
+    <tr><td><code>wf_node_instance</code></td><td>id, instance_id, node_id, node_type, status, token_id, activation_seq, started_at, ended_at</td><td>节点激活记录</td></tr>
+    <tr><td><code>wf_task</code></td><td>id, node_instance_id, assignee, candidate_group, status, verdict, comment, claimed_at, completed_at</td><td>人工任务</td></tr>
+    <tr><td><code>wf_variable</code></td><td>id, instance_id, scope, name, type, value_json, version, updated_at</td><td>当前变量值（乐观锁 version）</td></tr>
+    <tr><td><code>wf_variable_log</code></td><td>id, instance_id, name, old_value, new_value, actor, node_instance_id, created_at</td><td>变量变更审计</td></tr>
+    <tr><td><code>wf_token</code></td><td>id, instance_id, node_id, status, parent_token_id</td><td>令牌（并行执行游标）</td></tr>
+    <tr><td><code>wf_timer</code></td><td>id, instance_id, node_instance_id, fire_at, type, payload, status</td><td>定时器/超时持久化</td></tr>
+    <tr><td><code>wf_event_outbox</code></td><td>id, type, payload, status, retry_count, next_retry_at</td><td>事件投递 Outbox</td></tr>
+    <tr><td><code>wf_audit_log</code></td><td>id, instance_id, action, actor, detail_json, created_at</td><td>全量审计（append-only）</td></tr>
+    <tr><td><code>wf_delegate</code></td><td>id, user_id, delegate_id, start_at, end_at, scope</td><td>委托代理</td></tr>
+    <tr><td><code>wf_comment</code></td><td>id, task_id, user_id, content, attachments, created_at</td><td>审批意见与附件</td></tr>
+    <tr><td><code>wf_form</code></td><td>id, key, name, tenant, schema_json, status, category</td><td>表单定义（可复用资产，不绑死流程）</td></tr>
+    <tr><td><code>wf_form_version</code></td><td>id, form_id, version, schema_json, status, published_at</td><td>表单版本（同流程版本一样不可变）</td></tr>
+    <tr><td><code>wf_form_binding</code></td><td>id, version_id, node_id, form_version_id, field_permissions_json</td><td><b>节点 × 表单绑定 + 字段权限矩阵</b>（本章核心表）</td></tr>
+    <tr><td><code>wf_form_data</code></td><td>id, instance_id, node_instance_id, form_version_id, data_json, indexed_json, created_at</td><td>表单数据；<code>indexed_json</code> 为可查询字段的抽取投影</td></tr>
+    <tr><td><code>wf_form_draft</code></td><td>id, definition_id, user_id, business_key, data_json, updated_at</td><td>草稿（未启动实例）</td></tr>
+  </table>
+  <div class="callout">
+    <div class="ct">索引与分区建议</div>
+    <p><code>wf_task</code> 按 <code>(assignee, status)</code>、<code>(instance_id)</code> 建索引；<code>wf_instance</code> 按 <code>(business_key)</code>、<code>(status, started_at)</code> 建索引；<code>wf_form_data</code> 按 <code>(instance_id)</code> 建索引，可查询字段建 GIN/ES 索引；<code>wf_variable_log</code> / <code>wf_audit_log</code> / <code>wf_form_data</code> 按时间分区并归档。</p>
+  </div>
+</section>
+
+<!-- ============ 16 ============ -->
+<section id="s17">
+  <h2 class="sec"><span class="num">17</span>边界与异常清单</h2>
+  <p>以下为必须显式定义行为的场景，缺一个都是线上事故。</p>
+  <table>
+    <tr><th style="width:40px">#</th><th style="width:280px">场景</th><th>期望行为</th></tr>
+    <tr><td>1</td><td>并行分支未全部到达 Join</td><td>阻塞等待，超阈值告警；不自动跳过（防止静默丢分支）</td></tr>
+    <tr><td>2</td><td>并行分支写同一变量</td><td>乐观锁拦截，按配置重试/挂起/告警</td></tr>
+    <tr><td>3</td><td>审批人解析为空</td><td>按配置：指派管理员（默认）/ 自动通过 / 报错挂起</td></tr>
+    <tr><td>4</td><td>审批人已离职/停用</td><td>任务保留但提示；可配「自动转其上级」</td></tr>
+    <tr><td>5</td><td>同一任务并发提交（双击）</td><td>幂等：第二次返回首次结果，不重复流转</td></tr>
+    <tr><td>6</td><td>脚本超时/抛异常</td><td>按 12.3 策略：重试 / onError 边 / 挂起 FAILED</td></tr>
+    <tr><td>7</td><td>死循环（回环无终止条件）</td><td>实例最大步数保护，超限挂起告警</td></tr>
+    <tr><td>8</td><td>排他网关无匹配边</td><td>校验期强制默认边；运行期兜底走默认边并告警</td></tr>
+    <tr><td>9</td><td>实例终止时仍有在途任务</td><td>所有任务置 CANCELLED，令牌回收</td></tr>
+    <tr><td>10</td><td>流程定义发布新版本</td><td>旧实例不受影响；新实例默认走新版本</td></tr>
+    <tr><td>11</td><td>退回后重提</td><td>按 8.3 语义（保留 or 重走），设计期必须显式选择</td></tr>
+    <tr><td>12</td><td>竞签中两人同时提交</td><td>先提交者生效，后到者返回「任务已结束」</td></tr>
+    <tr><td>13</td><td>加签后裁决集合变化</td><td>新任务纳入原签核模式裁决；竞签加签仍是先到先得</td></tr>
+    <tr><td>14</td><td>Webhook 回调失败</td><td>Outbox 指数退避重试，超限进死信并告警</td></tr>
+    <tr><td>15</td><td>跨时区/夏令时</td><td>存储 UTC，展示按用户时区，工作日历按组织时区</td></tr>
+    <tr><td>16</td><td>服务重启时实例在跑</td><td>定时器与令牌持久化，重启后从断点继续</td></tr>
+    <tr><td>17</td><td>子流程失败</td><td>父流程按配置：挂起 / 走异常边 / 终止</td></tr>
+    <tr><td>18</td><td>变量类型不符（字符串赋给 number）</td><td>严格模式下拒绝并报错；宽松模式下强转并告警</td></tr>
+    <tr><td>19</td><td>脚本改了上下文，但表单已渲染</td><td>以服务端上下文为准，表单刷新时展示新值；提交前重新拉取表单数据</td></tr>
+    <tr><td>20</td><td>审批人提交了「只读字段」的新值</td><td>服务端按权限矩阵丢弃越权字段的写入并记审计，不报错（防前端篡改）</td></tr>
+    <tr><td>21</td><td>子表单行数超上限</td><td>拒绝提交并提示上限；后端硬限制，不信任前端</td></tr>
+    <tr><td>22</td><td>表单校验通过但流转前校验失败</td><td>停留在当前节点，返回结构化错误定位字段；实例不推进</td></tr>
+    <tr><td>23</td><td>竞签中先提交者的表单数据生效，后到者数据</td><td>后到者任务回收时其草稿数据作废（不落 form_data），仅留审计</td></tr>
+    <tr><td>24</td><td>表单 Schema 升级，旧实例仍在跑</td><td>实例钉住创建时的表单版本；旧实例展示旧 Schema，不受影响</td></tr>
+  </table>
+</section>
+
+<!-- ============ 17 ============ -->
+<section id="s18">
+  <h2 class="sec"><span class="num">18</span>权限矩阵</h2>
+  <table>
+    <tr><th style="width:170px">能力</th><th>设计者</th><th>流程管理员</th><th>业务开发者</th><th>审批人</th><th>申请人</th><th>运维</th></tr>
+    <tr><td>创建/编辑草稿</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>设计/编辑表单</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>配置字段权限矩阵</td><td>提交</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>查看表单数据</td><td>范围</td><td>✓(范围)</td><td>—</td><td>相关任务</td><td>仅自己</td><td>✓</td></tr>
+    <tr><td>导出表单数据</td><td>—</td><td>✓(范围)</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>发布版本</td><td>提交</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>下线版本</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>创建实例</td><td>✓(测试)</td><td>✓</td><td>✓(API)</td><td>—</td><td>✓(发起)</td><td>✓</td></tr>
+    <tr><td>审批任务</td><td>—</td><td>✓</td><td>—</td><td>✓(本人任务)</td><td>—</td><td>代操作</td></tr>
+    <tr><td>查看全部实例</td><td>—</td><td>✓(范围)</td><td>—</td><td>—</td><td>仅自己</td><td>✓</td></tr>
+    <tr><td>人工干预</td><td>—</td><td>部分</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>改派/改变量</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>✓(复核)</td></tr>
+  </table>
+</section>
+
+<!-- ============ 18 ============ -->
+<section id="s19">
+  <h2 class="sec"><span class="num">19</span>成功指标</h2>
+  <table>
+    <tr><th style="width:170px">类别</th><th style="width:260px">指标</th><th>目标（首年）</th></tr>
+    <tr><td>采纳</td><td>接入流程数 / 日均实例数</td><td>≥ 30 个流程，≥ 5 万实例/日</td></tr>
+    <tr><td>效率</td><td>平均流程流转时长（对比线下）</td><td>缩短 ≥ 40%</td></tr>
+    <tr><td>自助</td><td>业务方自助改流程占比（无需研发发版）</td><td>≥ 80%</td></tr>
+    <tr><td>质量</td><td>流转失败率 / 脚本错误率</td><td>&lt; 0.1% / &lt; 0.5%</td></tr>
+    <tr><td>运维</td><td>需人工干预的实例占比</td><td>&lt; 0.5%</td></tr>
+    <tr><td>性能</td><td>创建实例 P99 / 任务完成 P99</td><td>&lt; 300ms / &lt; 500ms</td></tr>
+    <tr><td>可用性</td><td>引擎可用性</td><td>≥ 99.95%</td></tr>
+  </table>
+</section>
+
+<!-- ============ 19 ============ -->
+<section id="s20">
+  <h2 class="sec"><span class="num">20</span>里程碑与排期</h2>
+  <table>
+    <tr><th style="width:90px">里程碑</th><th style="width:120px">周期</th><th>交付内容</th><th style="width:120px">验收</th></tr>
+    <tr><td><b>M0 技术验证</b></td><td>2 周</td><td>选定执行内核；跑通「定义→实例→审批→结束」最小闭环；脚本沙箱 PoC；表单 Schema 渲染 PoC</td><td>端到端 demo</td></tr>
+    <tr><td><b>M1 MVP</b></td><td>8 周</td><td>流程设计器 + 发布 + 串行审批 + 或签/并签 + 上下文 + 脚本节点 + 开放 API；<b>表单引擎基础</b>（表单设计器、字段类型、节点×字段权限矩阵、Schema 渲染、三层校验、PC+移动端）</td><td>场景 S1 跑通</td></tr>
+    <tr><td><b>M2 完整审批与表单</b></td><td>5 周</td><td>竞签 + 加签/转交/退回/撤回 + 并行网关 + 超时 + 通知 + 服务节点；<b>表单高级能力</b>（子表单、字段联动、计算字段、数据源、草稿、模板库）</td><td>场景 S2 跑通</td></tr>
+    <tr><td><b>M3 运维与集成</b></td><td>4 周</td><td>子流程 + 包容网关 + 定时/等待 + 监控大盘 + 人工干预 + Webhook；<b>表单数据检索/打印/导出</b></td><td>场景 S3 跑通</td></tr>
+    <tr><td><b>M4 企业化</b></td><td>4 周</td><td>多租户 + 权限矩阵 + 审计 + 压测达标 + 实例迁移工具</td><td>压测与安全评审</td></tr>
+  </table>
+  <p>总计约 23 周（含 M0）。<b>表单引擎使 M1 从 6 周增至 8 周</b>——它是本次新增的最大工作量来源，若需压缩排期，可把「子表单」「字段联动」整体后移到 M2（已在表中体现）。每期结束做一次真实业务接入试点，避免「闭门造车到 M4 才发现不合用」。</p>
+</section>
+
+<!-- ============ 20 ============ -->
+<section id="s21">
+  <h2 class="sec"><span class="num">21</span>风险与开放问题</h2>
+
+  <h3>20.1 风险</h3>
+  <table>
+    <tr><th style="width:200px">风险</th><th style="width:80px">等级</th><th>应对</th></tr>
+    <tr><td>并行 + 汇聚语义做错，导致静默丢分支</td><td>高</td><td>令牌模型 + Join 严格等待 + 结构性校验 + 死锁告警；M1 前先做执行内核专项测试</td></tr>
+    <tr><td>脚本沙箱逃逸</td><td>高</td><td>独立进程 + 资源限制 + 白名单 API；禁止危险模块；安全评审</td></tr>
+    <tr><td>长跑实例迁移做不好</td><td>中</td><td>默认不迁移 + 显式迁移工具 + 预演 + 回滚（见 6.4）</td></tr>
+    <tr><td>签核语义分歧（业务方各有理解）</td><td>中</td><td>本文第 8 章作为唯一口径，评审通过后冻结</td></tr>
+    <tr><td>引擎成为性能瓶颈</td><td>中</td><td>调度/执行分离、分区、归档；M4 压测卡口</td></tr>
+    <tr><td><b>表单引擎范围失控</b>（低代码平台都是这么烂尾的）</td><td>高</td><td>严守 10.1 边界：只服务流程节点，不做独立应用/像素级布局；字段类型按 MVP 清单冻结，新类型一律走 P2 评审</td></tr>
+    <tr><td>与现有审批系统并存导致双写</td><td>中</td><td>明确迁移路径；提供适配层；不做长期双跑</td></tr>
+  </table>
+
+  <h3>20.2 开放问题（需决策）</h3>
+  <div class="callout tbd">
+    <div class="ct">待定 TBD</div>
+    <dl class="kv">
+      <dt>Q1 执行内核选型</dt>
+      <dd>自研 vs 嵌入 DBOS / Restate / Temporal。倾向「内核不自研，嵌入现成 durable execution 内核，自研图模型与业务编排层」——详见附录 A。</dd>
+      <dt>Q2 流程定义 DSL 形态</dt>
+      <dd>纯 JSON 快照，还是提供 YAML/DSL 供研发代码化定义？倾向 JSON 为准 + YAML 糖。</dd>
+      <dt>Q3 表单引擎的渲染方式（已定方向，待定细节）</dt>
+      <dd>已确定<b>自建表单引擎</b>（见第 10 章）。待定：前端渲染器用现成开源方案（如 formily / form-create）还是自研？影响 M1 工期与长期可控性。</dd>
+      <dt>Q4 多租户是否首版必需</dt>
+      <dd>本文放 P2；若首个使用方就是多业务线共享，需提前到 M2。</dd>
+      <dt>Q5 与 OA/IM 的组织架构对接方式</dt>
+      <dd>实时调组织服务 vs 本地缓存同步，影响审批人解析的可用性。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ 附录 A ============ -->
+<section id="sA">
+  <h2 class="sec"><span class="num">A</span>附录：技术选型结论（沿用前两轮调研）</h2>
+  <p>本附录不是 PRD 主体，是给技术决策者的输入，结论来自本项目前两轮调研，<b>不重复展开</b>。</p>
+
+  <div class="callout dec">
+    <div class="ct">结论一：执行内核不自研</div>
+    <p>durable execution（持久化执行）这件事——崩溃恢复、至少一次投递、幂等重放——是极深的坑，自研必踩。建议在 <b>DBOS / Restate / Temporal</b> 中三选一，作为底层执行内核嵌入；本方只做上层「图模型 + 节点/边 + 业务编排 + 设计器 + 开放 API」。</p>
+  </div>
+  <div class="callout dec">
+    <div class="ct">结论二：Python 栈的传统 BPMN 引擎，唯一能打的是 SpiffWorkflow</div>
+    <p>若确需完整 BPMN 语义（事件子流程、边界事件等），<b>SpiffWorkflow（LGPL-3.0）</b>是 Python 生态里唯一成熟选项，可作为参考实现或直接嵌入。注意 LGPL 的合规边界。</p>
+  </div>
+  <div class="callout dec">
+    <div class="ct">结论三：最该抄的是版本化与实例迁移</div>
+    <p>传统引擎（CIB seven、Operaton 等）今年都在长 AI 能力，但在<b>流程定义版本化</b>与<b>长跑实例迁移</b>上积累深厚——这恰是自研最容易做薄的地方。本文第 6 章（版本管理）与 6.4（迁移）即据此设计，建议直接借鉴其成熟方案而非自创。</p>
+  </div>
+
+  <hr class="soft">
+  <h3>架构分层建议</h3>
+  <div class="flow">
+    <div class="fn plain">接入层<small>REST / SDK / Webhook</small></div><span class="fa">→</span>
+    <div class="fn">编排层<small>图模型 / 令牌 / 签核 / 上下文</small></div><span class="fa">→</span>
+    <div class="fn plain">执行层<small>节点执行器 / 脚本沙箱</small></div><span class="fa">→</span>
+    <div class="fn gw">内核<small>DBOS / Restate / Temporal</small></div>
+  </div>
+  <p>本 PRD 定义的是<b>编排层及以上</b>的功能契约；执行层的内核选型是 Q1 待决事项，不阻塞 M1（M0 阶段完成选型即可）。</p>
+</section>
+
+<div class="foot">
+  流程引擎平台 PRD · v1.0 · 2026-10-08 · 草案待评审<br>
+  评审通过后，第 8 章（签核体系）、第 10 章（表单引擎）与第 11 章（上下文）作为冻结口径执行。
+</div>
+
+</div>
+</body>
+</html>
