@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeWise 中间件部署与调用手册（单机版 · 公开版）</title>
+<style>
+  :root{--paper:#F5F6F3;--surface:#fff;--ink:#141A19;--ink2:#34403D;--muted:#5F6B68;--line:#D9DDD6;--line2:#E7EAE4;--accent:#1A6357;--accent2:#12544A;--accent-soft:#E1EDE8;--amber:#8A6412;--amber-soft:#FCF8EF;--red:#9C3A28;--red-soft:#FCF3F0;--blue:#28527A;--blue-soft:#F4F7FA;--mono:"JetBrains Mono",Consolas,"Liberation Mono",monospace;--sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;--serif:"Songti SC","Noto Serif SC",Georgia,serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.8}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 30px 100px}
+  .masthead{padding:58px 0 30px;border-bottom:2px solid var(--ink);margin-bottom:30px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.18;margin:0 0 10px}
+  .subtitle{font-size:16px;color:var(--ink2);margin:0 0 24px;max-width:70ch}
+  .metagrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .metagrid div{background:var(--surface);padding:10px 13px}
+  .metagrid .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px}
+  .metagrid .v{font-size:13px;font-weight:600}
+  h2{font-family:var(--serif);font-size:25px;margin:44px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:12px}
+  h2 .num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600}
+  h3{font-size:17px;margin:26px 0 8px}
+  h4{font-size:14.5px;margin:18px 0 6px;color:var(--ink2)}
+  p{margin:0 0 10px}
+  ul,ol{margin:0 0 12px;padding-left:22px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 18px;font-size:13px;background:var(--surface)}
+  th{background:#EEF0EB;text-align:left;padding:8px 10px;border:1px solid var(--line);white-space:nowrap}
+  td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#FBFCFA}
+  code{font-family:var(--mono);font-size:.88em;background:#EEF0EB;padding:1px 5px;border-radius:3px}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:#151B1A;color:#DCE5E1;padding:16px 18px;border-radius:4px;overflow-x:auto;margin:10px 0 18px}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;margin:14px 0;font-size:13.5px}
+  .callout .t{font-weight:700;color:var(--accent);display:block;margin-bottom:3px}
+  .callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}.callout.warn .t{color:var(--amber)}
+  .callout.danger{border-left-color:var(--red);background:var(--red-soft)}.callout.danger .t{color:var(--red)}
+  .callout.blue{border-left-color:var(--blue);background:var(--blue-soft)}.callout.blue .t{color:var(--blue)}
+  .cred{background:#151B1A;color:#EAF2EF;border-left:4px solid var(--accent);padding:16px 20px;font-family:var(--mono);font-size:12.8px;line-height:1.9;margin:14px 0 20px;overflow-x:auto}
+  .cred b{color:#8FD3C1;font-weight:600}
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent2);margin-left:4px}
+  .badge.warn{background:var(--amber-soft);color:var(--amber)}
+  .small{font-size:12.5px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .card{background:var(--surface);border:1px solid var(--line);padding:13px 15px;font-size:13px}
+  .card h4{margin:0 0 5px;color:var(--accent2)}
+  .card p{margin:0;color:var(--ink2)}
+  @media(max-width:760px){.metagrid{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.wrap{padding:0 18px 80px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">PipeWise Infrastructure · Single-node Deployment</p>
+  <h1>中间件部署与调用手册</h1>
+  <p class="subtitle">PostgreSQL 16 / Redis 7 / MinIO / RocketMQ 5.3.1 单机部署，Docker Compose 管理。本文档为公开脱敏版，不含密码；连接参数、代码示例与运维方式完整保留。</p>
+  <div class="metagrid">
+    <div><span class="k">主机</span><span class="v">111.228.14.136</span></div>
+    <div><span class="k">部署日期</span><span class="v">2026-10-18</span></div>
+    <div><span class="k">形态</span><span class="v">单机 · Docker Compose</span></div>
+    <div><span class="k">状态</span><span class="v">已部署，本地验证通过</span></div>
+  </div>
+</header>
+
+<h2><span class="num">01</span>部署概览</h2>
+<p>四个组件以独立容器运行，数据使用 Docker named volume 持久化，容器随 Docker 自动重启。端口刻意避开本机已有服务（PG 5432/5433、Redis 6379、MinIO 9000/9001）。</p>
+<table>
+  <tr><th>组件</th><th>容器名</th><th>镜像</th><th>对外端口</th><th>数据卷</th><th>状态</th></tr>
+  <tr><td>PostgreSQL 16</td><td><code>pipewise-postgres</code></td><td><code>postgres:16-alpine</code></td><td><b>5434</b> → 5432</td><td><code>pipewise-infra_pgdata</code></td><td>healthy</td></tr>
+  <tr><td>Redis 7</td><td><code>pipewise-redis</code></td><td><code>redis:7-alpine</code></td><td><b>6380</b> → 6379</td><td><code>pipewise-infra_redisdata</code></td><td>healthy</td></tr>
+  <tr><td>MinIO</td><td><code>pipewise-minio</code></td><td><code>minio/minio:latest</code></td><td><b>9010</b> API / <b>9011</b> Console</td><td><code>pipewise-infra_miniodata</code></td><td>running</td></tr>
+  <tr><td>RocketMQ Namesrv</td><td><code>pipewise-rocketmq-namesrv</code></td><td><code>apache/rocketmq:5.3.1</code></td><td><b>9876</b></td><td><code>pipewise-infra_namesrvlogs</code></td><td>running</td></tr>
+  <tr><td>RocketMQ Broker</td><td><code>pipewise-rocketmq-broker</code></td><td><code>apache/rocketmq:5.3.1</code></td><td><b>10911</b> / <b>10909</b></td><td><code>pipewise-infra_brokerstore</code> / <code>_brokerlogs</code></td><td>running</td></tr>
+</table>
+
+<h3>部署目录</h3>
+<pre><code>/opt/pipewise-infra/
+├── docker-compose.yml          # 四个服务的编排
+├── .env                        # 凭据（root 600）
+├── credentials.txt             # 人类可读凭据（root 600）
+├── rocketmq/
+│   ├── broker.conf             # brokerIP1=111.228.14.136
+│   └── plain_acl.yml           # RocketMQ ACL 账号
+└── （数据在 Docker named volume 中）</code></pre>
+<p>部署脚本：<code>/home/metabot/metabot-workspace/pipewise/deploy/deploy.sh</code>，通过本机 sudoers 免密以 root 执行。</p>
+
+<h2><span class="num">02</span>网络与安全组（重要）</h2>
+<div class="callout warn">
+  <span class="t">当前外部访问状态：待放行</span>
+  本机防火墙已确认放行（iptables INPUT ACCEPT、firewalld 关闭、SELinux 关闭），服务已监听 <code>0.0.0.0</code>。但 2026-10-18 从外部节点实测，只有 <b>22 / 80 / 443</b> 可连通，<b>5434 / 6380 / 9010 / 9011 / 9876 / 10911 / 10909 全部超时</b>。这是京东云安全组只放行了这三个端口导致的，需要在云控制台添加入站规则后，学员才能从外部直连。
+</div>
+<h3>需要放行的入站规则</h3>
+<table>
+  <tr><th>协议</th><th>端口</th><th>用途</th><th>建议来源</th></tr>
+  <tr><td>TCP</td><td>5434</td><td>PostgreSQL</td><td>0.0.0.0/0 或学员出口 IP 段</td></tr>
+  <tr><td>TCP</td><td>6380</td><td>Redis</td><td>同上</td></tr>
+  <tr><td>TCP</td><td>9010</td><td>MinIO S3 API</td><td>同上</td></tr>
+  <tr><td>TCP</td><td>9011</td><td>MinIO Console</td><td>同上（也可只放行 API）</td></tr>
+  <tr><td>TCP</td><td>9876</td><td>RocketMQ Nameserver</td><td>同上</td></tr>
+  <tr><td>TCP</td><td>10911</td><td>RocketMQ Broker</td><td>同上</td></tr>
+  <tr><td>TCP</td><td>10909</td><td>RocketMQ VIP 通道</td><td>同上</td></tr>
+</table>
+<p class="small">控制台路径通常为：京东云控制台 → 云主机 → 安全组 → 入站规则 → 添加规则。若只允许学员访问，把来源改成学员的公网 CIDR 更安全。10912 是 HA 端口，单机主节点不需要放行。</p>
+
+<h3>放行后的验证</h3>
+<pre><code># 在学员自己的电脑上执行（不是服务器上）
+nc -vz 111.228.14.136 5434
+nc -vz 111.228.14.136 6380
+nc -vz 111.228.14.136 9010
+nc -vz 111.228.14.136 9876
+nc -vz 111.228.14.136 10911</code></pre>
+
+<h3>临时替代：SSH 隧道</h3>
+<p>如果暂时不能改安全组，且有服务器 SSH 账号，可以把端口转发到本机（22 已开放）：</p>
+<pre><code>ssh -N \
+  -L 5434:127.0.0.1:5434 \
+  -L 6380:127.0.0.1:6380 \
+  -L 9010:127.0.0.1:9010 \
+  -L 9011:127.0.0.1:9011 \
+  -L 9876:127.0.0.1:9876 \
+  -L 10911:127.0.0.1:10911 \
+  -L 10909:127.0.0.1:10909 \
+  &lt;用户名&gt;@111.228.14.136</code></pre>
+<p>然后在本地把下面所有地址中的 <code>111.228.14.136</code> 换成 <code>127.0.0.1</code> 即可。</p>
+
+<h2><span class="num">03</span>凭据获取</h2>
+<div class="callout danger">
+  <span class="t">本公开版不含任何密码</span>
+  完整凭据请向项目负责人获取，或在部署机执行
+  <code>sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh show</code> 查看
+  （<code>/opt/pipewise-infra/credentials.txt</code>，root 600）。
+  请勿把含密码的版本提交到公开仓库或公开网页。
+</div>
+<div class="callout danger">
+  <span class="t">不要把本文档提交到公开仓库</span>
+  仓库 <code>davisu-china/pipewise</code> 是公开的，且开启了 GitHub Pages。本文档仅私发；部署机上完整凭据在 <code>/opt/pipewise-infra/credentials.txt</code>（root 600）。
+</div>
+
+<h2><span class="num">04</span>PostgreSQL 调用方式</h2>
+<h3>连接串</h3>
+<pre><code>jdbc:postgresql://111.228.14.136:5434/pipewise
+postgresql://pipewise:{{PG_PASSWORD}}@111.228.14.136:5434/pipewise</code></pre>
+<h3>命令行</h3>
+<pre><code>psql -h 111.228.14.136 -p 5434 -U pipewise -d pipewise
+# 密码：{{PG_PASSWORD}}</code></pre>
+<h3>Python（SQLAlchemy / psycopg）</h3>
+<pre><code>from sqlalchemy import create_engine, text
+engine = create_engine(
+    "postgresql+psycopg://pipewise:{{PG_PASSWORD}}@111.228.14.136:5434/pipewise")
+with engine.connect() as conn:
+    print(conn.execute(text("select version()")).scalar())</code></pre>
+<h3>Node.js（pg）</h3>
+<pre><code>import pg from "pg";
+const pool = new pg.Pool({
+  host: "111.228.14.136", port: 5434,
+  user: "pipewise", password: "{{PG_PASSWORD}}",
+  database: "pipewise"
+});
+console.log((await pool.query("select now()")).rows[0]);</code></pre>
+<ul>
+  <li><code>pipewise</code> 是数据库 owner，可以在库里创建自己的 schema/table；建议每个学员用 <code>student_&lt;name&gt;</code> 前缀。</li>
+  <li>最大连接数 200，<code>shared_buffers=256MB</code>；不要在客户端建大量短连接，建议连接池 ≤10。</li>
+  <li>当前未启用 TLS，密码与数据在公网明文传输，只放测试/教学数据。</li>
+</ul>
+
+<h2><span class="num">05</span>Redis 调用方式</h2>
+<h3>连接串</h3>
+<pre><code>redis://:{{REDIS_PASSWORD}}@111.228.14.136:6380/0</code></pre>
+<h3>命令行</h3>
+<pre><code>redis-cli -h 111.228.14.136 -p 6380 -a {{REDIS_PASSWORD}} ping
+# PONG</code></pre>
+<h3>Python</h3>
+<pre><code>import redis
+r = redis.Redis(host="111.228.14.136", port=6380,
+                password="{{REDIS_PASSWORD}}", decode_responses=True)
+r.set("demo:key", "hello")
+print(r.get("demo:key"))</code></pre>
+<h3>Node.js</h3>
+<pre><code>import Redis from "ioredis";
+const r = new Redis("redis://:{{REDIS_PASSWORD}}@111.228.14.136:6380/0");
+await r.set("demo:key", "hello");</code></pre>
+<ul>
+  <li>已开启 AOF（<code>appendonly yes</code>），容器重启数据保留。</li>
+  <li><code>protected-mode no</code> + 密码认证；没有密码无法操作。</li>
+  <li>有 16 个逻辑库（0–15），学员建议用不同 db 或 key 前缀，避免 <code>KEYS *</code>/<code>FLUSHALL</code> 互相影响。</li>
+</ul>
+
+<h2><span class="num">06</span>MinIO 调用方式</h2>
+<h3>控制台与 S3 端点</h3>
+<table>
+  <tr><th>项</th><th>值</th></tr>
+  <tr><td>S3 Endpoint</td><td><code>http://111.228.14.136:9010</code></td></tr>
+  <tr><td>Console</td><td><code>http://111.228.14.136:9011</code></td></tr>
+  <tr><td>Access Key</td><td><code>pipewise</code></td></tr>
+  <tr><td>Secret Key</td><td><code>{{MINIO_SECRET_KEY}}</code></td></tr>
+  <tr><td>已建 Bucket</td><td><code>pipewise</code>（应用）、<code>student</code>（学员练习）</td></tr>
+</table>
+<h3>mc 客户端</h3>
+<pre><code>mc alias set pipewise http://111.228.14.136:9010 pipewise {{MINIO_SECRET_KEY}}
+mc ls pipewise
+mc cp ./demo.txt pipewise/student/demo.txt</code></pre>
+<h3>Python（boto3）</h3>
+<pre><code>import boto3
+s3 = boto3.client(
+    "s3",
+    endpoint_url="http://111.228.14.136:9010",
+    aws_access_key_id="pipewise",
+    aws_secret_access_key="{{MINIO_SECRET_KEY}}",
+    region_name="us-east-1",
+    config=boto3.session.Config(signature_version="s3v4"),
+)
+s3.put_object(Bucket="student", Key="demo.txt", Body=b"hello minio")
+print(s3.list_buckets()["Buckets"])</code></pre>
+<h3>Java（MinIO SDK）</h3>
+<pre><code>MinioClient client = MinioClient.builder()
+    .endpoint("http://111.228.14.136:9010")
+    .credentials("pipewise", "{{MINIO_SECRET_KEY}}")
+    .build();
+client.putObject(PutObjectArgs.builder()
+    .bucket("student").object("demo.txt")
+    .stream(new ByteArrayInputStream("hello".getBytes()), 5, -1)
+    .build());</code></pre>
+<ul>
+  <li>当前是 HTTP，不是 HTTPS；预签名 URL 里的主机是公网地址，外部可直接使用（前提是 9010 已放行）。</li>
+  <li>Root 账号权限较大，学员练习建议只用 <code>student</code> 桶；不要删除 <code>pipewise</code> 桶。</li>
+</ul>
+
+<h2><span class="num">07</span>RocketMQ 调用方式</h2>
+<h3>连接参数</h3>
+<table>
+  <tr><th>项</th><th>值</th></tr>
+  <tr><td>Nameserver</td><td><code>111.228.14.136:9876</code></td></tr>
+  <tr><td>Broker</td><td><code>111.228.14.136:10911</code>（客户端由 nameserver 自动发现）</td></tr>
+  <tr><td>ACL Access Key</td><td><code>pipewise</code></td></tr>
+  <tr><td>ACL Secret Key</td><td><code>{{ROCKETMQ_SECRET_KEY}}</code></td></tr>
+  <tr><td>Topic / Group</td><td>自动创建；建议 <code>student_&lt;name&gt;_topic</code>、<code>student_&lt;name&gt;_group</code></td></tr>
+</table>
+<div class="callout blue">
+  <span class="t">ACL 已验证</span>
+  无凭据发送会被拒绝；带上述 access/secret 的 Java 生产者发送成功（测试消息 ID <code>AC18000700080533DDBA59AF49D60000</code>）。Python 客户端 v2.0.0 使用 <code>set_session_credentials(access_key, secret_key, "LOCAL")</code>。
+</div>
+<h3>Java 生产者</h3>
+<pre><code>DefaultMQProducer producer = new DefaultMQProducer(
+    "student_demo_producer",
+    new AclClientRPCHook(new SessionCredentials(
+        "pipewise", "{{ROCKETMQ_SECRET_KEY}}")));
+producer.setNamesrvAddr("111.228.14.136:9876");
+producer.start();
+SendResult r = producer.send(new Message(
+    "student_demo_topic", "hello rocketmq".getBytes(StandardCharsets.UTF_8)));
+System.out.println(r.getSendStatus() + " " + r.getMsgId());
+producer.shutdown();</code></pre>
+<p class="small">Maven 依赖：<code>org.apache.rocketmq:rocketmq-client:5.3.1</code> 与 <code>org.apache.rocketmq:rocketmq-acl:5.3.1</code>。</p>
+<h3>Java 消费者</h3>
+<pre><code>DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(
+    "student_demo_consumer",
+    new AclClientRPCHook(new SessionCredentials(
+        "pipewise", "{{ROCKETMQ_SECRET_KEY}}")));
+consumer.setNamesrvAddr("111.228.14.136:9876");
+consumer.subscribe("student_demo_topic", "*");
+consumer.registerMessageListener((MessageListenerConcurrently) (msgs, ctx) -&gt; {
+    for (MessageExt m : msgs) {
+        System.out.println(new String(m.getBody(), StandardCharsets.UTF_8));
+    }
+    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+});
+consumer.start();</code></pre>
+<h3>Python 生产者</h3>
+<pre><code>from rocketmq.client import Producer, Message
+
+p = Producer("student_demo_producer")
+p.set_name_server_address("111.228.14.136:9876")
+p.set_session_credentials("pipewise", "{{ROCKETMQ_SECRET_KEY}}", "LOCAL")
+p.start()
+
+msg = Message("student_demo_topic")
+msg.set_keys("demo")
+msg.set_body("hello rocketmq")
+print(p.send_sync(msg))
+
+p.shutdown()</code></pre>
+<h3>Python 消费者</h3>
+<pre><code>from rocketmq.client import PushConsumer, ConsumeStatus
+
+def callback(msg):
+    print(msg.body.decode())
+    return ConsumeStatus.CONSUME_SUCCESS
+
+c = PushConsumer("student_demo_consumer")
+c.set_name_server_address("111.228.14.136:9876")
+c.set_session_credentials("pipewise", "{{ROCKETMQ_SECRET_KEY}}", "LOCAL")
+c.subscribe("student_demo_topic", "*")
+c.register_message_callback(callback)
+c.start()
+# 保持进程运行；退出时 c.shutdown()</code></pre>
+<ul>
+  <li>Broker 对外宣告的地址是 <code>111.228.14.136:10911</code>，客户端必须能访问该地址；9876 与 10911/10909 都要放行。</li>
+  <li>自动创建 Topic/Group 已开启；仍建议显式使用独立名字，避免误消费别人的消息。</li>
+  <li>单机主节点、异步刷盘，适合教学；不要用于生产关键数据。</li>
+</ul>
+
+<h2><span class="num">08</span>连通性自检</h2>
+<pre><code># PostgreSQL
+PGPASSWORD={{PG_PASSWORD}} psql -h 111.228.14.136 -p 5434 -U pipewise -d pipewise -c 'select 1'
+
+# Redis
+redis-cli -h 111.228.14.136 -p 6380 -a {{REDIS_PASSWORD}} ping
+
+# MinIO
+curl http://111.228.14.136:9010/minio/health/live
+mc alias set pipewise http://111.228.14.136:9010 pipewise {{MINIO_SECRET_KEY}}
+mc ls pipewise
+
+# RocketMQ（Java 示例发送成功后应返回 SEND_OK）</code></pre>
+
+<h2><span class="num">09</span>运维手册</h2>
+<h3>常用命令</h3>
+<pre><code>cd /opt/pipewise-infra
+
+docker compose ps                 # 状态
+docker compose logs -f postgres   # 日志（redis/minio/rocketmq-* 同理）
+docker compose restart redis      # 重启单个服务
+docker compose stop               # 停止全部（数据保留）
+docker compose up -d              # 启动全部
+docker compose down               # 删除容器（不删 named volume）
+docker compose down -v            # 连数据一起删除（危险）</code></pre>
+<h3>备份与恢复</h3>
+<pre><code># PostgreSQL 逻辑备份
+docker exec pipewise-postgres pg_dump -U pipewise -d pipewise &gt; /opt/pipewise-infra/backup-$(date +%F).sql
+# 恢复
+cat backup.sql | docker exec -i pipewise-postgres psql -U pipewise -d pipewise
+
+# Redis：触发 RDB 快照（AOF 已在写）
+docker exec pipewise-redis redis-cli -a {{REDIS_PASSWORD}} BGSAVE
+
+# MinIO：镜像到本地目录
+mc mirror pipewise/student /opt/pipewise-infra/backup-minio/student
+
+# RocketMQ：停 broker 后打包 store 卷（或直接备份底层磁盘）
+docker compose stop rocketmq-broker
+docker run --rm -v pipewise-infra_brokerstore:/data -v /opt/pipewise-infra:/backup alpine \
+  tar czf /backup/rocketmq-store-$(date +%F).tgz -C /data .
+docker compose start rocketmq-broker</code></pre>
+<h3>查看数据卷位置</h3>
+<pre><code>docker volume inspect pipewise-infra_pgdata --format '{{.Mountpoint}}'
+docker volume ls | grep pipewise</code></pre>
+<h3>重启后检查</h3>
+<pre><code>docker compose ps
+docker logs --tail 20 pipewise-rocketmq-broker | grep 'boot success'
+curl -s http://127.0.0.1:9010/minio/health/live && echo minio-ok</code></pre>
+
+<h2><span class="num">10</span>故障排查</h2>
+<table>
+  <tr><th>现象</th><th>原因</th><th>处理</th></tr>
+  <tr><td>外部连接全部超时，服务器本机正常</td><td>云安全组未放行端口</td><td>按第 02 节添加规则；本机 iptables 已确认放行</td></tr>
+  <tr><td>服务器上用公网 IP 连自己超时</td><td>NAT 不支持 hairpin（回环）</td><td>服务器本机请用 <code>127.0.0.1</code>；外部学员用公网 IP</td></tr>
+  <tr><td>RocketMQ broker 反复重启</td><td>named volume 属于 root，容器用户 uid 3000 无法写入</td><td>部署脚本已自动 chown 3000；手动修复见下</td></tr>
+  <tr><td>Docker Hub 拉镜像超时</td><td>网络抖动</td><td>重跑部署脚本（已存在镜像会跳过）；或配置镜像加速</td></tr>
+  <tr><td>Redis <code>NOAUTH</code></td><td>没带密码</td><td>使用 <code>-a</code> 或连接串里的密码</td></tr>
+  <tr><td>MinIO <code>SignatureDoesNotMatch</code></td><td>Access/Secret 错误或签名版本不对</td><td>确认密钥；boto3 指定 <code>s3v4</code></td></tr>
+  <tr><td>RocketMQ 发送超时但端口通</td><td>ACL 未配置或 access/secret 错误</td><td>客户端同时配置 <code>AclClientRPCHook</code>（或 Python 的 <code>set_session_credentials</code>）</td></tr>
+</table>
+<p>手动修复 RocketMQ 卷权限：</p>
+<pre><code>docker run --rm --user root \
+  -v pipewise-infra_brokerstore:/store \
+  -v pipewise-infra_brokerlogs:/logs \
+  -v pipewise-infra_namesrvlogs:/nlogs \
+  apache/rocketmq:5.3.1 \
+  sh -c 'chown -R 3000:3000 /store /logs /nlogs'
+docker compose restart rocketmq-namesrv rocketmq-broker</code></pre>
+
+<h2><span class="num">11</span>安全与使用约定</h2>
+<div class="grid">
+  <div class="card"><h4>仅教学数据</h4><p>PG/Redis/RocketMQ/MinIO 都是明文协议（无 TLS），密码和数据在公网可被嗅探。不要放真实个人信息、密钥或生产数据。</p></div>
+  <div class="card"><h4>限制来源 IP</h4><p>安全组尽量只放行学员出口 IP 段，而不是 0.0.0.0/0；课程结束及时收回规则。</p></div>
+  <div class="card"><h4>不要共用 root 权限</h4><p>MinIO root 账号、PG owner 权限都很大。学员练习建议用 <code>student</code> 桶、独立 schema/key 前缀。</p></div>
+  <div class="card"><h4>定期轮换</h4><p>课程结束后修改四个密码：编辑 <code>/opt/pipewise-infra/.env</code> 后重跑部署脚本；MinIO/Redis/PG 会按新密码重建容器。</p></div>
+</div>
+
+<h2><span class="num">12</span>附录</h2>
+<h3>部署脚本用法</h3>
+<pre><code>sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh          # 部署/更新
+sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh status   # 健康状态
+sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh show     # 查看凭据（root）
+sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh net      # 查看防火墙/NAT</code></pre>
+<h3>本次部署验证记录</h3>
+<ul>
+  <li>PostgreSQL：<code>select current_user, current_database()</code> 返回 <code>pipewise|pipewise</code>。</li>
+  <li>Redis：<code>PING → PONG</code>；AOF 已开启。</li>
+  <li>MinIO：health 200；Console 200；桶 <code>pipewise</code>、<code>student</code> 已创建；<code>mc admin info</code> 正常。</li>
+  <li>RocketMQ：broker <code>boot success</code>；无凭据发送被 ACL 拒绝；带 ACL 凭据发送返回 <code>SEND_OK</code>。</li>
+  <li>外部端口：22/80/443 可达；业务端口待安全组放行（见第 02 节）。</li>
+</ul>
+
+<p class="small" style="text-align:center;margin-top:36px">PipeWise 中间件部署手册 · 2026-10-18 · 公开脱敏版 · 不含密码</p>
+</div>
+</body>
+</html>

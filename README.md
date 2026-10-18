@@ -15,7 +15,8 @@ AI 时代的流程引擎平台：**定义流程 → 发布版本 → 创建实�
 
 已在 `111.228.14.136` 部署 PostgreSQL 16 / Redis 7 / MinIO / RocketMQ 5.3.1，
 Docker Compose 管理，端口分别为 `5434 / 6380 / 9010·9011 / 9876·10911·10909`。
-连接方式、代码示例与外网放行说明见 [docs/middleware-deploy.md](docs/middleware-deploy.md)。
+连接方式、代码示例与外网放行说明见 [docs/middleware-deploy.md](docs/middleware-deploy.md)，
+公开版在线手册：https://davisu-china.github.io/pipewise/middleware/ （不含密码）。
 密码不在仓库内：部署机 `/opt/pipewise-infra/credentials.txt`（root 600），或执行
 `sudo deploy/deploy.sh show` 查看；含密码的完整版部署手册由项目负责人私发。
 
