@@ -1,6 +1,17 @@
 # 本机部署期配置（含 Basic Auth 密码），绝不提交
 deploy/env.local
 
+# Java / Maven
+target/
+*.class
+*.log
+
+# Python（script-runner 与本地脚本）
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # 前端依赖与构建产物
 web/node_modules/
 web/dist/
