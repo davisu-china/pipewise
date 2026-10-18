@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/instances")
@@ -43,6 +44,15 @@ public class InstanceController {
             @RequestParam(value = "key", required = false) String definitionKey,
             @RequestHeader(value = "X-Tenant-Id", defaultValue = "default") String tenant) {
         return ApiResponse.ok(service.list(tenant, status, definitionKey), traceId());
+    }
+
+    @PostMapping("/{id}/withdraw")
+    public ApiResponse<Map<String, Object>> withdraw(
+            @PathVariable String id,
+            @RequestHeader(value = "X-Tenant-Id", defaultValue = "default") String tenant,
+            @RequestHeader(value = "X-User-Id", defaultValue = "anonymous") String user) {
+        service.withdraw(tenant, id, user);
+        return ApiResponse.ok(Map.of("status", "withdrawn"), traceId());
     }
 
     @GetMapping("/{id}")

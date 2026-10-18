@@ -2,6 +2,7 @@ package com.pipewise.api.runtime;
 
 import com.pipewise.api.web.TraceIdFilter;
 import com.pipewise.common.api.ApiResponse;
+import com.pipewise.engine.EngineDtos.AssigneeRequest;
 import com.pipewise.engine.EngineDtos.CompleteTaskRequest;
 import com.pipewise.engine.EngineDtos.TaskView;
 import com.pipewise.engine.TaskService;
@@ -38,6 +39,24 @@ public class TaskController {
     @GetMapping("/{id}")
     public ApiResponse<TaskView> get(@PathVariable long id) {
         return ApiResponse.ok(service.get(id), traceId());
+    }
+
+    @PostMapping("/{id}/add-sign")
+    public ApiResponse<TaskView> addSign(
+            @PathVariable long id,
+            @Valid @RequestBody AssigneeRequest request,
+            @RequestHeader(value = "X-Tenant-Id", defaultValue = "default") String tenant,
+            @RequestHeader(value = "X-User-Id", defaultValue = "anonymous") String user) {
+        return ApiResponse.ok(service.addSign(tenant, id, user, request.assignee()), traceId());
+    }
+
+    @PostMapping("/{id}/transfer")
+    public ApiResponse<TaskView> transfer(
+            @PathVariable long id,
+            @Valid @RequestBody AssigneeRequest request,
+            @RequestHeader(value = "X-Tenant-Id", defaultValue = "default") String tenant,
+            @RequestHeader(value = "X-User-Id", defaultValue = "anonymous") String user) {
+        return ApiResponse.ok(service.transfer(tenant, id, user, request.assignee()), traceId());
     }
 
     @PostMapping("/{id}/complete")

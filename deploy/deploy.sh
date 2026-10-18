@@ -149,7 +149,7 @@ EOF
   echo "[systemd] writing units"
   cat > /etc/systemd/system/pipewise-api.service <<EOF
 [Unit]
-Description=PipeWise API (Java P2)
+Description=PipeWise API (Java P3)
 After=network.target
 
 [Service]
@@ -167,7 +167,7 @@ EOF
 
   cat > /etc/systemd/system/pipewise-worker.service <<EOF
 [Unit]
-Description=PipeWise Worker (Java P2)
+Description=PipeWise Worker (Java P3)
 After=network.target pipewise-api.service
 
 [Service]

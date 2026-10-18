@@ -143,6 +143,15 @@ public class EngineRepository {
                 """, outcome, id);
     }
 
+    public void terminateInstance(String id, String outcome) {
+        jdbc.update("""
+                UPDATE wf_instance
+                SET status = 'TERMINATED', outcome = ?, ended_at = now(),
+                    state_version = state_version + 1
+                WHERE id = ?
+                """, outcome, id);
+    }
+
     public void bumpStep(String instanceId) {
         jdbc.update("""
                 UPDATE wf_instance
@@ -394,22 +403,30 @@ public class EngineRepository {
                            String instanceId,
                            long nodeInstanceId,
                            String nodeId,
+                           Long signSessionId,
                            String assignee,
-                           String title) {
+                           String title,
+                           String status) {
         KeyHolder keys = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO wf_task
-                        (tenant_id, instance_id, node_instance_id, node_id, task_kind,
-                         assignee, assignee_type, status, title_snapshot)
-                    VALUES (?, ?, ?, ?, 'APPROVAL', ?, 'user', 'CREATED', ?)
+                        (tenant_id, instance_id, node_instance_id, node_id, sign_session_id,
+                         task_kind, assignee, assignee_type, status, title_snapshot)
+                    VALUES (?, ?, ?, ?, ?, 'APPROVAL', ?, 'user', ?, ?)
                     """, new String[]{"id"});
             ps.setString(1, tenant);
             ps.setString(2, instanceId);
             ps.setLong(3, nodeInstanceId);
             ps.setString(4, nodeId);
-            ps.setString(5, assignee);
-            ps.setString(6, title);
+            if (signSessionId == null) {
+                ps.setNull(5, java.sql.Types.BIGINT);
+            } else {
+                ps.setLong(5, signSessionId);
+            }
+            ps.setString(6, assignee);
+            ps.setString(7, status == null ? "CREATED" : status);
+            ps.setString(8, title);
             return ps;
         }, keys);
         return keys.getKey() == null ? 0L : keys.getKey().longValue();
@@ -429,7 +446,7 @@ public class EngineRepository {
 
     public Optional<TaskRow> findTask(long id) {
         return jdbc.query("""
-                SELECT id, instance_id, node_instance_id, node_id, assignee,
+                SELECT id, instance_id, node_instance_id, node_id, sign_session_id, assignee,
                        status, verdict, comment, title_snapshot, version
                 FROM wf_task WHERE id = ?
                 """, (rs, rowNum) -> taskRow(rs), id).stream().findFirst();
@@ -445,7 +462,7 @@ public class EngineRepository {
 
     public Optional<TaskRow> findTaskForUpdate(long id) {
         return jdbc.query("""
-                SELECT id, instance_id, node_instance_id, node_id, assignee,
+                SELECT id, instance_id, node_instance_id, node_id, sign_session_id, assignee,
                        status, verdict, comment, title_snapshot, version
                 FROM wf_task WHERE id = ? FOR UPDATE
                 """, (rs, rowNum) -> taskRow(rs), id).stream().findFirst();
@@ -463,8 +480,41 @@ public class EngineRepository {
     public void cancelTasks(String instanceId) {
         jdbc.update("""
                 UPDATE wf_task SET status = 'CANCELLED'
-                WHERE instance_id = ? AND status = 'CREATED'
+                WHERE instance_id = ? AND status IN ('CREATED', 'PENDING')
                 """, instanceId);
+    }
+
+    public void delegateTask(long taskId) {
+        jdbc.update("UPDATE wf_task SET status = 'DELEGATED', version = version + 1 WHERE id = ?", taskId);
+    }
+
+    public List<TaskRow> listTasksBySession(long sessionId) {
+        return jdbc.query("""
+                SELECT id, instance_id, node_instance_id, node_id, sign_session_id, assignee,
+                       status, verdict, comment, title_snapshot, version
+                FROM wf_task WHERE sign_session_id = ? ORDER BY id
+                """, (rs, rowNum) -> taskRow(rs), sessionId);
+    }
+
+    public void cancelSessionTasks(long sessionId) {
+        jdbc.update("""
+                UPDATE wf_task SET status = 'CANCELLED'
+                WHERE sign_session_id = ? AND status IN ('CREATED', 'PENDING')
+                """, sessionId);
+    }
+
+    public Optional<Long> activateNextPendingTask(long sessionId) {
+        return jdbc.query("""
+                WITH picked AS (
+                    SELECT id FROM wf_task
+                    WHERE sign_session_id = ? AND status = 'PENDING'
+                    ORDER BY id LIMIT 1
+                    FOR UPDATE SKIP LOCKED
+                )
+                UPDATE wf_task t SET status = 'CREATED'
+                FROM picked WHERE t.id = picked.id
+                RETURNING t.id
+                """, (rs, rowNum) -> rs.getLong("id"), sessionId).stream().findFirst();
     }
 
     public List<TaskView> listInstanceTasks(String instanceId) {
@@ -473,6 +523,113 @@ public class EngineRepository {
                        title_snapshot, created_at, completed_at
                 FROM wf_task WHERE instance_id = ? ORDER BY created_at
                 """, (rs, rowNum) -> taskView(rs), instanceId);
+    }
+
+    // ---------- sign session ----------
+
+    public long insertSignSession(String instanceId,
+                                  long nodeInstanceId,
+                                  String nodeId,
+                                  String mode,
+                                  String signStyle,
+                                  String passRuleType,
+                                  Double ratio,
+                                  String rejectRule,
+                                  String returnStrategy,
+                                  String returnTarget,
+                                  int expected) {
+        ObjectNode passRule = objectMapper.createObjectNode();
+        passRule.put("type", passRuleType == null ? "ALL" : passRuleType);
+        if (ratio != null) {
+            passRule.put("ratio", ratio);
+        }
+        KeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement("""
+                    INSERT INTO wf_sign_session
+                        (instance_id, node_instance_id, node_id, mode, sign_style, status,
+                         pass_rule, reject_rule, return_strategy, return_target, expected_count)
+                    VALUES (?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, ?)
+                    """, new String[]{"id"});
+            ps.setString(1, instanceId);
+            ps.setLong(2, nodeInstanceId);
+            ps.setString(3, nodeId);
+            ps.setString(4, mode);
+            ps.setString(5, signStyle);
+            ps.setObject(6, jsonb(passRule));
+            ps.setString(7, rejectRule);
+            ps.setString(8, returnStrategy);
+            ps.setString(9, returnTarget);
+            ps.setInt(10, expected);
+            return ps;
+        }, keys);
+        return keys.getKey() == null ? 0L : keys.getKey().longValue();
+    }
+
+    public Optional<SignSessionRow> findSignSessionForUpdate(long id) {
+        return jdbc.query("""
+                SELECT id, instance_id, node_instance_id, node_id, mode, sign_style, status,
+                       decision, pass_rule, reject_rule, return_strategy, return_target,
+                       expected_count, completed_count, approve_count, reject_count,
+                       turn_index, version
+                FROM wf_sign_session WHERE id = ? FOR UPDATE
+                """, (rs, rowNum) -> signSessionRow(rs), id).stream().findFirst();
+    }
+
+    public void updateSessionCounts(long sessionId, String verdict) {
+        jdbc.update("""
+                UPDATE wf_sign_session
+                SET completed_count = completed_count + 1,
+                    approve_count = approve_count + CASE WHEN ? = 'approve' THEN 1 ELSE 0 END,
+                    reject_count = reject_count + CASE WHEN ? = 'reject' THEN 1 ELSE 0 END,
+                    version = version + 1
+                WHERE id = ?
+                """, verdict, verdict, sessionId);
+    }
+
+    public void decideSession(long sessionId, String decision) {
+        jdbc.update("""
+                UPDATE wf_sign_session
+                SET status = 'DECIDED', decision = ?, decided_at = now(), version = version + 1
+                WHERE id = ? AND status = 'OPEN'
+                """, decision, sessionId);
+    }
+
+    public void cancelSession(long sessionId) {
+        jdbc.update("""
+                UPDATE wf_sign_session
+                SET status = 'CANCELLED', decided_at = now(), version = version + 1
+                WHERE id = ? AND status = 'OPEN'
+                """, sessionId);
+    }
+
+    public void cancelOpenSessions(String instanceId) {
+        jdbc.update("""
+                UPDATE wf_sign_session
+                SET status = 'CANCELLED', decided_at = now(), version = version + 1
+                WHERE instance_id = ? AND status = 'OPEN'
+                """, instanceId);
+    }
+
+    public int incrementSessionExpected(long sessionId) {
+        Integer value = jdbc.queryForObject("""
+                UPDATE wf_sign_session
+                SET expected_count = expected_count + 1, version = version + 1
+                WHERE id = ? AND status = 'OPEN'
+                RETURNING expected_count
+                """, Integer.class, sessionId);
+        return value == null ? 0 : value;
+    }
+
+    public int incrementRound(String instanceId) {
+        Integer value = jdbc.queryForObject("""
+                UPDATE wf_instance
+                SET round = round + 1, status = 'RUNNING', outcome = NULL, ended_at = NULL,
+                    state_version = state_version + 1
+                WHERE id = ?
+                RETURNING round
+                """, Integer.class, instanceId);
+        return value == null ? 1 : value;
     }
 
     // ---------- audit / outbox ----------
@@ -561,12 +718,39 @@ public class EngineRepository {
                 instant(rs, "ended_at"));
     }
 
+    private SignSessionRow signSessionRow(ResultSet rs) throws SQLException {
+        JsonNode passRule = readJson(rs.getString("pass_rule"));
+        String passRuleType = passRule.path("type").asText("ALL");
+        Double ratio = passRule.hasNonNull("ratio") ? passRule.get("ratio").asDouble() : null;
+        return new SignSessionRow(
+                rs.getLong("id"),
+                rs.getString("instance_id"),
+                rs.getLong("node_instance_id"),
+                rs.getString("node_id"),
+                rs.getString("mode"),
+                rs.getString("sign_style"),
+                rs.getString("status"),
+                rs.getString("decision"),
+                passRuleType,
+                ratio,
+                rs.getString("reject_rule"),
+                rs.getString("return_strategy"),
+                rs.getString("return_target"),
+                rs.getInt("expected_count"),
+                rs.getInt("completed_count"),
+                rs.getInt("approve_count"),
+                rs.getInt("reject_count"),
+                rs.getInt("turn_index"),
+                rs.getInt("version"));
+    }
+
     private TaskRow taskRow(ResultSet rs) throws SQLException {
         return new TaskRow(
                 rs.getLong("id"),
                 rs.getString("instance_id"),
                 rs.getLong("node_instance_id"),
                 rs.getString("node_id"),
+                nullableLong(rs, "sign_session_id"),
                 rs.getString("assignee"),
                 rs.getString("status"),
                 rs.getString("verdict"),
@@ -695,11 +879,34 @@ public class EngineRepository {
             String instanceId,
             long nodeInstanceId,
             String nodeId,
+            Long signSessionId,
             String assignee,
             String status,
             String verdict,
             String comment,
             String title,
+            int version) {
+    }
+
+    public record SignSessionRow(
+            long id,
+            String instanceId,
+            long nodeInstanceId,
+            String nodeId,
+            String mode,
+            String signStyle,
+            String status,
+            String decision,
+            String passRuleType,
+            Double ratio,
+            String rejectRule,
+            String returnStrategy,
+            String returnTarget,
+            int expected,
+            int completed,
+            int approve,
+            int reject,
+            int turnIndex,
             int version) {
     }
 }

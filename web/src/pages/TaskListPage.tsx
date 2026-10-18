@@ -44,20 +44,61 @@ export default function TaskListPage() {
     return () => window.clearInterval(timer);
   }, [load]);
 
-  const complete = async (task: TaskView, verdict: "approve" | "reject") => {
+  const complete = async (task: TaskView, verdict: "approve" | "reject" | "return") => {
     setBusyId(task.id);
     setError(null);
     setMessage(null);
     try {
       const response = await api.completeTask(task.id, verdict, comments[task.id] ?? "");
       if (response.success) {
-        setMessage(`任务 #${task.id} 已${verdict === "approve" ? "同意" : "驳回"}`);
+        const label = verdict === "approve" ? "同意" : verdict === "reject" ? "驳回" : "退回";
+        setMessage(`任务 #${task.id} 已${label}`);
         setTasks((current) => current.filter((item) => item.id !== task.id));
       } else {
         setError(response.error?.message ?? "处理失败");
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "处理失败");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const addSign = async (task: TaskView) => {
+    const assignee = window.prompt("加签给谁（用户 ID）", "");
+    if (!assignee || !assignee.trim()) return;
+    setBusyId(task.id);
+    setError(null);
+    try {
+      const response = await api.addSign(task.id, assignee.trim());
+      if (response.success) {
+        setMessage(`已加签给 ${assignee.trim()}`);
+        await load();
+      } else {
+        setError(response.error?.message ?? "加签失败");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "加签失败");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const transfer = async (task: TaskView) => {
+    const assignee = window.prompt("转交给谁（用户 ID）", "");
+    if (!assignee || !assignee.trim()) return;
+    setBusyId(task.id);
+    setError(null);
+    try {
+      const response = await api.transfer(task.id, assignee.trim());
+      if (response.success) {
+        setMessage(`任务已转交给 ${assignee.trim()}`);
+        setTasks((current) => current.filter((item) => item.id !== task.id));
+      } else {
+        setError(response.error?.message ?? "转交失败");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "转交失败");
     } finally {
       setBusyId(null);
     }
@@ -116,7 +157,7 @@ export default function TaskListPage() {
                     placeholder="审批意见（可选）"
                     className="h-9 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-slate-400"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       className="h-9 bg-emerald-700 hover:bg-emerald-600"
                       disabled={busyId === task.id}
@@ -130,6 +171,27 @@ export default function TaskListPage() {
                       onClick={() => void complete(task, "reject")}
                     >
                       驳回
+                    </Button>
+                    <Button
+                      className="h-9 bg-amber-700 hover:bg-amber-600"
+                      disabled={busyId === task.id}
+                      onClick={() => void complete(task, "return")}
+                    >
+                      退回
+                    </Button>
+                    <Button
+                      className="h-9 bg-slate-600 hover:bg-slate-500"
+                      disabled={busyId === task.id}
+                      onClick={() => void addSign(task)}
+                    >
+                      加签
+                    </Button>
+                    <Button
+                      className="h-9 bg-slate-600 hover:bg-slate-500"
+                      disabled={busyId === task.id}
+                      onClick={() => void transfer(task)}
+                    >
+                      转交
                     </Button>
                   </div>
                 </div>

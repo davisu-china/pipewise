@@ -21,6 +21,7 @@ export default function InstanceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [detail, setDetail] = useState<InstanceDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -50,6 +51,24 @@ export default function InstanceDetailPage() {
     return () => window.clearInterval(timer);
   }, [load, detail?.summary.status]);
 
+  const withdraw = async () => {
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await api.withdrawInstance(id);
+      if (response.success) {
+        await load();
+      } else {
+        setError(response.error?.message ?? "撤回失败");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "撤回失败");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading && !detail) {
     return <main className="p-8 text-sm text-slate-500">加载实例中…</main>;
   }
@@ -77,9 +96,16 @@ export default function InstanceDetailPage() {
         <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusStyles[summary.status] ?? "bg-slate-100 text-slate-600"}`}>
           {summary.status}{summary.outcome ? ` · ${summary.outcome}` : ""}
         </span>
-        <Button className="ml-auto h-8 bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50" onClick={() => void load()}>
-          <RefreshCw size={14} /> 刷新
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          {summary.status === "RUNNING" && (
+            <Button className="h-8 bg-amber-700 hover:bg-amber-600" disabled={busy} onClick={() => void withdraw()}>
+              撤回
+            </Button>
+          )}
+          <Button className="h-8 bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50" onClick={() => void load()}>
+            <RefreshCw size={14} /> 刷新
+          </Button>
+        </div>
       </div>
 
       {error && (

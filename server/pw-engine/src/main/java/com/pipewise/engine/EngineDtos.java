@@ -23,9 +23,12 @@ public final class EngineDtos {
 
     public record CompleteTaskRequest(
             @NotBlank
-            @Pattern(regexp = "approve|reject", message = "verdict 只能是 approve 或 reject")
+            @Pattern(regexp = "approve|reject|return", message = "verdict 只能是 approve、reject 或 return")
             String verdict,
             String comment) {
+    }
+
+    public record AssigneeRequest(@NotBlank String assignee) {
     }
 
     public record InstanceSummary(

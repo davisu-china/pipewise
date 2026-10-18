@@ -561,20 +561,90 @@ export default function DesignerPage() {
                       onChange={(event) => updateConfig("signMode", event.target.value)}
                       className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
                     >
-                      <option value="any">或签 any</option>
-                      <option value="all">并签 all</option>
-                      <option value="race">竞签 race</option>
+                      <option value="any">或签 any（任一同意即通过）</option>
+                      <option value="all">并签 all（全部/比例通过）</option>
+                      <option value="race">竞签 race（先处理者定音）</option>
                     </select>
                   </label>
                   <label className="grid gap-1 text-xs text-slate-600">
-                    审批人表达式（P3 生效）
+                    审批人（逗号分隔用户 ID）
                     <input
-                      value={String(selectedNode.data.config.assignee ?? "")}
-                      onChange={(event) => updateConfig("assignee", event.target.value)}
-                      placeholder="managerOf(ctx.applicantId)"
+                      value={String(selectedNode.data.config.assignees ?? selectedNode.data.config.assignee ?? "")}
+                      onChange={(event) => updateConfig("assignees", event.target.value)}
+                      placeholder="u1,u2,u3 或 initiator"
                       className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
                     />
                   </label>
+                  {String(selectedNode.data.config.signMode ?? "any") === "all" && (
+                    <>
+                      <label className="grid gap-1 text-xs text-slate-600">
+                        会签方式
+                        <select
+                          value={String(selectedNode.data.config.signStyle ?? "parallel")}
+                          onChange={(event) => updateConfig("signStyle", event.target.value)}
+                          className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
+                        >
+                          <option value="parallel">并行会签</option>
+                          <option value="serial">串行会签</option>
+                        </select>
+                      </label>
+                      <label className="grid gap-1 text-xs text-slate-600">
+                        通过规则
+                        <select
+                          value={String(selectedNode.data.config.passRule ?? "ALL")}
+                          onChange={(event) => updateConfig("passRule", event.target.value)}
+                          className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
+                        >
+                          <option value="ALL">全部同意</option>
+                          <option value="RATIO">同意比例</option>
+                        </select>
+                      </label>
+                      {String(selectedNode.data.config.passRule ?? "ALL") === "RATIO" && (
+                        <label className="grid gap-1 text-xs text-slate-600">
+                          通过比例（0–1）
+                          <input
+                            value={String(selectedNode.data.config.passRatio ?? "0.6")}
+                            onChange={(event) => updateConfig("passRatio", event.target.value)}
+                            className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
+                          />
+                        </label>
+                      )}
+                      <label className="grid gap-1 text-xs text-slate-600">
+                        否决规则
+                        <select
+                          value={String(selectedNode.data.config.rejectRule ?? "VETO_IMMEDIATE")}
+                          onChange={(event) => updateConfig("rejectRule", event.target.value)}
+                          className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
+                        >
+                          <option value="VETO_IMMEDIATE">一票否决</option>
+                          <option value="AFTER_ALL">收集完再判</option>
+                        </select>
+                      </label>
+                    </>
+                  )}
+                  <label className="grid gap-1 text-xs text-slate-600">
+                    否决/退回策略
+                    <select
+                      value={String(selectedNode.data.config.rejectStrategy ?? "terminate")}
+                      onChange={(event) => updateConfig("rejectStrategy", event.target.value)}
+                      className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
+                    >
+                      <option value="terminate">终止实例</option>
+                      <option value="to_start">退回发起人</option>
+                      <option value="to_node">退回指定节点</option>
+                    </select>
+                  </label>
+                  {String(selectedNode.data.config.rejectStrategy ?? "terminate") === "to_node" && (
+                    <label className="grid gap-1 text-xs text-slate-600">
+                      退回目标节点 ID
+                      <input
+                        value={String(selectedNode.data.config.returnTarget ?? "")}
+                        onChange={(event) => updateConfig("returnTarget", event.target.value)}
+                        placeholder="start"
+                        className="h-8 rounded-md border border-slate-200 px-2 text-sm outline-none focus:border-slate-400"
+                      />
+                    </label>
+                  )}
                 </>
               )}
               {selectedNode.data.nodeType === "form" && (

@@ -22,10 +22,12 @@ public class InstanceService {
 
     private final EngineRepository repository;
     private final ObjectMapper objectMapper;
+    private final SignService signService;
 
-    public InstanceService(EngineRepository repository, ObjectMapper objectMapper) {
+    public InstanceService(EngineRepository repository, ObjectMapper objectMapper, SignService signService) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.signService = signService;
     }
 
     @Transactional
@@ -81,6 +83,10 @@ public class InstanceService {
         repository.outbox(tenant, instanceId, "instance.created", payload);
 
         return detail(tenant, instanceId);
+    }
+
+    public void withdraw(String tenant, String instanceId, String user) {
+        signService.withdraw(tenant, instanceId, user);
     }
 
     public List<InstanceSummary> list(String tenant, String status, String definitionKey) {

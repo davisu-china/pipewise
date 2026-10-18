@@ -22,11 +22,16 @@ public class TaskService {
     private final EngineRepository repository;
     private final TokenAdvancer advancer;
     private final ObjectMapper objectMapper;
+    private final SignService signService;
 
-    public TaskService(EngineRepository repository, TokenAdvancer advancer, ObjectMapper objectMapper) {
+    public TaskService(EngineRepository repository,
+                       TokenAdvancer advancer,
+                       ObjectMapper objectMapper,
+                       SignService signService) {
         this.repository = repository;
         this.advancer = advancer;
         this.objectMapper = objectMapper;
+        this.signService = signService;
     }
 
     public List<TaskView> list(String assignee, String status) {
@@ -36,6 +41,14 @@ public class TaskService {
     public TaskView get(long id) {
         return repository.findTaskView(id)
                 .orElseThrow(() -> EngineException.notFound("任务不存在: " + id));
+    }
+
+    public TaskView addSign(String tenant, long taskId, String user, String assignee) {
+        return signService.addSign(tenant, taskId, user, assignee);
+    }
+
+    public TaskView transfer(String tenant, long taskId, String user, String assignee) {
+        return signService.transfer(tenant, taskId, user, assignee);
     }
 
     @Transactional
@@ -55,6 +68,9 @@ public class TaskService {
         }
         if (!task.assignee().equals(user)) {
             throw EngineException.forbidden("NOT_ASSIGNEE", "当前用户不是该任务的处理人");
+        }
+        if (task.signSessionId() != null) {
+            return signService.complete(tenant, task, user, request.verdict(), request.comment());
         }
 
         int updated = repository.completeTask(taskId, request.verdict(), request.comment());

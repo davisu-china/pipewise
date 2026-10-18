@@ -12,6 +12,9 @@ import com.pipewise.engine.model.FlowModel.NodeDef;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 一个作业 = 一次令牌激活。事务内持有实例 advisory lock，重复投递会被令牌状态挡住。
  */
@@ -84,18 +87,51 @@ public class EngineProcessor {
                 }
             }
             case "approval" -> {
-                String assignee = assignee(node, instance);
+                List<String> assignees = resolveAssignees(node, instance);
+                String mode = configText(node, "signMode", "any").toUpperCase();
+                if (!List.of("ANY", "ALL", "RACE").contains(mode)) {
+                    mode = "ANY";
+                }
+                String signStyle = configText(node, "signStyle", "parallel").toUpperCase();
+                if (!"SERIAL".equals(signStyle)) {
+                    signStyle = "PARALLEL";
+                }
+                String passRule = configText(node, "passRule", "ALL").toUpperCase();
+                if (!"RATIO".equals(passRule)) {
+                    passRule = "ALL";
+                }
+                Double ratio = configDouble(node, "passRatio");
+                String rejectRule = configText(node, "rejectRule", "VETO_IMMEDIATE").toUpperCase();
+                String returnStrategy = configText(node, "rejectStrategy", "terminate");
+                String returnTarget = configText(node, "returnTarget", null);
+
+                long sessionId = repository.insertSignSession(
+                        instance.id(), nodeInstanceId, node.id(), mode, signStyle,
+                        passRule, ratio, rejectRule, returnStrategy, returnTarget, assignees.size());
                 String title = taskTitle(instance, node);
-                long taskId = repository.insertTask(
-                        instance.tenantId(), instance.id(), nodeInstanceId, node.id(), assignee, title);
+                for (int index = 0; index < assignees.size(); index++) {
+                    String assignee = assignees.get(index);
+                    String status = "SERIAL".equals(signStyle) && index > 0 ? "PENDING" : "CREATED";
+                    long taskId = repository.insertTask(
+                            instance.tenantId(), instance.id(), nodeInstanceId, node.id(),
+                            sessionId, assignee, title, status);
+                    ObjectNode payload = objectMapper.createObjectNode();
+                    payload.put("taskId", taskId);
+                    payload.put("nodeId", node.id());
+                    payload.put("assignee", assignee);
+                    payload.put("signSessionId", sessionId);
+                    repository.outbox(instance.tenantId(), instance.id(), "task.created", payload);
+                }
                 repository.markNodeWaiting(nodeInstanceId);
                 repository.updateTokenStatus(token.id(), "WAITING");
-                audit(instance, "task.created", "system", node, nodeInstanceId);
-                ObjectNode payload = objectMapper.createObjectNode();
-                payload.put("taskId", taskId);
-                payload.put("nodeId", node.id());
-                payload.put("assignee", assignee);
-                repository.outbox(instance.tenantId(), instance.id(), "task.created", payload);
+                ObjectNode detail = objectMapper.createObjectNode();
+                detail.put("nodeId", node.id());
+                detail.put("nodeInstanceId", nodeInstanceId);
+                detail.put("signSessionId", sessionId);
+                detail.put("mode", mode);
+                detail.put("expected", assignees.size());
+                detail.put("assignees", String.join(",", assignees));
+                repository.audit(instance.tenantId(), instance.id(), "sign.session.created", "system", detail);
             }
             default -> throw new EngineException(
                     501, "NODE_NOT_SUPPORTED",
@@ -103,14 +139,79 @@ public class EngineProcessor {
         }
     }
 
-    private String assignee(NodeDef node, InstanceRow instance) {
-        if (node.config() != null && node.config().hasNonNull("assignee")) {
-            String value = node.config().get("assignee").asText();
-            if (!value.isBlank() && !"initiator".equals(value)) {
-                return value.startsWith("user:") ? value.substring(5) : value;
+    private List<String> resolveAssignees(NodeDef node, InstanceRow instance) {
+        List<String> values = new ArrayList<>();
+        if (node.config() != null) {
+            var assignees = node.config().get("assignees");
+            if (assignees != null && !assignees.isNull()) {
+                if (assignees.isArray()) {
+                    assignees.forEach(item -> values.add(item.asText()));
+                } else {
+                    values.addAll(splitAssignees(assignees.asText()));
+                }
+            }
+            if (values.isEmpty() && node.config().hasNonNull("assignee")) {
+                values.addAll(splitAssignees(node.config().get("assignee").asText()));
             }
         }
-        return instance.initiator();
+
+        List<String> resolved = new ArrayList<>();
+        for (String value : values) {
+            String candidate = value == null ? "" : value.trim();
+            if (candidate.isEmpty()) {
+                continue;
+            }
+            if ("initiator".equals(candidate)) {
+                candidate = instance.initiator();
+            } else if (candidate.startsWith("user:")) {
+                candidate = candidate.substring(5);
+            }
+            if (!candidate.isBlank() && !resolved.contains(candidate)) {
+                resolved.add(candidate);
+            }
+        }
+        if (resolved.isEmpty()) {
+            resolved.add(instance.initiator());
+        }
+        return resolved;
+    }
+
+    private List<String> splitAssignees(String value) {
+        List<String> result = new ArrayList<>();
+        if (value == null) {
+            return result;
+        }
+        for (String part : value.split(",")) {
+            if (!part.isBlank()) {
+                result.add(part.trim());
+            }
+        }
+        return result;
+    }
+
+    private String configText(NodeDef node, String field, String fallback) {
+        if (node.config() != null && node.config().hasNonNull(field)) {
+            String value = node.config().get(field).asText();
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return fallback;
+    }
+
+    private Double configDouble(NodeDef node, String field) {
+        if (node.config() != null && node.config().hasNonNull(field)) {
+            var value = node.config().get(field);
+            if (value.isNumber()) {
+                return value.asDouble();
+            }
+            try {
+                return Double.parseDouble(value.asText());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private String taskTitle(InstanceRow instance, NodeDef node) {

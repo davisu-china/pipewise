@@ -230,9 +230,23 @@ export const api = {
     }),
   listTasks: (status = "CREATED") =>
     requestJson<TaskView[]>(`/api/v1/tasks?status=${encodeURIComponent(status)}`),
-  completeTask: (id: number, verdict: "approve" | "reject", comment: string) =>
+  completeTask: (id: number, verdict: "approve" | "reject" | "return", comment: string) =>
     requestJson<TaskView>(`/api/v1/tasks/${id}/complete`, {
       method: "POST",
       body: JSON.stringify({ verdict, comment })
+    }),
+  addSign: (id: number, assignee: string) =>
+    requestJson<TaskView>(`/api/v1/tasks/${id}/add-sign`, {
+      method: "POST",
+      body: JSON.stringify({ assignee })
+    }),
+  transfer: (id: number, assignee: string) =>
+    requestJson<TaskView>(`/api/v1/tasks/${id}/transfer`, {
+      method: "POST",
+      body: JSON.stringify({ assignee })
+    }),
+  withdrawInstance: (id: string) =>
+    requestJson<{ status: string }>(`/api/v1/instances/${encodeURIComponent(id)}/withdraw`, {
+      method: "POST"
     })
 };
