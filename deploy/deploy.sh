@@ -22,6 +22,10 @@ API_DIR="${API_DIR:-/opt/pipewise}"
 SEED="${SEED:-1}"
 BASIC_USER="${BASIC_USER:-pipewise}"
 BASIC_PASS="${BASIC_PASS:-}"
+# sudo 会清掉环境变量；密码可放在 deploy/env.local（不进仓库）里
+if [ -z "$BASIC_PASS" ] && [ -f "$REPO/deploy/env.local" ]; then
+  BASIC_PASS="$(grep -E '^BASIC_PASS=' "$REPO/deploy/env.local" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+fi
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_USER="$(stat -c '%U' "$REPO")"
@@ -116,6 +120,7 @@ if [ -f "$OVERRIDE_FILE" ]; then
     case "$line" in ''|'#'*) continue ;; esac
     case "$line" in *=*) ;; *) warn "跳过无法解析的一行: $line"; continue ;; esac
     key="${line%%=*}"
+    case "$key" in BASIC_USER|BASIC_PASS) continue ;; esac   # 部署期凭据，不属于应用配置
     if [ "$(grep -E "^${key}=" "$ENV_FILE" 2>/dev/null | tail -1 || true)" = "$line" ]; then continue; fi
     { grep -vE "^${key}=" "$ENV_FILE" || true; printf '%s\n' "$line"; } > "$ENV_FILE.tmp"
     cat "$ENV_FILE.tmp" > "$ENV_FILE"; rm -f "$ENV_FILE.tmp"; chmod 600 "$ENV_FILE"
