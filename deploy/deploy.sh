@@ -18,6 +18,9 @@ set -euo pipefail
 SUBPATH="${SUBPATH:-pipewise}"
 SITE="${SITE:-jianjiange.site}"
 API_PORT="${API_PORT:-8121}"
+# 容器里的 nginx 走 172.17.0.1（docker 网桥网关）找宿主机，所以 API **不能只绑 127.0.0.1**，
+# 否则 nginx 侧就是 502。绑网桥地址也避免像 0.0.0.0 那样把端口暴露到公网网卡。
+API_BIND="${API_BIND:-172.17.0.1}"
 API_DIR="${API_DIR:-/opt/pipewise}"
 SEED="${SEED:-1}"
 BASIC_USER="${BASIC_USER:-pipewise}"
@@ -88,6 +91,7 @@ if [ "$SEED" = "1" ]; then
   # PORT 参与种子里的 webhook 地址（指向本机 API，走内网，不经过 Basic Auth）
   sudo -u "$RUN_USER" -H \
     env PORT="$API_PORT" DATABASE_URL="$DATABASE_URL" \
+        PIPEWISE_SINK_URL="http://${API_BIND}:${API_PORT}/api/v1/dev/webhook-sink" \
     bash -lc "cd '$REPO/backend' && .venv/bin/python -m app.seed" \
     | sed 's/^/  /' || die "种子失败"
   echo "  ✓ 种子数据（组织/表单/三个演示流程）"
@@ -144,7 +148,7 @@ WorkingDirectory=${REPO}/backend
 EnvironmentFile=${ENV_FILE}
 # 本机 systemd 是 219，不支持 StandardOutput=append:（240+ 才有），
 # 用 sh -c 重定向；注意 /opt/pipewise 必须是运行用户可写的，否则日志文件建不出来。
-ExecStart=/bin/sh -c 'exec .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port \${PORT} >> ${API_DIR}/api.log 2>&1'
+ExecStart=/bin/sh -c 'exec .venv/bin/uvicorn app.main:app --host ${API_BIND} --port \${PORT} >> ${API_DIR}/api.log 2>&1'
 Restart=always
 RestartSec=5
 
@@ -159,7 +163,7 @@ systemctl restart pipewise-api
 printf '  等待 API 就绪'
 API_OK=0
 for _ in $(seq 1 25); do
-  if curl -fsS -o /dev/null "http://127.0.0.1:${API_PORT}/api/v1/health" 2>/dev/null; then API_OK=1; break; fi
+  if curl -fsS -o /dev/null "http://${API_BIND}:${API_PORT}/api/v1/health" 2>/dev/null; then API_OK=1; break; fi
   printf '.'; sleep 1
 done
 echo
@@ -168,7 +172,7 @@ if [ "$API_OK" != "1" ]; then
   echo "--- ${API_DIR}/api.log ---"; tail -30 "${API_DIR}/api.log" 2>/dev/null || true
   die "API 没起来"
 fi
-echo "  ✓ API 在跑（127.0.0.1:${API_PORT}）"
+echo "  ✓ API 在跑（${API_BIND}:${API_PORT}）"
 
 # ---------------------------------------------------------------- 6. Basic Auth
 log "准备访问凭据"
