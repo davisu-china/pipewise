@@ -31,6 +31,12 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_USER="$(stat -c '%U' "$REPO")"
 [ "$RUN_USER" = "root" ] && RUN_USER="metabot"
 
+# 前后端分离：前端（web/）构建后放进 nginx 容器可见的 html 挂载目录。
+# docker-compose 里 ./nginx/html 挂到容器 /usr/share/nginx/html（只读）。
+WEB_DIR="$REPO/web"
+NGINX_HTML_DIR="${NGINX_HTML_DIR:-/opt/jianjian/deploy/nginx/html}"
+WEB_PUBLISH_DIR="$NGINX_HTML_DIR/$SUBPATH"
+
 # sudo 会清掉环境变量；密码可放在 deploy/env.local（不进仓库）里
 if [ -z "$BASIC_PASS" ] && [ -f "$REPO/deploy/env.local" ]; then
   BASIC_PASS="$(grep -E '^BASIC_PASS=' "$REPO/deploy/env.local" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
@@ -65,7 +71,11 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-/home/metabot/.local/pg/usr/pgsql-14/
 export PATH="/home/metabot/.local/pg/usr/pgsql-14/bin:$PATH"
 command -v psql >/dev/null || die "找不到 psql（/home/metabot/.local/pg/usr/pgsql-14/bin）"
 [ -d "$REPO/backend" ] || die "仓库结构不对：$REPO"
-echo "  ✓ root / nginx 容器 / uv / psql 就绪（repo=$REPO，user=$RUN_USER）"
+[ -d "$WEB_DIR" ] || die "找不到前端目录：$WEB_DIR"
+[ -n "$SUBPATH" ] || die "SUBPATH 不能为空（会用来删除静态目录）"
+sudo -u "$RUN_USER" -H bash -lc 'command -v npm >/dev/null' \
+  || die "找不到 npm（Node 22 在 /opt/node-v22.23.2/bin，登录 shell 的 PATH 里要有）"
+echo "  ✓ root / nginx 容器 / uv / psql / npm 就绪（repo=$REPO，user=$RUN_USER）"
 
 # ---------------------------------------------------------------- 2. 构建
 log "构建后端虚拟环境"
@@ -78,6 +88,21 @@ sudo -u "$RUN_USER" -H bash -lc "
     -r requirements.txt >/dev/null
 " || die "依赖安装失败"
 echo "  ✓ 虚拟环境就绪"
+
+# ---------------------------------------------------------------- 2b. 前端构建
+log "构建前端（React + shadcn/ui）"
+sudo -u "$RUN_USER" -H bash -lc "
+  set -e
+  cd '$WEB_DIR'
+  # 本机全局 NODE_ENV=production 会让 npm 静默跳过 devDependencies（tsc/vite 都在里面）
+  if [ -f package-lock.json ]; then
+    NODE_ENV=development npm ci --include=dev --no-audit --no-fund >/dev/null
+  else
+    NODE_ENV=development npm install --include=dev --no-audit --no-fund >/dev/null
+  fi
+  NODE_ENV=production VITE_BASE='/${SUBPATH}/' npm run build
+" || die "前端构建失败"
+echo "  ✓ 前端构建完成（base=/${SUBPATH}/）"
 
 # ---------------------------------------------------------------- 3. 数据库与种子
 log "准备数据库"
@@ -195,15 +220,35 @@ else
   echo "  ✓ 沿用已有凭据 ${HTPASSWD_HOST}（要重置就删掉它再重跑）"
 fi
 
+# ---------------------------------------------------------------- 6b. 前端发布
+log "发布前端到 nginx 静态目录"
+install -d "$NGINX_HTML_DIR"
+rm -rf "$WEB_PUBLISH_DIR"
+cp -r "$WEB_DIR/dist" "$WEB_PUBLISH_DIR"
+chmod -R a+rX "$WEB_PUBLISH_DIR"
+echo "  ✓ ${WEB_PUBLISH_DIR}（容器内 /usr/share/nginx/html/${SUBPATH}）"
+
 # ---------------------------------------------------------------- 7. nginx
-log "配置 nginx（子路径 ${WEB_URL_PATH}）"
+log "配置 nginx（前端静态 + /api 反代）"
 
+# 配置测试失败必须回滚（否则一次笔误会把整台机器上的所有站点打挂）
+BAK="$NGINX_CONF.bak.pipewise.$(date +%Y%m%d-%H%M%S)"
+cp "$NGINX_CONF" "$BAK"
+
+# 旧版本的 PipeWise 块（整段反代到后端）先整段移除，再按当前脚本重新插入：
+# 这样重复执行会跟着脚本更新，而不是"配置已存在就跳过"。
+# 块的结束位置是主站 server 的收尾大括号（4 空格缩进）；块内部只有 8/12 空格缩进。
 if grep -qF "$MARK" "$NGINX_CONF"; then
-  echo "  ✓ 配置已存在（改端口请手动改后 reload）"
-else
-  cp "$NGINX_CONF" "$NGINX_CONF.bak.pipewise.$(date +%Y%m%d-%H%M%S)"
+  awk -v mark="$MARK" '
+    index($0, mark) > 0 { skip = 1; next }
+    skip && /^    }[[:space:]]*$/ { skip = 0; print; next }
+    !skip { print }
+  ' "$NGINX_CONF" > /tmp/pipewise.nginx.strip
+  cat /tmp/pipewise.nginx.strip > "$NGINX_CONF"
+  echo "  ✓ 已移除旧配置块"
+fi
 
-  # 插入点：主站 server 块（listen 443 且 server_name 含 $SITE）的收尾大括号。
+# 插入点：主站 server 块（listen 443 且 server_name 含 $SITE）的收尾大括号。
   # 不能取文件里最后一个 }（那是 http{} 的收尾，裸 location 放进去非法），
   # 也不能猜——主站 server 夹在文件中间，只能按括号深度算。
   INSERT_AT="$(awk -v site="$SITE" '
@@ -251,13 +296,12 @@ else
         location = ${WEB_URL_PATH%/} {
             return 301 ${WEB_URL_PATH}\$is_args\$args;
         }
-        # ^~ 让前缀匹配终止正则评估：主站有按图片后缀匹配的 location，
-        # 不加它 /pipewise/xxx.png 会被抢去主站前端。
-        location ^~ ${WEB_URL_PATH} {
+        # API：剥掉子路径前缀后反代到后端（后端路由仍是 /api/v1）。
+        # 容器的 127.0.0.1 是它自己；宿主机是 docker 网桥网关 172.17.0.1。
+        location ^~ ${WEB_URL_PATH}api/ {
             auth_basic           "PipeWise";
             auth_basic_user_file ${HTPASSWD_CONTAINER};
-            # 容器的 127.0.0.1 是它自己；宿主机是 docker 网桥网关 172.17.0.1。
-            proxy_pass           http://172.17.0.1:${API_PORT}/;
+            proxy_pass           http://172.17.0.1:${API_PORT}/api/;
             proxy_http_version   1.1;
             proxy_set_header Host              \$host;
             proxy_set_header X-Real-IP         \$remote_addr;
@@ -265,6 +309,26 @@ else
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_buffering off;
             proxy_read_timeout  120s;
+        }
+        # 前端构建产物由 nginx 直接托管：宿主机 ${NGINX_HTML_DIR}/${SUBPATH}
+        # 挂载为容器内 /usr/share/nginx/html/${SUBPATH}。
+        # 带内容哈希的 assets 可长缓存。
+        location ^~ ${WEB_URL_PATH}assets/ {
+            auth_basic           "PipeWise";
+            auth_basic_user_file ${HTPASSWD_CONTAINER};
+            root /usr/share/nginx/html;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+        }
+        # ^~ 让前缀匹配终止正则评估：主站有按图片后缀匹配的 location，
+        # 不加它 /pipewise/xxx.png 会被抢去主站前端。
+        location ^~ ${WEB_URL_PATH} {
+            auth_basic           "PipeWise";
+            auth_basic_user_file ${HTPASSWD_CONTAINER};
+            root /usr/share/nginx/html;
+            index index.html;
+            # BrowserRouter：刷新 /pipewise/designer/xxx 也要回 SPA 外壳。
+            try_files \$uri \$uri/ ${WEB_URL_PATH}index.html;
+            add_header Cache-Control "no-cache" always;
         }
 LOC
 
@@ -276,19 +340,13 @@ LOC
         print line[i]
       }
     }' "$NGINX_CONF" > /tmp/pipewise.nginx.new
-  cat /tmp/pipewise.nginx.new > "$NGINX_CONF"   # 原地覆盖：不能 sed -i（换 inode 容器读不到）
-  echo "  ✓ 已插入配置"
-fi
+cat /tmp/pipewise.nginx.new > "$NGINX_CONF"   # 原地覆盖：不能 sed -i（换 inode 容器读不到）
+echo "  ✓ 已插入配置"
 
-# 配置测试失败必须回滚（否则一次笔误会把整台机器上的所有站点打挂）
-LATEST_BAK="$(ls -1t "$NGINX_CONF".bak.pipewise.* 2>/dev/null | head -1 || true)"
 if ! docker exec "$NGINX_CONTAINER" nginx -t; then
-  if [ -n "$LATEST_BAK" ]; then
-    cat "$LATEST_BAK" > "$NGINX_CONF"
-    docker exec "$NGINX_CONTAINER" nginx -t && docker exec "$NGINX_CONTAINER" nginx -s reload || true
-    die "nginx -t 失败，已回滚到 $(basename "$LATEST_BAK")"
-  fi
-  die "nginx -t 失败"
+  cat "$BAK" > "$NGINX_CONF"
+  docker exec "$NGINX_CONTAINER" nginx -t && docker exec "$NGINX_CONTAINER" nginx -s reload || true
+  die "nginx -t 失败，已回滚到 $(basename "$BAK")"
 fi
 docker exec "$NGINX_CONTAINER" nginx -s reload
 echo "  ✓ nginx 已 reload"
@@ -304,6 +362,13 @@ elif [ "$code" = "401" ] && [ -z "$BASIC_PASS" ]; then
 else
   warn "页面自检返回 $code（凭据可能是旧密码，用 ${API_DIR}/access.txt 里的试一次）"
 fi
+spa="$(curl -s -o /tmp/pipewise.verify.spa.html -w '%{http_code}' -u "${BASIC_USER}:${BASIC_PASS:-__existing__}" \
+  "https://${SITE}${WEB_URL_PATH}definitions" || true)"
+if [ "$spa" = "200" ] && grep -q 'id="root"' /tmp/pipewise.verify.spa.html; then
+  echo "  ✓ SPA 深链 /definitions 回落到外壳 -> 200"
+else
+  warn "SPA 深链自检返回 $spa（刷新子路由可能 404）"
+fi
 health="$(curl -s -o /dev/null -w '%{http_code}' -u "${BASIC_USER}:${BASIC_PASS:-__existing__}" \
   "https://${SITE}${WEB_URL_PATH}api/v1/health" || true)"
 [ "$health" = "200" ] && echo "  ✓ API /health -> 200" || warn "API /health 返回 $health"
@@ -315,9 +380,10 @@ cat <<EOF
 ════════════════════════════════════════════
  访问地址： https://${SITE}${WEB_URL_PATH}
  凭据：     ${API_DIR}/access.txt（用户名 ${BASIC_USER}）
- 服务：     systemctl status pipewise-api（日志 ${API_DIR}/api.log）
+ 前端：     静态托管 ${WEB_PUBLISH_DIR}（构建产物 web/dist，容器内 /usr/share/nginx/html/${SUBPATH}）
+ 服务：     systemctl status pipewise-api（日志 ${API_DIR}/api.log，只提供 /api/v1）
  数据库：   ${DB_NAME} @ 127.0.0.1:${PG_PORT}
- 演示模式： PIPWISE_DEMO 在 ${ENV_FILE} 里；正式对外前改成 0 并接 SSO
+ 演示模式： PIPEWISE_DEMO 在 ${ENV_FILE} 里；正式对外前改成 0 并接 SSO
 EOF
 
 cat <<'EOF'

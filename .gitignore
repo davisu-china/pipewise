@@ -1,2 +1,7 @@
 # 本机部署期配置（含 Basic Auth 密码），绝不提交
 deploy/env.local
+
+# 前端依赖与构建产物
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo

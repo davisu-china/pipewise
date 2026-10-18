@@ -4,6 +4,11 @@ ai 时代的流程引擎
 企业级流程引擎平台：**定义流程 → 发布版本 → 创建实例**。覆盖人工审批（或签／并签／竞签）、
 表单引擎（节点×字段权限矩阵）、并行网关与汇聚、流程上下文系统与节点脚本计算。
 
+**前后端分离**：
+
+- 前端 `web/`：React 18 + Vite + **shadcn/ui（Radix UI + Tailwind CSS）**，独立构建、由 nginx 静态托管。
+- 后端 `backend/`：FastAPI，只提供 `/api/v1`（不再挂静态页）。
+
 ## 文档
 
 - 产品需求文档 PRD v1.1 → https://davisu-china.github.io/pipewise/
@@ -18,16 +23,22 @@ ai 时代的流程引擎
 # 1) 建库
 psql -h 127.0.0.1 -p 5432 -U postgres -c "CREATE DATABASE pipewise"
 
-# 2) 装依赖并起服务
+# 2) 装依赖并起 API
 cd backend
 uv venv --python 3.12 .venv
 uv pip install -r requirements.txt
 export DATABASE_URL="postgresql+psycopg://postgres@127.0.0.1:5432/pipewise"
 .venv/bin/python -m app.seed          # 建表 + 种子（组织/表单/三个演示流程）
 .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8100
+
+# 3) 起前端开发服务器（另开一个终端）
+cd web
+npm install
+VITE_API_PROXY=http://127.0.0.1:8100 npm run dev
 ```
 
-浏览器打开 <http://127.0.0.1:8100/>。右上角可以切换演示用户（张三/李四/王芳/管理员……）。
+浏览器打开 <http://127.0.0.1:5173/>。右上角可以切换演示用户（张三/李四/王芳/管理员……）。
+`VITE_API_PROXY` 缺省指向本机部署的 API（`http://172.17.0.1:8121`），手工起 uvicorn 时按需覆盖。
 
 ## 部署（本机，子路径模式）
 
@@ -45,12 +56,13 @@ sudo ./deploy/deploy.sh          # 需要 root：要写 nginx 配置与 systemd 
 
 | 步骤 | 内容 |
 |---|---|
-| 构建 | 在 `backend/.venv` 建 Python 3.12 虚拟环境并装依赖（默认走清华镜像，`PIP_INDEX_URL` 可改） |
+| 构建 | 后端：在 `backend/.venv` 建 Python 3.12 虚拟环境并装依赖（默认走清华镜像，`PIP_INDEX_URL` 可改）；前端：`web/` 里 `npm ci` + `vite build`（`VITE_BASE=/pipewise/`） |
+| 前端发布 | 构建产物 `web/dist` 拷到 `/opt/jianjian/deploy/nginx/html/pipewise/`（容器内 `/usr/share/nginx/html/pipewise`），由 nginx 直接托管 |
 | 数据库 | 在既有 PG（127.0.0.1:5433）上建 `pipewise_prod` 并跑种子（`SEED=0` 可跳过） |
-| 服务 | `/etc/systemd/system/pipewise-api.service`（User=metabot，日志 `/opt/pipewise/api.log`） |
+| 服务 | `/etc/systemd/system/pipewise-api.service`（User=metabot，日志 `/opt/pipewise/api.log`，只跑 API） |
 | 环境 | `/opt/pipewise/api.env`（root 600）：`DATABASE_URL` / `PORT` / `PIPEWISE_DEMO`；可用 `deploy/env.local` 覆盖 |
-| 网关 | 主站 443 server 块里插 `location ^~ /pipewise/`（Basic Auth + 反代）；插入点按括号深度算，先备份、`nginx -t` 失败自动回滚 |
-| 验收 | 带凭据取首页与 `/api/v1/health`，再确认不带凭据是 401 |
+| 网关 | 主站 443 server 块里插 `location ^~ /pipewise/`（Basic Auth + 静态文件 + SPA 回落）与 `location ^~ /pipewise/api/`（反代后端）；插入点按括号深度算，先备份、`nginx -t` 失败自动回滚 |
+| 验收 | 带凭据取首页、SPA 深链 `/pipewise/definitions` 与 `/pipewise/api/v1/health`，再确认不带凭据是 401 |
 
 > 注意：整站套了 nginx Basic Auth，`Authorization` 头被 Basic 占用。所以 Web 前端用的是
 > 专用头 `X-PipeWise-Token`；SDK/脚本仍可用 `Authorization: Bearer`（两种都认）。
@@ -105,12 +117,27 @@ TEST_DATABASE_URL="postgresql+psycopg://postgres@127.0.0.1:5432/pipewise_test" .
 48 个用例：表达式白名单、快照校验、脚本沙箱（超时/禁 import/异常）、引擎（令牌/网关/签核/
 退回/挂起/幂等/步数保护）、表单权限矩阵、以及 HTTP 接口层。
 
+前端（jsdom 渲染冒烟，覆盖 8 个页面）：
+
+```bash
+cd web
+npm test
+# 脚本里显式设了 NODE_ENV=test：本机全局 NODE_ENV=production 会让 React 解析成生产构建（act 不可用）
+```
+
+生产构建：
+
+```bash
+cd web
+VITE_BASE=/pipewise/ npm run build
+```
+
 ## 目录结构
 
 ```
 backend/
   app/
-    main.py            FastAPI 入口（建表 + dispatcher + 静态页）
+    main.py            FastAPI 入口（建表 + dispatcher + /api/v1，不托管静态）
     middleware.py      请求级事务：响应发出**之前**提交
     models.py          wf_* 数据模型（PRD §16）
     seed.py            组织/表单/三个演示流程
@@ -127,9 +154,13 @@ backend/
       outbox.py        Webhook 事件投递（HMAC 签名 + 退避）
       dispatcher.py    崩溃续跑 / outbox / join 卡点巡检
     api/               REST 接口（definitions/forms/instances/tasks/admin/misc）
-  static/              无构建 SPA（设计器 / 待办 / 实例 / 运维）
   tests/               pytest（引擎 + API）
   scripts/demo.py      端到端验收脚本
+web/                   React 18 + Vite + shadcn/ui（独立构建的前端）
+  src/pages/           流程定义 / 设计器 / 表单 / 待办 / 实例 / 发起 / 运维
+  src/components/ui/   shadcn/ui 组件（Radix UI + Tailwind CSS）
+  src/lib/             API 客户端、鉴权、类型
+  src/test/            vitest 页面渲染冒烟
 docs/tech-design.md    技术方案
 index.html             PRD v1.1
 ```
