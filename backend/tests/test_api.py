@@ -25,6 +25,13 @@ def test_requires_auth(client):
     assert client.get("/api/v1/definitions", headers=h("bad-token")).status_code == 401
 
 
+def test_two_auth_headers(client):
+    """Web 用 X-PipeWise-Token（Basic Auth 占着 Authorization）；SDK 仍用 Bearer。"""
+    assert client.get("/api/v1/me", headers={"X-PipeWise-Token": "tok_zhangsan"}).status_code == 200
+    assert client.get("/api/v1/me", headers=h("tok_zhangsan")).status_code == 200
+    assert client.get("/api/v1/me", headers={"X-PipeWise-Token": "bad"}).status_code == 401
+
+
 def test_me_and_users(client):
     me = client.get("/api/v1/me", headers=h("tok_zhangsan")).json()
     assert me["id"] == "u_zhangsan" and me["roles"] == ["user"]

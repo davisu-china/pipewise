@@ -52,6 +52,9 @@ sudo ./deploy/deploy.sh          # 需要 root：要写 nginx 配置与 systemd 
 | 网关 | 主站 443 server 块里插 `location ^~ /pipewise/`（Basic Auth + 反代）；插入点按括号深度算，先备份、`nginx -t` 失败自动回滚 |
 | 验收 | 带凭据取首页与 `/api/v1/health`，再确认不带凭据是 401 |
 
+> 注意：整站套了 nginx Basic Auth，`Authorization` 头被 Basic 占用。所以 Web 前端用的是
+> 专用头 `X-PipeWise-Token`；SDK/脚本仍可用 `Authorization: Bearer`（两种都认）。
+
 首次部署会生成一个 Basic Auth 账号（默认用户名 `pipewise`），**密码打印一次**并写入
 `/opt/pipewise/access.txt`（root 600）。改密码：删掉
 `/opt/jianjian/deploy/nginx/ssl/pipewise.htpasswd` 后重跑脚本，或 `BASIC_PASS=新密码 sudo ./deploy/deploy.sh`。

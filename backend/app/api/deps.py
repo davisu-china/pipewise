@@ -18,11 +18,21 @@ from ..models import IdempotencyKey, User
 
 def current_user(
     authorization: str | None = Header(default=None),
+    x_pipewise_token: str | None = Header(default=None, alias="X-PipeWise-Token"),
     session: Session = Depends(get_session),
 ) -> User:
-    if not authorization or not authorization.lower().startswith("bearer "):
-        raise ApiError(401, "UNAUTHORIZED", "请先登录（缺少 Bearer token）")
-    token = authorization.split(" ", 1)[1].strip()
+    """两种凭证二选一：
+
+    - `X-PipeWise-Token: <token>`：**Web 前端用这个**。整站挂在 nginx Basic Auth 后面时，
+      `Authorization` 头被 Basic 占用，SPA 再往同一个头上写 Bearer 会把 Basic 冲掉，
+      nginx 直接 401（线上踩过：能过 Basic 登录，但页面里每个接口都 401）。
+    - `Authorization: Bearer <token>`：SDK / 脚本 / 直连 API 用，保持兼容。
+    """
+    token = (x_pipewise_token or "").strip()
+    if not token:
+        if not authorization or not authorization.lower().startswith("bearer "):
+            raise ApiError(401, "UNAUTHORIZED", "请先登录（缺少访问令牌）")
+        token = authorization.split(" ", 1)[1].strip()
     user = session.execute(select(User).where(User.token == token, User.active.is_(True))).scalar_one_or_none()
     if user is None:
         raise ApiError(401, "UNAUTHORIZED", "token 无效")

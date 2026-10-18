@@ -48,7 +48,9 @@ async function api(path, { method = "GET", body, headers = {} } = {}) {
     method,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      Authorization: "Bearer " + state.token,
+      // 不能用 Authorization：整站挂在 nginx Basic Auth 后面时那个头归 Basic，
+      // 往同一个头写 Bearer 会把 Basic 冲掉，nginx 直接 401。
+      "X-PipeWise-Token": state.token,
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

@@ -373,7 +373,11 @@ MVP 不实现；快照里可写 `resubmitMode: "restart"`，校验器只接受 `
 
 ## 5. 开放 API
 
-统一前缀 `/api/v1`；`Authorization: Bearer <token>`；写接口支持 `Idempotency-Key`。
+统一前缀 `/api/v1`；写接口支持 `Idempotency-Key`。**两种凭证二选一**：
+
+- `X-PipeWise-Token: <token>` —— Web 前端用。整站挂在 nginx Basic Auth 后面时 `Authorization`
+  归 Basic 所有，SPA 若往同一个头写 Bearer 会把它冲掉（线上表现为「能过 Basic 登录，页面里每个接口都 401」）。
+- `Authorization: Bearer <token>` —— SDK / 脚本 / 直连 API 用，保持兼容。
 错误体：`{"error": {"code": "...", "message": "...", "details": {...}}}`。
 
 | 方法 | 路径 | 说明 | 权限 |
