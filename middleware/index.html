@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PipeWise 中间件部署与调用手册（单机版 · 公开版）</title>
+<title>PipeWise 中间件部署与调用手册（单机版 · 含凭据）</title>
 <style>
   :root{--paper:#F5F6F3;--surface:#fff;--ink:#141A19;--ink2:#34403D;--muted:#5F6B68;--line:#D9DDD6;--line2:#E7EAE4;--accent:#1A6357;--accent2:#12544A;--accent-soft:#E1EDE8;--amber:#8A6412;--amber-soft:#FCF8EF;--red:#9C3A28;--red-soft:#FCF3F0;--blue:#28527A;--blue-soft:#F4F7FA;--mono:"JetBrains Mono",Consolas,"Liberation Mono",monospace;--sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;--serif:"Songti SC","Noto Serif SC",Georgia,serif}
   *{box-sizing:border-box}
@@ -53,7 +53,7 @@
 <header class="masthead">
   <p class="eyebrow">PipeWise Infrastructure · Single-node Deployment</p>
   <h1>中间件部署与调用手册</h1>
-  <p class="subtitle">PostgreSQL 16 / Redis 7 / MinIO / RocketMQ 5.3.1 单机部署，Docker Compose 管理。本文档为公开脱敏版，不含密码；连接参数、代码示例与运维方式完整保留。</p>
+  <p class="subtitle">PostgreSQL 16 / Redis 7 / MinIO / RocketMQ 5.3.1 单机部署，Docker Compose 管理。本文档包含真实账号密码，已按项目负责人要求公开发布；请仅在课程范围内使用，课程结束后及时轮换密码。</p>
   <div class="metagrid">
     <div><span class="k">主机</span><span class="v">111.228.14.136</span></div>
     <div><span class="k">部署日期</span><span class="v">2026-10-18</span></div>
@@ -123,37 +123,58 @@ nc -vz 111.228.14.136 10911</code></pre>
   &lt;用户名&gt;@111.228.14.136</code></pre>
 <p>然后在本地把下面所有地址中的 <code>111.228.14.136</code> 换成 <code>127.0.0.1</code> 即可。</p>
 
-<h2><span class="num">03</span>凭据获取</h2>
-<div class="callout danger">
-  <span class="t">本公开版不含任何密码</span>
-  完整凭据请向项目负责人获取，或在部署机执行
-  <code>sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh show</code> 查看
-  （<code>/opt/pipewise-infra/credentials.txt</code>，root 600）。
-  请勿把含密码的版本提交到公开仓库或公开网页。
+<h2><span class="num">03</span>账号密码速查</h2>
+<div class="cred">
+<b>PostgreSQL</b>
+  host      111.228.14.136
+  port      5434
+  database  pipewise
+  user      pipewise
+  password  283b0eb9c25c77783b90a2ca
+
+<b>Redis</b>
+  host      111.228.14.136
+  port      6380
+  password  9a99e01f60478c408c2cf058
+
+<b>MinIO</b>
+  API       http://111.228.14.136:9010
+  Console   http://111.228.14.136:9011
+  access    pipewise
+  secret    23cc3c5cdaceb3cf3ea1c26f
+  buckets   pipewise, student
+
+<b>RocketMQ</b>
+  namesrv   111.228.14.136:9876
+  broker    111.228.14.136:10911
+  access    pipewise
+  secret    7fb103fc8347063b6250f335
 </div>
 <div class="callout danger">
-  <span class="t">不要把本文档提交到公开仓库</span>
-  仓库 <code>davisu-china/pipewise</code> 是公开的，且开启了 GitHub Pages。本文档仅私发；部署机上完整凭据在 <code>/opt/pipewise-infra/credentials.txt</code>（root 600）。
+  <span class="t">本页含真实凭据，任何人可访问</span>
+  本页已按项目负责人要求公开发布在 GitHub Pages。密码已进入 git 历史，删除页面也无法完全撤回；课程结束后请立即修改
+  <code>/opt/pipewise-infra/.env</code> 中的四个密码并重跑部署脚本轮换。
+  部署机上的同一份凭据在 <code>/opt/pipewise-infra/credentials.txt</code>（root 600）。
 </div>
 
 <h2><span class="num">04</span>PostgreSQL 调用方式</h2>
 <h3>连接串</h3>
 <pre><code>jdbc:postgresql://111.228.14.136:5434/pipewise
-postgresql://pipewise:{{PG_PASSWORD}}@111.228.14.136:5434/pipewise</code></pre>
+postgresql://pipewise:283b0eb9c25c77783b90a2ca@111.228.14.136:5434/pipewise</code></pre>
 <h3>命令行</h3>
 <pre><code>psql -h 111.228.14.136 -p 5434 -U pipewise -d pipewise
-# 密码：{{PG_PASSWORD}}</code></pre>
+# 密码：283b0eb9c25c77783b90a2ca</code></pre>
 <h3>Python（SQLAlchemy / psycopg）</h3>
 <pre><code>from sqlalchemy import create_engine, text
 engine = create_engine(
-    "postgresql+psycopg://pipewise:{{PG_PASSWORD}}@111.228.14.136:5434/pipewise")
+    "postgresql+psycopg://pipewise:283b0eb9c25c77783b90a2ca@111.228.14.136:5434/pipewise")
 with engine.connect() as conn:
     print(conn.execute(text("select version()")).scalar())</code></pre>
 <h3>Node.js（pg）</h3>
 <pre><code>import pg from "pg";
 const pool = new pg.Pool({
   host: "111.228.14.136", port: 5434,
-  user: "pipewise", password: "{{PG_PASSWORD}}",
+  user: "pipewise", password: "283b0eb9c25c77783b90a2ca",
   database: "pipewise"
 });
 console.log((await pool.query("select now()")).rows[0]);</code></pre>
@@ -165,19 +186,19 @@ console.log((await pool.query("select now()")).rows[0]);</code></pre>
 
 <h2><span class="num">05</span>Redis 调用方式</h2>
 <h3>连接串</h3>
-<pre><code>redis://:{{REDIS_PASSWORD}}@111.228.14.136:6380/0</code></pre>
+<pre><code>redis://:9a99e01f60478c408c2cf058@111.228.14.136:6380/0</code></pre>
 <h3>命令行</h3>
-<pre><code>redis-cli -h 111.228.14.136 -p 6380 -a {{REDIS_PASSWORD}} ping
+<pre><code>redis-cli -h 111.228.14.136 -p 6380 -a 9a99e01f60478c408c2cf058 ping
 # PONG</code></pre>
 <h3>Python</h3>
 <pre><code>import redis
 r = redis.Redis(host="111.228.14.136", port=6380,
-                password="{{REDIS_PASSWORD}}", decode_responses=True)
+                password="9a99e01f60478c408c2cf058", decode_responses=True)
 r.set("demo:key", "hello")
 print(r.get("demo:key"))</code></pre>
 <h3>Node.js</h3>
 <pre><code>import Redis from "ioredis";
-const r = new Redis("redis://:{{REDIS_PASSWORD}}@111.228.14.136:6380/0");
+const r = new Redis("redis://:9a99e01f60478c408c2cf058@111.228.14.136:6380/0");
 await r.set("demo:key", "hello");</code></pre>
 <ul>
   <li>已开启 AOF（<code>appendonly yes</code>），容器重启数据保留。</li>
@@ -192,11 +213,11 @@ await r.set("demo:key", "hello");</code></pre>
   <tr><td>S3 Endpoint</td><td><code>http://111.228.14.136:9010</code></td></tr>
   <tr><td>Console</td><td><code>http://111.228.14.136:9011</code></td></tr>
   <tr><td>Access Key</td><td><code>pipewise</code></td></tr>
-  <tr><td>Secret Key</td><td><code>{{MINIO_SECRET_KEY}}</code></td></tr>
+  <tr><td>Secret Key</td><td><code>23cc3c5cdaceb3cf3ea1c26f</code></td></tr>
   <tr><td>已建 Bucket</td><td><code>pipewise</code>（应用）、<code>student</code>（学员练习）</td></tr>
 </table>
 <h3>mc 客户端</h3>
-<pre><code>mc alias set pipewise http://111.228.14.136:9010 pipewise {{MINIO_SECRET_KEY}}
+<pre><code>mc alias set pipewise http://111.228.14.136:9010 pipewise 23cc3c5cdaceb3cf3ea1c26f
 mc ls pipewise
 mc cp ./demo.txt pipewise/student/demo.txt</code></pre>
 <h3>Python（boto3）</h3>
@@ -205,7 +226,7 @@ s3 = boto3.client(
     "s3",
     endpoint_url="http://111.228.14.136:9010",
     aws_access_key_id="pipewise",
-    aws_secret_access_key="{{MINIO_SECRET_KEY}}",
+    aws_secret_access_key="23cc3c5cdaceb3cf3ea1c26f",
     region_name="us-east-1",
     config=boto3.session.Config(signature_version="s3v4"),
 )
@@ -214,7 +235,7 @@ print(s3.list_buckets()["Buckets"])</code></pre>
 <h3>Java（MinIO SDK）</h3>
 <pre><code>MinioClient client = MinioClient.builder()
     .endpoint("http://111.228.14.136:9010")
-    .credentials("pipewise", "{{MINIO_SECRET_KEY}}")
+    .credentials("pipewise", "23cc3c5cdaceb3cf3ea1c26f")
     .build();
 client.putObject(PutObjectArgs.builder()
     .bucket("student").object("demo.txt")
@@ -232,7 +253,7 @@ client.putObject(PutObjectArgs.builder()
   <tr><td>Nameserver</td><td><code>111.228.14.136:9876</code></td></tr>
   <tr><td>Broker</td><td><code>111.228.14.136:10911</code>（客户端由 nameserver 自动发现）</td></tr>
   <tr><td>ACL Access Key</td><td><code>pipewise</code></td></tr>
-  <tr><td>ACL Secret Key</td><td><code>{{ROCKETMQ_SECRET_KEY}}</code></td></tr>
+  <tr><td>ACL Secret Key</td><td><code>7fb103fc8347063b6250f335</code></td></tr>
   <tr><td>Topic / Group</td><td>自动创建；建议 <code>student_&lt;name&gt;_topic</code>、<code>student_&lt;name&gt;_group</code></td></tr>
 </table>
 <div class="callout blue">
@@ -243,7 +264,7 @@ client.putObject(PutObjectArgs.builder()
 <pre><code>DefaultMQProducer producer = new DefaultMQProducer(
     "student_demo_producer",
     new AclClientRPCHook(new SessionCredentials(
-        "pipewise", "{{ROCKETMQ_SECRET_KEY}}")));
+        "pipewise", "7fb103fc8347063b6250f335")));
 producer.setNamesrvAddr("111.228.14.136:9876");
 producer.start();
 SendResult r = producer.send(new Message(
@@ -255,7 +276,7 @@ producer.shutdown();</code></pre>
 <pre><code>DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(
     "student_demo_consumer",
     new AclClientRPCHook(new SessionCredentials(
-        "pipewise", "{{ROCKETMQ_SECRET_KEY}}")));
+        "pipewise", "7fb103fc8347063b6250f335")));
 consumer.setNamesrvAddr("111.228.14.136:9876");
 consumer.subscribe("student_demo_topic", "*");
 consumer.registerMessageListener((MessageListenerConcurrently) (msgs, ctx) -&gt; {
@@ -270,7 +291,7 @@ consumer.start();</code></pre>
 
 p = Producer("student_demo_producer")
 p.set_name_server_address("111.228.14.136:9876")
-p.set_session_credentials("pipewise", "{{ROCKETMQ_SECRET_KEY}}", "LOCAL")
+p.set_session_credentials("pipewise", "7fb103fc8347063b6250f335", "LOCAL")
 p.start()
 
 msg = Message("student_demo_topic")
@@ -288,7 +309,7 @@ def callback(msg):
 
 c = PushConsumer("student_demo_consumer")
 c.set_name_server_address("111.228.14.136:9876")
-c.set_session_credentials("pipewise", "{{ROCKETMQ_SECRET_KEY}}", "LOCAL")
+c.set_session_credentials("pipewise", "7fb103fc8347063b6250f335", "LOCAL")
 c.subscribe("student_demo_topic", "*")
 c.register_message_callback(callback)
 c.start()
@@ -301,14 +322,14 @@ c.start()
 
 <h2><span class="num">08</span>连通性自检</h2>
 <pre><code># PostgreSQL
-PGPASSWORD={{PG_PASSWORD}} psql -h 111.228.14.136 -p 5434 -U pipewise -d pipewise -c 'select 1'
+PGPASSWORD=283b0eb9c25c77783b90a2ca psql -h 111.228.14.136 -p 5434 -U pipewise -d pipewise -c 'select 1'
 
 # Redis
-redis-cli -h 111.228.14.136 -p 6380 -a {{REDIS_PASSWORD}} ping
+redis-cli -h 111.228.14.136 -p 6380 -a 9a99e01f60478c408c2cf058 ping
 
 # MinIO
 curl http://111.228.14.136:9010/minio/health/live
-mc alias set pipewise http://111.228.14.136:9010 pipewise {{MINIO_SECRET_KEY}}
+mc alias set pipewise http://111.228.14.136:9010 pipewise 23cc3c5cdaceb3cf3ea1c26f
 mc ls pipewise
 
 # RocketMQ（Java 示例发送成功后应返回 SEND_OK）</code></pre>
@@ -331,7 +352,7 @@ docker exec pipewise-postgres pg_dump -U pipewise -d pipewise &gt; /opt/pipewise
 cat backup.sql | docker exec -i pipewise-postgres psql -U pipewise -d pipewise
 
 # Redis：触发 RDB 快照（AOF 已在写）
-docker exec pipewise-redis redis-cli -a {{REDIS_PASSWORD}} BGSAVE
+docker exec pipewise-redis redis-cli -a 9a99e01f60478c408c2cf058 BGSAVE
 
 # MinIO：镜像到本地目录
 mc mirror pipewise/student /opt/pipewise-infra/backup-minio/student
@@ -392,7 +413,7 @@ sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh net      # 查看
   <li>外部端口：22/80/443 可达；业务端口待安全组放行（见第 02 节）。</li>
 </ul>
 
-<p class="small" style="text-align:center;margin-top:36px">PipeWise 中间件部署手册 · 2026-10-18 · 公开脱敏版 · 不含密码</p>
+<p class="small" style="text-align:center;margin-top:36px">PipeWise 中间件部署手册 · 2026-10-18 · 含真实凭据 · 公开发布</p>
 </div>
 </body>
 </html>
