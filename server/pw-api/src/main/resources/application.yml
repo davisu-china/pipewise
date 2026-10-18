@@ -1,5 +1,6 @@
 server:
   port: ${PW_API_PORT:18081}
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -36,6 +37,10 @@ logging:
     console: "%d{HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
 
 pw:
+  auth:
+    username: ${PW_AUTH_USER:pipewise}
+    password: ${PW_AUTH_PASSWORD:pipewise}
+    session-ttl-days: ${PW_AUTH_SESSION_DAYS:7}
   minio:
     endpoint: ${PW_MINIO_ENDPOINT:http://111.228.14.136:9010}
     access-key: ${PW_MINIO_ACCESS_KEY:}

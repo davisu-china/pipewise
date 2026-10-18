@@ -10,6 +10,7 @@ public class PipeWiseProperties {
 
     private final Minio minio = new Minio();
     private final Rocketmq rocketmq = new Rocketmq();
+    private final Auth auth = new Auth();
 
     public Minio getMinio() {
         return minio;
@@ -17,6 +18,40 @@ public class PipeWiseProperties {
 
     public Rocketmq getRocketmq() {
         return rocketmq;
+    }
+
+    public Auth getAuth() {
+        return auth;
+    }
+
+    public static class Auth {
+        private String username = "pipewise";
+        private String password = "pipewise";
+        private int sessionTtlDays = 7;
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public int getSessionTtlDays() {
+            return sessionTtlDays;
+        }
+
+        public void setSessionTtlDays(int sessionTtlDays) {
+            this.sessionTtlDays = sessionTtlDays;
+        }
     }
 
     public static class Minio {

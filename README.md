@@ -24,7 +24,8 @@ Docker Compose 管理，端口分别为 `5434 / 6380 / 9010·9011 / 9876·10911�
 ## 线上演示
 
 - 地址：https://jianjiange.site/pipewise/
-- 访问方式：nginx Basic Auth（账号 `pipewise`，密码见部署机 `/opt/pipewise/access.txt`）
+- 访问方式：应用内登录（账号 `pipewise`，密码见部署机 `/opt/pipewise/access.txt`）；
+  登录后写 HttpOnly Cookie（Redis 会话，7 天），nginx 不再弹 Basic Auth
 - 部署命令：`sudo deploy/deploy.sh app`（安装 systemd API/Worker、发布前端、切换 nginx 反代）
 
 ## 本地开发（P0 骨架）

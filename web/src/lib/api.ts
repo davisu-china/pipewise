@@ -161,8 +161,15 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
   if (init?.body) {
     headers["Content-Type"] = "application/json";
   }
-  const response = await fetch(withBase(path), { ...init, headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) } });
+  const response = await fetch(withBase(path), {
+    ...init,
+    credentials: "same-origin",
+    headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) }
+  });
   const body = (await response.json()) as ApiResponse<T>;
+  if (response.status === 401 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("pw-unauthorized"));
+  }
   if (!response.ok && body.error) {
     return body;
   }
@@ -177,6 +184,17 @@ export async function getJson<T>(path: string): Promise<ApiResponse<T>> {
 }
 
 export const api = {
+  login: (username: string, password: string) =>
+    requestJson<{ username: string }>("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    }),
+  me: () => requestJson<{ username: string }>("/api/v1/auth/me"),
+  logout: () =>
+    requestJson<{ status: string }>("/api/v1/auth/logout", {
+      method: "POST"
+    }),
+
   listDefinitions: (keyword = "") =>
     requestJson<DefinitionSummary[]>(
       `/api/v1/definitions${keyword ? `?keyword=${encodeURIComponent(keyword)}` : ""}`

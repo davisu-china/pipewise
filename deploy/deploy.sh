@@ -121,8 +121,17 @@ if [ "${1:-}" = "app" ]; then
   [ -f "$DIST/index.html" ] || { echo "missing $DIST/index.html"; exit 1; }
 
   mkdir -p "$APP_DIR"
+  AUTH_USER=pipewise
+  AUTH_PASS=change-me
+  if [ -f "$APP_DIR/access.txt" ]; then
+    AUTH_USER=$(awk -F'：' '/用户名/{print $2}' "$APP_DIR/access.txt" | tr -d ' ')
+    AUTH_PASS=$(awk -F'：' '/密码/{print $2}' "$APP_DIR/access.txt" | tr -d ' ')
+  fi
   cat > "$APP_DIR/api.env" <<EOF
 PW_API_PORT=18081
+PW_AUTH_USER=$AUTH_USER
+PW_AUTH_PASSWORD=$AUTH_PASS
+PW_AUTH_SESSION_DAYS=7
 PW_PG_URL=jdbc:postgresql://111.228.14.136:5434/pipewise
 PW_PG_USER=pipewise
 PW_PG_PASSWORD=$PG_PASSWORD
@@ -200,6 +209,18 @@ if old in text:
     text = text.replace(old, new)
 elif new not in text:
     raise SystemExit('pipewise proxy_pass not found')
+marker = '# ===== PipeWise ====='
+start = text.find(marker)
+if start >= 0:
+    end = text.find('# =====', start + len(marker))
+    if end < 0:
+        end = len(text)
+    block = '\n'.join(
+        line for line in text[start:end].splitlines()
+        if 'auth_basic' not in line
+    )
+    text = text[:start] + block + '\n' + text[end:]
+    print('pipewise basic auth removed')
 open(path, 'w', encoding='utf-8').write(text)
 print('nginx config updated')
 PY
@@ -216,7 +237,7 @@ PY
   systemctl --no-pager --lines=0 status pipewise-api pipewise-worker 2>&1 | grep -E 'pipewise|Active' | head -10
   echo "=== local API ==="
   curl -s -o /dev/null -w 'ping=%{http_code}\n' --max-time 5 http://127.0.0.1:18081/api/v1/ping || true
-  echo "=== basic auth ==="
+  echo "=== app login ==="
   cat "$APP_DIR/access.txt" 2>/dev/null || true
   echo "=== url ==="
   echo "https://jianjiange.site/pipewise/"
