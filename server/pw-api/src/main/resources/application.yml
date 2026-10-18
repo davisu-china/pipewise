@@ -1,0 +1,48 @@
+server:
+  port: ${PW_API_PORT:18081}
+
+spring:
+  application:
+    name: pipewise-api
+  datasource:
+    url: ${PW_PG_URL:jdbc:postgresql://111.228.14.136:5434/pipewise}
+    username: ${PW_PG_USER:pipewise}
+    password: ${PW_PG_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${PW_REDIS_HOST:111.228.14.136}
+      port: ${PW_REDIS_PORT:6380}
+      password: ${PW_REDIS_PASSWORD:}
+      timeout: 3s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+
+pw:
+  minio:
+    endpoint: ${PW_MINIO_ENDPOINT:http://111.228.14.136:9010}
+    access-key: ${PW_MINIO_ACCESS_KEY:}
+    secret-key: ${PW_MINIO_SECRET_KEY:}
+    bucket: ${PW_MINIO_BUCKET:pipewise}
+  rocketmq:
+    namesrv: ${PW_ROCKETMQ_NAMESRV:111.228.14.136:9876}
+    access-key: ${PW_ROCKETMQ_ACCESS_KEY:}
+    secret-key: ${PW_ROCKETMQ_SECRET_KEY:}
+    topic: ${PW_ROCKETMQ_TOPIC:pipewise_health_check}

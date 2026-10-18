@@ -3,6 +3,11 @@ deploy/env.local
 deploy/*.local.html
 deploy/*.local.md
 
+# 本地环境变量（含数据库/中间件密码）
+.env
+server/.env
+web/.env
+
 # Java / Maven
 target/
 *.class

@@ -21,6 +21,32 @@ Docker Compose 管理，端口分别为 `5434 / 6380 / 9010·9011 / 9876·10911�
 密码不在仓库内：部署机 `/opt/pipewise-infra/credentials.txt`（root 600），或执行
 `sudo deploy/deploy.sh show` 查看；含密码的完整版部署手册由项目负责人私发。
 
+## 本地开发（P0 骨架）
+
+前置：Java 21、Maven 3.9+、Node 22+。
+
+```bash
+# 1) 准备环境变量（不要提交 server/.env）
+cp server/.env.example server/.env
+# 编辑 server/.env 填入中间件密码，然后：
+set -a; source server/.env; set +a
+
+# 2) 构建并启动后端
+cd server
+mvn -DskipTests package
+java -jar pw-api/target/pw-api-0.1.0-SNAPSHOT.jar      # API :18081
+java -jar pw-worker/target/pw-worker-0.1.0-SNAPSHOT.jar # Worker 心跳
+
+# 3) 启动前端（另开终端）
+cd web
+NODE_ENV=development npm install
+NODE_ENV=development npm run dev
+```
+
+打开 <http://127.0.0.1:5173/> 查看环境自检，API 默认 `18081`。
+本机如果 `tsc`/`vite` 找不到，通常是全局 `NODE_ENV=production` 导致 npm 跳过 devDependencies，
+安装时显式带上 `NODE_ENV=development`。
+
 ## 目标架构
 
 - **后端**：Java 21 + Spring Boot 3.5，模块化单体，拆 `api` / `engine` 两种运行形态
@@ -39,4 +65,4 @@ deploy/            # 部署脚本与配置
 docs/              # PRD 与技术方案
 ```
 
-当前状态：重新开发准备中。
+当前状态：P0 骨架已落地（`server/` 多模块 + `web/` 环境自检 + GitHub Actions CI）。

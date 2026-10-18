@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: pipewise-worker
+  main:
+    web-application-type: none
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
