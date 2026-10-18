@@ -1,0 +1,31 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: pipewise-flowable-mvp
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5433/flowable_mvp}
+    username: ${DB_USER:mutual}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+  jackson:
+    default-property-inclusion: non_null
+
+flowable:
+  # 骨架/开发环境自动建表；生产请改成 false，并用官方 SQL 脚本 + Flyway 管理
+  database-schema-update: true
+  # 骨架不开启异步作业执行器（没有定时器/异步服务任务）
+  async-executor-activate: false
+  # full 才能在看板里查到已结束实例的变量；生产按需降为 audit
+  history-level: full
+  process:
+    definition-location-prefix: classpath*:/processes/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

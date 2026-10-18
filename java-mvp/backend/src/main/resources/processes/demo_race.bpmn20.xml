@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://pipewise.example/flowable">
+
+    <!--
+      竞签：第一个完成的裁决即最终结论，其余任务被取消。
+      完成条件：只要完成一个就结束。
+    -->
+    <process id="demo_race" name="竞签演示" isExecutable="true">
+        <startEvent id="start"/>
+        <sequenceFlow id="f1" sourceRef="start" targetRef="sign"/>
+
+        <userTask id="sign" name="竞签审批" flowable:assignee="${assignee}">
+            <extensionElements>
+                <flowable:taskListener event="complete" delegateExpression="${verdictListener}"/>
+            </extensionElements>
+            <multiInstanceLoopCharacteristics isSequential="false"
+                                              flowable:collection="${assignees}"
+                                              flowable:elementVariable="assignee">
+                <completionCondition><![CDATA[${nrOfCompletedInstances >= 1}]]></completionCondition>
+            </multiInstanceLoopCharacteristics>
+        </userTask>
+
+        <exclusiveGateway id="gw" default="toRejected"/>
+        <sequenceFlow id="f2" sourceRef="sign" targetRef="gw"/>
+        <sequenceFlow id="toApproved" sourceRef="gw" targetRef="approvedEnd">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${lastVerdict == 'approve'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="toRejected" sourceRef="gw" targetRef="rejectedEnd"/>
+
+        <endEvent id="approvedEnd"/>
+        <endEvent id="rejectedEnd"/>
+    </process>
+</definitions>

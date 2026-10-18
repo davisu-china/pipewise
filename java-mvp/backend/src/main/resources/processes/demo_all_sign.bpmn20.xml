@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://pipewise.example/flowable">
+
+    <!--
+      并签（会签）：默认所有人都要同意；任意一个否决即一票否决。
+      完成条件：rejectCount > 0 || 所有人都已完成
+    -->
+    <process id="demo_all_sign" name="并签演示" isExecutable="true">
+        <startEvent id="start"/>
+        <sequenceFlow id="f1" sourceRef="start" targetRef="sign"/>
+
+        <userTask id="sign" name="并签审批" flowable:assignee="${assignee}">
+            <extensionElements>
+                <flowable:taskListener event="complete" delegateExpression="${verdictListener}"/>
+            </extensionElements>
+            <multiInstanceLoopCharacteristics isSequential="false"
+                                              flowable:collection="${assignees}"
+                                              flowable:elementVariable="assignee">
+                <completionCondition><![CDATA[${rejectCount > 0 || nrOfCompletedInstances == nrOfInstances}]]></completionCondition>
+            </multiInstanceLoopCharacteristics>
+        </userTask>
+
+        <exclusiveGateway id="gw" default="toApproved"/>
+        <sequenceFlow id="f2" sourceRef="sign" targetRef="gw"/>
+        <sequenceFlow id="toRejected" sourceRef="gw" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${rejectCount > 0}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="toApproved" sourceRef="gw" targetRef="approvedEnd"/>
+
+        <endEvent id="approvedEnd"/>
+        <endEvent id="rejectedEnd"/>
+    </process>
+</definitions>

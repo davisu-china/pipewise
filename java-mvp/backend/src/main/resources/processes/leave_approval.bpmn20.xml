@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://pipewise.example/flowable">
+
+    <!--
+      S1 请假审批：
+      start -> 主管审批 -> (否决? 结束)
+                        -> (请假 > 2 天? 并行 fork: HR + 总监 -> join -> 计算补贴)
+                        -> (否则直接计算补贴) -> 结束
+    -->
+    <process id="leave_approval" name="请假审批（S1）" isExecutable="true">
+
+        <startEvent id="start"/>
+
+        <sequenceFlow id="f1" sourceRef="start" targetRef="mgr"/>
+
+        <userTask id="mgr" name="直属主管审批" flowable:assignee="${manager}">
+            <extensionElements>
+                <flowable:taskListener event="complete" delegateExpression="${verdictListener}"/>
+            </extensionElements>
+        </userTask>
+
+        <exclusiveGateway id="gwReject" default="fNotRejected"/>
+        <sequenceFlow id="f2" sourceRef="mgr" targetRef="gwReject"/>
+        <sequenceFlow id="fRejected" sourceRef="gwReject" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${lastVerdict == 'reject'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="fNotRejected" sourceRef="gwReject" targetRef="gwDays"/>
+
+        <exclusiveGateway id="gwDays" default="fShort"/>
+        <sequenceFlow id="fLong" sourceRef="gwDays" targetRef="fork">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${leave_days > 2}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="fShort" sourceRef="gwDays" targetRef="calc"/>
+
+        <parallelGateway id="fork"/>
+        <sequenceFlow id="f3" sourceRef="fork" targetRef="hr"/>
+        <sequenceFlow id="f4" sourceRef="fork" targetRef="vp"/>
+
+        <userTask id="hr" name="HR 备案" flowable:assignee="${hr}">
+            <extensionElements>
+                <flowable:taskListener event="complete" delegateExpression="${verdictListener}"/>
+            </extensionElements>
+        </userTask>
+        <userTask id="vp" name="部门负责人审批" flowable:assignee="${vp}">
+            <extensionElements>
+                <flowable:taskListener event="complete" delegateExpression="${verdictListener}"/>
+            </extensionElements>
+        </userTask>
+
+        <parallelGateway id="join"/>
+        <sequenceFlow id="f5" sourceRef="hr" targetRef="join"/>
+        <sequenceFlow id="f6" sourceRef="vp" targetRef="join"/>
+        <sequenceFlow id="f7" sourceRef="join" targetRef="gwResult"/>
+
+        <exclusiveGateway id="gwResult" default="fApprovedPath"/>
+        <sequenceFlow id="fRejected2" sourceRef="gwResult" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${rejectCount > 0}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="fApprovedPath" sourceRef="gwResult" targetRef="calc"/>
+
+        <serviceTask id="calc" name="计算补贴与年假" flowable:delegateExpression="${allowanceDelegate}"/>
+        <sequenceFlow id="f8" sourceRef="calc" targetRef="approvedEnd"/>
+
+        <endEvent id="approvedEnd"/>
+        <endEvent id="rejectedEnd"/>
+    </process>
+</definitions>
