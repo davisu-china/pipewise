@@ -86,6 +86,11 @@ class Executor(Protocol):
 生产：API 多副本（无状态） + 独立 worker 副本（跑 dispatcher，任一副本持有 advisory lock）
 ```
 
+**本机部署形态（`deploy/deploy.sh`）**：子路径 `https://jianjiange.site/pipewise/` →
+共享 nginx（容器 `jianjian-nginx`）Basic Auth → `172.17.0.1:8121` → systemd `pipewise-api`
+→ PG `pipewise_prod`（既有 5433 实例）。用子路径是因为独立域名的 DNS 还没配；
+切独立域名只需换成 domain 模式的 server 块。
+
 ---
 
 ## 2. 数据模型

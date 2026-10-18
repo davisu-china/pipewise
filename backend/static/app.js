@@ -7,7 +7,10 @@
 
 // ----------------------------------------------------------------- 基础工具
 
-const API = "/api/v1";
+// 允许把应用挂在子路径下（如 https://site/pipewise/）：从当前页面推导根路径。
+// 注意用 ".." 的相对解析对 hash 路由是安全的：pathname 不含 hash。
+const ROOT = new URL(".", location.href).pathname.replace(/\/$/, "");
+const API = ROOT + "/api/v1";
 const state = {
   token: localStorage.getItem("pw_token") || "tok_zhangsan",
   users: [],

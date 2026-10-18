@@ -6,7 +6,9 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..db import get_session
+from ..engine.errors import ApiError
 from ..models import DevSink, User
 from .deps import current_user
 from .serializers import user_dict
@@ -32,10 +34,12 @@ def users(session: Session = Depends(get_session), user: User = Depends(current_
 
 @router.get("/dev/demo-users")
 def demo_users(session: Session = Depends(get_session)):
-    """**仅用于演示**：把种子用户的 token 暴露给前端用户切换器。
+    """**仅演示模式开放**：把种子用户的 token 给前端用户切换器。
 
-    生产环境应该删掉这个接口（接 SSO/OIDC，见技术方案 §11）。
+    `PIPEWISE_DEMO=0`（默认）时返回 404——token 等同于账号，不能裸露在生产接口里。
     """
+    if not settings.DEMO:
+        raise ApiError(404, "NOT_FOUND", "演示模式未开启")
     rows = session.execute(select(User).where(User.active.is_(True)).order_by(User.id)).scalars()
     return {"items": [{"id": u.id, "name": u.name, "roles": u.roles, "token": u.token} for u in rows]}
 

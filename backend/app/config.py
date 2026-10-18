@@ -41,6 +41,10 @@ class Settings:
     # 事件投递重试间隔（秒）
     OUTBOX_BACKOFF_S: list[int] = [2, 8, 30, 120, 600]
 
+    # 演示模式：为 1 时开放 /dev/demo-users（把种子用户的 token 给演示前端切换用）。
+    # 生产环境必须关闭（接 SSO/OIDC 之前，用 nginx Basic Auth 做外层保护）。
+    DEMO: bool = False
+
     def __init__(self) -> None:
         # 允许测试里覆盖
         self.DATABASE_URL = os.getenv("DATABASE_URL", self.DATABASE_URL)
@@ -51,6 +55,7 @@ class Settings:
         self.SCRIPT_MEMORY_MB = _int("SCRIPT_MEMORY_MB", self.SCRIPT_MEMORY_MB)
         self.JOIN_STALL_MINUTES = _int("JOIN_STALL_MINUTES", self.JOIN_STALL_MINUTES)
         self.DISPATCH_INTERVAL_S = float(os.getenv("DISPATCH_INTERVAL_S", str(self.DISPATCH_INTERVAL_S)))
+        self.DEMO = os.getenv("PIPEWISE_DEMO", "0") == "1"
 
 
 settings = Settings()
