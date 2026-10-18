@@ -58,7 +58,7 @@
     <div><span class="k">主机</span><span class="v">111.228.14.136</span></div>
     <div><span class="k">部署日期</span><span class="v">2026-10-18</span></div>
     <div><span class="k">形态</span><span class="v">单机 · Docker Compose</span></div>
-    <div><span class="k">状态</span><span class="v">已部署，本地验证通过</span></div>
+    <div><span class="k">状态</span><span class="v">已部署，外部端口已连通</span></div>
   </div>
 </header>
 
@@ -85,11 +85,13 @@
 <p>部署脚本：<code>/home/metabot/metabot-workspace/pipewise/deploy/deploy.sh</code>，通过本机 sudoers 免密以 root 执行。</p>
 
 <h2><span class="num">02</span>网络与安全组（重要）</h2>
-<div class="callout warn">
-  <span class="t">当前外部访问状态：待放行</span>
-  本机防火墙已确认放行（iptables INPUT ACCEPT、firewalld 关闭、SELinux 关闭），服务已监听 <code>0.0.0.0</code>。但 2026-10-18 从外部节点实测，只有 <b>22 / 80 / 443</b> 可连通，<b>5434 / 6380 / 9010 / 9011 / 9876 / 10911 / 10909 全部超时</b>。这是京东云安全组只放行了这三个端口导致的，需要在云控制台添加入站规则后，学员才能从外部直连。
+<div class="callout blue">
+  <span class="t">当前外部访问状态：已放行</span>
+  本机防火墙已确认放行（iptables INPUT ACCEPT、firewalld 关闭、SELinux 关闭），服务监听 <code>0.0.0.0</code>。
+  2026-10-18 从多个外部节点复测：<b>5434 / 6380 / 9010 / 9011 / 9876 / 10911 / 10909 均可握手成功</b>
+  （9010/9011 各有一个探测节点无响应，属探测节点问题；其他节点成功）。学员可从外部直连。
 </div>
-<h3>需要放行的入站规则</h3>
+<h3>入站规则（已配置）</h3>
 <table>
   <tr><th>协议</th><th>端口</th><th>用途</th><th>建议来源</th></tr>
   <tr><td>TCP</td><td>5434</td><td>PostgreSQL</td><td>0.0.0.0/0 或学员出口 IP 段</td></tr>
@@ -102,7 +104,7 @@
 </table>
 <p class="small">控制台路径通常为：京东云控制台 → 云主机 → 安全组 → 入站规则 → 添加规则。若只允许学员访问，把来源改成学员的公网 CIDR 更安全。10912 是 HA 端口，单机主节点不需要放行。</p>
 
-<h3>放行后的验证</h3>
+<h3>外部连通性验证</h3>
 <pre><code># 在学员自己的电脑上执行（不是服务器上）
 nc -vz 111.228.14.136 5434
 nc -vz 111.228.14.136 6380
@@ -157,6 +159,20 @@ nc -vz 111.228.14.136 10911</code></pre>
   部署机上的同一份凭据在 <code>/opt/pipewise-infra/credentials.txt</code>（root 600）。
 </div>
 
+<h3>Java 依赖清单（Maven）</h3>
+<table>
+  <tr><th>用途</th><th>Maven 坐标</th><th>版本</th></tr>
+  <tr><td>PostgreSQL JDBC</td><td><code>org.postgresql:postgresql</code></td><td>42.7.4</td></tr>
+  <tr><td>HikariCP 连接池</td><td><code>com.zaxxer:HikariCP</code></td><td>5.1.0</td></tr>
+  <tr><td>Redis（Jedis）</td><td><code>redis.clients:jedis</code></td><td>5.1.3</td></tr>
+  <tr><td>Redis（Lettuce）</td><td><code>io.lettuce:lettuce-core</code></td><td>6.3.2.RELEASE</td></tr>
+  <tr><td>Spring Boot Redis</td><td><code>org.springframework.boot:spring-boot-starter-data-redis</code></td><td>跟随 Spring Boot</td></tr>
+  <tr><td>MinIO SDK</td><td><code>io.minio:minio</code></td><td>8.5.12</td></tr>
+  <tr><td>RocketMQ 客户端</td><td><code>org.apache.rocketmq:rocketmq-client</code></td><td>5.3.1</td></tr>
+  <tr><td>RocketMQ ACL</td><td><code>org.apache.rocketmq:rocketmq-acl</code></td><td>5.3.1</td></tr>
+</table>
+<p class="small">Java 8+ 均可；Spring Boot 3 需要 Java 17+。</p>
+
 <h2><span class="num">04</span>PostgreSQL 调用方式</h2>
 <h3>连接串</h3>
 <pre><code>jdbc:postgresql://111.228.14.136:5434/pipewise
@@ -178,6 +194,38 @@ const pool = new pg.Pool({
   database: "pipewise"
 });
 console.log((await pool.query("select now()")).rows[0]);</code></pre>
+<h3>Java（JDBC）</h3>
+<pre><code>String url = "jdbc:postgresql://111.228.14.136:5434/pipewise?sslmode=disable";
+try (Connection conn = DriverManager.getConnection(
+        url, "pipewise", "283b0eb9c25c77783b90a2ca");
+     PreparedStatement ps = conn.prepareStatement("select version()");
+     ResultSet rs = ps.executeQuery()) {
+    if (rs.next()) System.out.println(rs.getString(1));
+}</code></pre>
+<h3>Java（HikariCP 连接池）</h3>
+<pre><code>HikariConfig cfg = new HikariConfig();
+cfg.setJdbcUrl("jdbc:postgresql://111.228.14.136:5434/pipewise?sslmode=disable");
+cfg.setUsername("pipewise");
+cfg.setPassword("283b0eb9c25c77783b90a2ca");
+cfg.setMaximumPoolSize(10);
+cfg.setConnectionTimeout(3000);
+
+try (HikariDataSource ds = new HikariDataSource(cfg);
+     Connection conn = ds.getConnection();
+     PreparedStatement ps = conn.prepareStatement("select now()");
+     ResultSet rs = ps.executeQuery()) {
+    if (rs.next()) System.out.println(rs.getTimestamp(1));
+}</code></pre>
+<h3>Spring Boot 配置</h3>
+<pre><code>spring:
+  datasource:
+    url: jdbc:postgresql://111.228.14.136:5434/pipewise?sslmode=disable
+    username: pipewise
+    password: 283b0eb9c25c77783b90a2ca
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000</code></pre>
+<p class="small">Maven：<code>org.postgresql:postgresql:42.7.4</code>；连接池 <code>com.zaxxer:HikariCP:5.1.0</code>（Spring Boot 3 已自带 HikariCP）。</p>
 <ul>
   <li><code>pipewise</code> 是数据库 owner，可以在库里创建自己的 schema/table；建议每个学员用 <code>student_&lt;name&gt;</code> 前缀。</li>
   <li>最大连接数 200，<code>shared_buffers=256MB</code>；不要在客户端建大量短连接，建议连接池 ≤10。</li>
@@ -200,6 +248,31 @@ print(r.get("demo:key"))</code></pre>
 <pre><code>import Redis from "ioredis";
 const r = new Redis("redis://:9a99e01f60478c408c2cf058@111.228.14.136:6380/0");
 await r.set("demo:key", "hello");</code></pre>
+<h3>Java（Jedis）</h3>
+<pre><code>JedisPooled jedis = new JedisPooled(
+    URI.create("redis://:9a99e01f60478c408c2cf058@111.228.14.136:6380/0"));
+jedis.set("demo:key", "hello");
+System.out.println(jedis.get("demo:key"));
+jedis.close();</code></pre>
+<h3>Java（Lettuce）</h3>
+<pre><code>RedisClient client = RedisClient.create(
+    "redis://:9a99e01f60478c408c2cf058@111.228.14.136:6380/0");
+try (StatefulRedisConnection&lt;String, String&gt; conn = client.connect()) {
+    RedisCommands&lt;String, String&gt; cmd = conn.sync();
+    cmd.set("demo:key", "hello");
+    System.out.println(cmd.get("demo:key"));
+}
+client.shutdown();</code></pre>
+<h3>Spring Boot 配置</h3>
+<pre><code>spring:
+  data:
+    redis:
+      host: 111.228.14.136
+      port: 6380
+      password: 9a99e01f60478c408c2cf058
+      database: 0
+      timeout: 3s</code></pre>
+<p class="small">Maven：<code>redis.clients:jedis:5.1.3</code> 或 <code>io.lettuce:lettuce-core:6.3.2.RELEASE</code>；Spring Boot 使用 <code>spring-boot-starter-data-redis</code>。</p>
 <ul>
   <li>已开启 AOF（<code>appendonly yes</code>），容器重启数据保留。</li>
   <li><code>protected-mode no</code> + 密码认证；没有密码无法操作。</li>
@@ -237,10 +310,30 @@ print(s3.list_buckets()["Buckets"])</code></pre>
     .endpoint("http://111.228.14.136:9010")
     .credentials("pipewise", "23cc3c5cdaceb3cf3ea1c26f")
     .build();
+
+String bucket = "student";
+if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
+    client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+}
+
 client.putObject(PutObjectArgs.builder()
-    .bucket("student").object("demo.txt")
-    .stream(new ByteArrayInputStream("hello".getBytes()), 5, -1)
-    .build());</code></pre>
+    .bucket(bucket).object("demo/hello.txt")
+    .stream(new ByteArrayInputStream(
+        "hello minio".getBytes(StandardCharsets.UTF_8)),
+        -1, 10 * 1024 * 1024)
+    .contentType("text/plain")
+    .build());
+
+try (InputStream in = client.getObject(GetObjectArgs.builder()
+        .bucket(bucket).object("demo/hello.txt").build())) {
+    System.out.println(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+}
+
+String url = client.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+    .method(Method.GET).bucket(bucket).object("demo/hello.txt")
+    .expiry(7, TimeUnit.DAYS).build());
+System.out.println(url);</code></pre>
+<p class="small">Maven：<code>io.minio:minio:8.5.12</code>。预签名 URL 默认使用 endpoint 主机，外部可直接访问。</p>
 <ul>
   <li>当前是 HTTP，不是 HTTPS；预签名 URL 里的主机是公网地址，外部可直接使用（前提是 9010 已放行）。</li>
   <li>Root 账号权限较大，学员练习建议只用 <code>student</code> 桶；不要删除 <code>pipewise</code> 桶。</li>
@@ -286,6 +379,7 @@ consumer.registerMessageListener((MessageListenerConcurrently) (msgs, ctx) -&gt;
     return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
 });
 consumer.start();</code></pre>
+<p class="small">生产者/消费者都是线程安全的，建议应用内单例复用；若只放行了 10911 而 10909 未放行，可调用 <code>producer.setVipChannelEnabled(false)</code> / <code>consumer.setVipChannelEnabled(false)</code>。本环境 10909 已放行，无需关闭。</p>
 <h3>Python 生产者</h3>
 <pre><code>from rocketmq.client import Producer, Message
 

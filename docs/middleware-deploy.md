@@ -23,9 +23,10 @@
 ## 2. 网络与安全组（重要）
 
 本机防火墙已放行（iptables INPUT ACCEPT、firewalld 关闭、SELinux 关闭），服务监听 `0.0.0.0`。
-但云安全组目前只放行了 **22 / 80 / 443**，业务端口从外部实测全部超时。
+2026-10-18 从多个外部节点复测：**5434 / 6380 / 9010 / 9011 / 9876 / 10911 / 10909 均可握手成功**
+（9010/9011 各有一个探测节点无响应，属探测节点问题）。学员可从外部直连。
 
-需要放行的入站 TCP 端口：
+入站 TCP 端口（已配置）：
 
 ```text
 5434   PostgreSQL
@@ -40,7 +41,7 @@
 控制台路径通常为：京东云控制台 → 云主机 → 安全组 → 入站规则 → 添加规则。
 建议来源限制为学员出口 IP 段，而不是 `0.0.0.0/0`。
 
-放行后学员侧验证：
+外部连通性验证：
 
 ```bash
 nc -vz 111.228.14.136 5434
@@ -76,6 +77,21 @@ sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh show
 - MinIO：access key / secret key
 - RocketMQ：ACL access key / secret key
 
+### Java 依赖清单（Maven）
+
+| 用途 | Maven 坐标 | 版本 |
+|---|---|---|
+| PostgreSQL JDBC | `org.postgresql:postgresql` | 42.7.4 |
+| HikariCP 连接池 | `com.zaxxer:HikariCP` | 5.1.0 |
+| Redis（Jedis） | `redis.clients:jedis` | 5.1.3 |
+| Redis（Lettuce） | `io.lettuce:lettuce-core` | 6.3.2.RELEASE |
+| Spring Boot Redis | `org.springframework.boot:spring-boot-starter-data-redis` | 跟随 Spring Boot |
+| MinIO SDK | `io.minio:minio` | 8.5.12 |
+| RocketMQ 客户端 | `org.apache.rocketmq:rocketmq-client` | 5.3.1 |
+| RocketMQ ACL | `org.apache.rocketmq:rocketmq-acl` | 5.3.1 |
+
+Java 8+ 均可；Spring Boot 3 需要 Java 17+。
+
 ## 4. PostgreSQL
 
 ```text
@@ -96,6 +112,50 @@ engine = create_engine(
 with engine.connect() as conn:
     print(conn.execute(text("select version()")).scalar())
 ```
+
+Java（JDBC）：
+
+```java
+String url = "jdbc:postgresql://111.228.14.136:5434/pipewise?sslmode=disable";
+try (Connection conn = DriverManager.getConnection(
+        url, "pipewise", "<PG_PASSWORD>");
+     PreparedStatement ps = conn.prepareStatement("select version()");
+     ResultSet rs = ps.executeQuery()) {
+    if (rs.next()) System.out.println(rs.getString(1));
+}
+```
+
+Java（HikariCP 连接池）：
+
+```java
+HikariConfig cfg = new HikariConfig();
+cfg.setJdbcUrl("jdbc:postgresql://111.228.14.136:5434/pipewise?sslmode=disable");
+cfg.setUsername("pipewise");
+cfg.setPassword("<PG_PASSWORD>");
+cfg.setMaximumPoolSize(10);
+cfg.setConnectionTimeout(3000);
+
+try (HikariDataSource ds = new HikariDataSource(cfg);
+     Connection conn = ds.getConnection();
+     PreparedStatement ps = conn.prepareStatement("select now()");
+     ResultSet rs = ps.executeQuery()) {
+    if (rs.next()) System.out.println(rs.getTimestamp(1));
+}
+```
+
+Spring Boot：
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://111.228.14.136:5434/pipewise?sslmode=disable
+    username: pipewise
+    password: <PG_PASSWORD>
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+```
+
 
 说明：数据库 owner 为 `pipewise`；最大连接 200，`shared_buffers=256MB`；
 未启用 TLS，仅用于教学与测试数据。
@@ -118,6 +178,43 @@ r = redis.Redis(host="111.228.14.136", port=6380,
                 password="<REDIS_PASSWORD>", decode_responses=True)
 r.set("demo:key", "hello")
 ```
+
+Java（Jedis）：
+
+```java
+JedisPooled jedis = new JedisPooled(
+    URI.create("redis://:<REDIS_PASSWORD>@111.228.14.136:6380/0"));
+jedis.set("demo:key", "hello");
+System.out.println(jedis.get("demo:key"));
+jedis.close();
+```
+
+Java（Lettuce）：
+
+```java
+RedisClient client = RedisClient.create(
+    "redis://:<REDIS_PASSWORD>@111.228.14.136:6380/0");
+try (StatefulRedisConnection<String, String> conn = client.connect()) {
+    RedisCommands<String, String> cmd = conn.sync();
+    cmd.set("demo:key", "hello");
+    System.out.println(cmd.get("demo:key"));
+}
+client.shutdown();
+```
+
+Spring Boot：
+
+```yaml
+spring:
+  data:
+    redis:
+      host: 111.228.14.136
+      port: 6380
+      password: <REDIS_PASSWORD>
+      database: 0
+      timeout: 3s
+```
+
 
 说明：已开启 AOF；`protected-mode no` + 密码；有 16 个逻辑库，建议用 key 前缀隔离。
 
@@ -151,6 +248,39 @@ s3 = boto3.client(
 s3.put_object(Bucket="student", Key="demo.txt", Body=b"hello")
 ```
 
+Java（MinIO SDK）：
+
+```java
+MinioClient client = MinioClient.builder()
+    .endpoint("http://111.228.14.136:9010")
+    .credentials("pipewise", "<MINIO_SECRET_KEY>")
+    .build();
+
+String bucket = "student";
+if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
+    client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+}
+
+client.putObject(PutObjectArgs.builder()
+    .bucket(bucket).object("demo/hello.txt")
+    .stream(new ByteArrayInputStream(
+        "hello minio".getBytes(StandardCharsets.UTF_8)),
+        -1, 10 * 1024 * 1024)
+    .contentType("text/plain")
+    .build());
+
+try (InputStream in = client.getObject(GetObjectArgs.builder()
+        .bucket(bucket).object("demo/hello.txt").build())) {
+    System.out.println(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+}
+
+String url = client.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+    .method(Method.GET).bucket(bucket).object("demo/hello.txt")
+    .expiry(7, TimeUnit.DAYS).build());
+System.out.println(url);
+```
+
+
 当前为 HTTP，预签名 URL 的外部可访问性取决于安全组是否放行 9010。
 
 ## 7. RocketMQ
@@ -176,6 +306,28 @@ SendResult r = producer.send(new Message(
 System.out.println(r.getSendStatus() + " " + r.getMsgId());
 producer.shutdown();
 ```
+
+Java 消费者：
+
+```java
+DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(
+    "student_demo_consumer",
+    new AclClientRPCHook(new SessionCredentials(
+        "pipewise", "<ROCKETMQ_SECRET_KEY>")));
+consumer.setNamesrvAddr("111.228.14.136:9876");
+consumer.subscribe("student_demo_topic", "*");
+consumer.registerMessageListener((MessageListenerConcurrently) (msgs, ctx) -> {
+    for (MessageExt m : msgs) {
+        System.out.println(new String(m.getBody(), StandardCharsets.UTF_8));
+    }
+    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+});
+consumer.start();
+```
+
+生产者/消费者都是线程安全的，建议应用内单例复用；若只放行了 10911 而 10909 未放行，
+可调用 `producer.setVipChannelEnabled(false)` / `consumer.setVipChannelEnabled(false)`。
+本环境 10909 已放行，无需关闭。
 
 Python（`rocketmq-client-python` 2.0.0）：
 
