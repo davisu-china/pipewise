@@ -1,0 +1,2775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeWise 技术方案 · Java 自研内核 + React</title>
+<style>
+  :root{
+    --paper:#F5F6F3; --surface:#FFFFFF; --surface-2:#EEF0EB;
+    --ink:#141A19; --ink-2:#34403D; --muted:#5F6B68;
+    --line:#D9DDD6; --line-soft:#E7EAE4;
+    --accent:#1A6357; --accent-2:#12544A; --accent-soft:#E1EDE8;
+    --blue:#28527A; --blue-soft:#E3EAF2;
+    --amber:#8A6412; --amber-soft:#F5EBD8;
+    --red:#9C3A28; --red-soft:#F4E4DF;
+    --violet:#5B3E7A; --violet-soft:#ECE5F3;
+    --on-accent:#FFFFFF;
+    --shadow:0 4px 18px rgba(20,26,25,.07);
+    --mono:"JetBrains Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+    --serif:"Songti SC","Source Han Serif SC","Noto Serif SC",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:1px 5px;border-radius:3px;color:var(--ink-2)}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.65;background:#151B1A;color:#DCE5E1;padding:18px 20px;border-radius:4px;overflow-x:auto;margin:14px 0 20px}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px 110px}
+
+  /* 封面 */
+  .masthead{padding:64px 0 34px;border-bottom:2px solid var(--ink);margin-bottom:34px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+  h1{font-family:var(--serif);font-weight:700;font-size:44px;line-height:1.16;letter-spacing:.01em;margin:0 0 12px}
+  .subtitle{font-size:16.5px;color:var(--ink-2);margin:0 0 26px;max-width:72ch}
+  .metagrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .metagrid div{background:var(--surface);padding:11px 14px}
+  .metagrid .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px}
+  .metagrid .v{font-size:13px;font-weight:600;color:var(--ink)}
+
+  /* 目录 */
+  .toc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);padding:20px 24px;margin-bottom:48px}
+  .toc h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;font-weight:600}
+  .toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:40px}
+  .toc li{font-size:13px;padding:2.5px 0;break-inside:avoid;color:var(--ink-2)}
+  .toc li a{color:var(--ink-2)}
+  .toc li b{font-family:var(--mono);color:var(--accent);font-weight:600;margin-right:8px;font-size:11.5px}
+
+  /* 章节 */
+  section{margin-bottom:54px;scroll-margin-top:20px}
+  h2.sec{font-family:var(--serif);font-size:26px;font-weight:700;margin:0 0 18px;padding-bottom:11px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:13px}
+  h2.sec .num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600;letter-spacing:.05em}
+  h3{font-size:17px;font-weight:700;margin:30px 0 10px;color:var(--ink)}
+  h4{font-size:14.5px;font-weight:700;margin:22px 0 8px;color:var(--ink-2)}
+  p{margin:0 0 12px}
+  ul,ol{margin:0 0 14px;padding-left:22px}
+  li{margin:3px 0}
+  strong{font-weight:700}
+  .lead{font-size:15.5px;color:var(--ink-2)}
+
+  /* 表格 */
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:13px;background:var(--surface)}
+  th{background:var(--surface-2);text-align:left;font-weight:700;color:var(--ink-2);padding:8px 10px;border:1px solid var(--line);white-space:nowrap}
+  td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#FBFCFA}
+  td code{white-space:nowrap}
+
+  /* 标记 */
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;padding:1px 6px;border-radius:3px;vertical-align:middle;margin-left:4px}
+  .b-mvp{background:var(--accent-soft);color:var(--accent-2)}
+  .b-p1{background:var(--blue-soft);color:var(--blue)}
+  .b-p2{background:var(--violet-soft);color:var(--violet)}
+  .chip{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border:1px solid var(--line);border-radius:10px;color:var(--muted);margin:2px 4px 2px 0;background:var(--surface)}
+
+  /* 提示块 */
+  .callout{border-left:3px solid var(--accent);background:var(--surface);padding:13px 17px;margin:16px 0;font-size:13.8px;box-shadow:var(--shadow)}
+  .callout .t{font-weight:700;color:var(--accent);display:block;margin-bottom:4px;font-size:13px}
+  .callout.warn{border-left-color:var(--amber);background:#FCF8EF}
+  .callout.warn .t{color:var(--amber)}
+  .callout.danger{border-left-color:var(--red);background:#FCF3F0}
+  .callout.danger .t{color:var(--red)}
+  .callout.blue{border-left-color:var(--blue);background:#F4F7FA}
+  .callout.blue .t{color:var(--blue)}
+
+  /* 流程图 */
+  .flow{display:flex;align-items:stretch;flex-wrap:wrap;gap:0;margin:18px 0 26px}
+  .flow .step{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--accent);padding:10px 14px;font-size:12.8px;min-width:120px;flex:1 1 120px;line-height:1.5}
+  .flow .step b{display:block;font-size:12.5px;color:var(--ink);margin-bottom:2px}
+  .flow .step span{color:var(--muted);font-size:11.5px}
+  .flow .arrow{display:flex;align-items:center;color:var(--accent);font-size:18px;padding:0 5px;flex:0 0 auto}
+  .flow.vertical{flex-direction:column;align-items:flex-start}
+  .flow.vertical .arrow{padding:2px 0 2px 20px;transform:rotate(90deg)}
+
+  /* 网格卡片 */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+  .card{background:var(--surface);border:1px solid var(--line);padding:14px 16px;font-size:13.2px}
+  .card h4{margin:0 0 6px;font-size:13.5px;color:var(--accent-2)}
+  .card p{margin:0;color:var(--ink-2)}
+
+  /* 架构图 */
+  .arch{border:1px solid var(--line);background:var(--surface);margin:18px 0 24px}
+  .arch .layer{display:grid;grid-template-columns:132px 1fr;border-bottom:1px solid var(--line-soft)}
+  .arch .layer:last-child{border-bottom:none}
+  .arch .lbl{background:var(--surface-2);padding:14px 12px;font-size:12px;font-weight:700;color:var(--ink-2);border-right:1px solid var(--line);display:flex;align-items:center}
+  .arch .body{padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .arch .box{background:var(--surface);border:1px solid var(--line);padding:7px 11px;font-size:12px;line-height:1.4}
+  .arch .box.hi{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2);font-weight:600}
+  .arch .box.blue{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+
+  /* 代码/文件树 */
+  .tree{font-family:var(--mono);font-size:12px;line-height:1.7;background:var(--surface);border:1px solid var(--line);padding:16px 18px;white-space:pre;overflow-x:auto;color:var(--ink-2)}
+
+  /* 图注 */
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin:-14px 0 24px;font-family:var(--mono)}
+  .figbox{background:var(--surface);border:1px solid var(--line);padding:18px 12px;margin:18px 0 6px;overflow-x:auto;text-align:center}
+  svg{max-width:100%;height:auto}
+
+  /* 状态色 */
+  .st-run{color:var(--accent);font-weight:700}
+  .st-warn{color:var(--amber);font-weight:700}
+  .st-stop{color:var(--red);font-weight:700}
+  .st-done{color:var(--blue);font-weight:700}
+
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:18px 0}
+  .kpi div{background:var(--surface);padding:13px 15px}
+  .kpi .n{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);display:block;line-height:1.2}
+  .kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px;display:block}
+
+  .rule{height:1px;background:var(--line);margin:34px 0}
+  .small{font-size:12.5px;color:var(--muted)}
+  .nowrap{white-space:nowrap}
+
+  @media (max-width:760px){
+    .wrap{padding:0 18px 80px}
+    h1{font-size:32px}
+    .metagrid,.kpi{grid-template-columns:1fr 1fr}
+    .toc ol{columns:1}
+    .grid2,.grid3{grid-template-columns:1fr}
+    .arch .layer{grid-template-columns:88px 1fr}
+    .flow{flex-direction:column}
+    .flow .arrow{transform:rotate(90deg);padding-left:18px}
+  }
+  @media print{
+    body{background:#fff;font-size:11pt}
+    .wrap{max-width:none;padding:0}
+    .toc{display:none}
+    section{page-break-inside:auto}
+    h2.sec{page-break-after:avoid}
+    table,pre,.arch,.figbox{page-break-inside:avoid}
+    a{color:inherit}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= 封面 ================= -->
+<header class="masthead">
+  <p class="eyebrow">Technical Design · Java Self-built Workflow Engine + React</p>
+  <h1>PipeWise 流程引擎平台<br>技术方案</h1>
+  <p class="subtitle">自研令牌驱动执行内核，PostgreSQL 为唯一事实源，Redis / RocketMQ / MinIO 各司其职；React 构建设计器、表单引擎与任务中心。本方案覆盖 PRD v1.1 全部功能范围，明确排除 Flowable 等第三方流程引擎。</p>
+  <div class="metagrid">
+    <div><span class="k">文档版本</span><span class="v">v1.0 · 2026-10-18</span></div>
+    <div><span class="k">对应 PRD</span><span class="v">流程引擎平台 PRD v1.1</span></div>
+    <div><span class="k">后端技术栈</span><span class="v">Java 21 · Spring Boot 3.5</span></div>
+    <div><span class="k">状态</span><span class="v">待评审</span></div>
+  </div>
+</header>
+
+<!-- ================= 目录 ================= -->
+<nav class="toc">
+  <h2>目录 / Contents</h2>
+  <ol>
+    <li><a href="#s1"><b>01</b>方案摘要与关键决策</a></li>
+    <li><a href="#s2"><b>02</b>总体架构与技术栈</a></li>
+    <li><a href="#s3"><b>03</b>执行内核：令牌与状态机</a></li>
+    <li><a href="#s4"><b>04</b>调度、恢复与幂等</a></li>
+    <li><a href="#s5"><b>05</b>签核、退回与人工干预</a></li>
+    <li><a href="#s6"><b>06</b>版本、发布与长跑迁移</a></li>
+    <li><a href="#s7"><b>07</b>表单引擎</a></li>
+    <li><a href="#s8"><b>08</b>上下文、表达式与脚本沙箱</a></li>
+    <li><a href="#s9"><b>09</b>事件、通知与服务节点</a></li>
+    <li><a href="#s10"><b>10</b>开放 API 与 SDK</a></li>
+    <li><a href="#s11"><b>11</b>数据模型</a></li>
+    <li><a href="#s12"><b>12</b>前端技术方案</a></li>
+    <li><a href="#s13"><b>13</b>非功能设计</a></li>
+    <li><a href="#s14"><b>14</b>技术难点专章</a></li>
+    <li><a href="#s15"><b>15</b>测试与验收</a></li>
+    <li><a href="#s16"><b>16</b>实施计划与风险</a></li>
+    <li><a href="#s17"><b>17</b>附录</a></li>
+  </ol>
+</nav>
+
+<!-- ================= 01 ================= -->
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>方案摘要与关键决策</h2>
+
+  <p class="lead">PRD 附录 A 的原始建议是「执行内核不自研，嵌入 DBOS / Restate / Temporal」。本方案按项目决策改为<strong>纯自研</strong>：不自研通用 durable execution 平台，只自研流程引擎所需的<strong>持久化状态机 + 作业队列 + 幂等重放</strong>，范围可控、可测试、可演进。Flowable 及任何 BPMN 引擎均不进入依赖树。</p>
+
+  <h3>1.1 一句话架构</h3>
+  <div class="callout">
+    <span class="t">架构摘要</span>
+    Spring Boot 模块化单体拆成 <code>api</code> 与 <code>engine</code> 两种运行形态：API 只做同步读写与鉴权；Engine 从 PostgreSQL 的 <code>wf_execution_job</code> 表中领取作业，以「实例级串行 + 令牌驱动」推进流程，所有状态变更、审计、Outbox 事件在同一个数据库事务内提交；RocketMQ 负责事务提交后的异步投递，Redis 只做缓存与限流，MinIO 存附件与导出文件。
+  </div>
+
+  <h3>1.2 关键选型</h3>
+  <table>
+    <tr><th>维度</th><th>选择</th><th>决策理由</th></tr>
+    <tr><td>执行内核</td><td><strong>自研令牌引擎</strong>（Token / NodeInstance / SignSession）</td><td>PRD 的签核语义（或签/并签/竞签、加签、退回重提）与 BPMN 差异大；自研可让「语义即模型」，避免在引擎扩展点上打补丁</td></tr>
+    <tr><td>事实源</td><td>PostgreSQL 16</td><td>事务、行锁、<code>SKIP LOCKED</code>、advisory lock、JSONB、GIN、声明式分区，一个库覆盖运行态与审计</td></tr>
+    <tr><td>作业调度</td><td>PG 作业表 + 租约（lease）+ 心跳</td><td>避免引入额外调度中间件；作业可审计、可重放；RocketMQ 不承担「状态权威」</td></tr>
+    <tr><td>消息</td><td>RocketMQ 5.x + Outbox 模式</td><td>事务内落 Outbox，事务后投递；保证「不全丢、可重放」，消费端按事件 ID 幂等</td></tr>
+    <tr><td>缓存</td><td>Redis 7</td><td>只做加速：版本快照、组织架构、幂等热键、限流、任务角标推送；<strong>任何 Redis 数据丢失都不影响正确性</strong></td></tr>
+    <tr><td>对象存储</td><td>MinIO（S3 协议）</td><td>附件、图片、导出文件、归档包；预签名直传 + 服务端确认</td></tr>
+    <tr><td>脚本</td><td>Python 独立 Runner 进程池</td><td>PRD 明确脚本语言为 Python。Runner 与 Java 内核隔离部署，通过本机 RPC 调用；内核只认「输入快照 → 输出补丁」</td></tr>
+    <tr><td>表达式</td><td>AviatorScript 白名单子集</td><td>轻量、可编译缓存、无反射；只读、无副作用，复杂逻辑强制落脚本</td></tr>
+    <tr><td>后端框架</td><td>Java 21 + Spring Boot 3.5 + MyBatis + Flyway</td><td>虚拟线程承载 IO；MyBatis 对引擎热路径 SQL 可控；Flyway 管理 schema 演进</td></tr>
+    <tr><td>前端</td><td>React 18 + TypeScript + Vite + shadcn/ui + React Flow</td><td>与现有 <code>web/</code> 工程一致；React Flow 承担画布；Schema 驱动的自研表单渲染器</td></tr>
+    <tr><td>部署</td><td>模块化单体，按 profile 拆进程</td><td>MVP 阶段一套代码、两个进程，降低运维复杂度；后续可独立扩缩容</td></tr>
+  </table>
+
+  <h3>1.3 与 PRD 附录 A 的偏差说明</h3>
+  <table>
+    <tr><th>PRD 原建议</th><th>本方案</th><th>补偿措施</th></tr>
+    <tr><td>嵌入 DBOS / Restate / Temporal 作为执行内核</td><td>自研持久化状态机 + 作业队列</td><td>M0 用状态机模型测试 + 故障注入专项验证崩溃恢复；内核抽象出 <code>ExecutionStore</code> 接口，保留未来替换空间</td></tr>
+    <tr><td>Python 技术栈</td><td>Java 后端 + Python 脚本 Runner</td><td>脚本边界清晰：Runner 无 DB/网络权限，只做纯计算；Java 侧负责超时、重试、审计</td></tr>
+    <tr><td>完整 BPMN 2.0（非目标）</td><td>PRD 裁剪后的节点类型集合</td><td>节点类型注册表可扩展；不为冷门 BPMN 特性付出复杂度</td></tr>
+  </table>
+
+  <h4>Flowable 与自研的取舍</h4>
+  <table>
+    <tr><th>维度</th><th>Flowable 7</th><th>自研内核</th></tr>
+    <tr><td>签核语义</td><td>多实例任务可做会签，但或签/竞签/加签/退回重提需要大量扩展与自定义监听器</td><td>签核会话语义原生建模，三种模式由同一裁决函数表达</td></tr>
+    <tr><td>数据模型</td><td>引入 30+ 张 <code>ACT_*</code> 表，与业务表并存，排障需要理解引擎内部结构</td><td><code>wf_*</code> 一套表覆盖定义、运行态、任务、表单、审计，语义直白</td></tr>
+    <tr><td>版本与迁移</td><td>引擎自带版本，但长跑实例迁移仍需自研；升级引擎有兼容性风险</td><td>版本钉住与迁移工具直接建在快照模型上，升级完全自主</td></tr>
+    <tr><td>可控性</td><td>行为受引擎默认语义约束，遇到边界要读源码或绕行</td><td>每个状态转移都在自己代码里，可测试、可审计、可演进</td></tr>
+    <tr><td>成本</td><td>上手快，MVP 周期短</td><td>M0 需要 2 周专项验证持久化与并发正确性</td></tr>
+  </table>
+  <p>结论：本项目对签核语义、表单权限与运维干预有大量定制需求，Flowable 的扩展成本会持续累积；按项目决策采用自研，并用 M0 门槛与模型测试控制风险。</p>
+
+  <div class="callout warn">
+    <span class="t">仓库现状说明</span>
+    当前 <code>java-mvp/</code> 是基于 Flowable 7 的可运行验证骨架，仅用于验证「定义 → 实例 → 审批 → 结束」闭环；本方案落地时<strong>不复用其引擎层</strong>，新建 <code>server/</code> 模块承载自研内核，<code>java-mvp/</code> 在 M1 完成后归档删除。<code>backend/</code>（Python MVP）作为行为语义参考，不作为生产实现。
+  </div>
+
+  <h3>1.4 自研边界：我们到底在自研什么</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>在范围内</h4>
+      <p>流程实例内部的持久化状态转移、令牌流转、作业重放、签核裁决、超时与回调唤醒、版本钉住、审计与 Outbox。</p>
+    </div>
+    <div class="card">
+      <h4>不在范围内</h4>
+      <p>通用分布式事务、任意代码的 exactly-once、跨系统两阶段提交、通用任务编排（DAG 调度）、RPA 执行器。</p>
+    </div>
+    <div class="card">
+      <h4>正确性目标</h4>
+      <p>人工任务严格一次；状态转移至少一次执行 + 幂等收敛为一次效果；外部副作用通过幂等键收敛。</p>
+    </div>
+    <div class="card">
+      <h4>失败处理原则</h4>
+      <p>任何无法自动恢复的异常，实例进入 <code>FAILED</code> 或节点挂起并告警，绝不在状态不明时继续推进。</p>
+    </div>
+  </div>
+
+  <h3>1.5 PRD 功能覆盖索引</h3>
+  <table>
+    <tr><th>PRD 模块</th><th>编号</th><th>优先级</th><th>本方案章节</th></tr>
+    <tr><td>流程建模与设计器</td><td>FR-1</td><td><span class="badge b-mvp">MVP</span></td><td>§12.3 设计器、§3 内核模型、§17 快照</td></tr>
+    <tr><td>发布与版本管理</td><td>FR-2</td><td><span class="badge b-mvp">MVP</span></td><td>§6</td></tr>
+    <tr><td>实例生命周期</td><td>FR-3</td><td><span class="badge b-mvp">MVP</span></td><td>§3.3、§10</td></tr>
+    <tr><td>审批与任务</td><td>FR-4</td><td><span class="badge b-mvp">MVP</span></td><td>§5.1–5.4</td></tr>
+    <tr><td>签核体系</td><td>FR-5</td><td><span class="badge b-mvp">MVP</span></td><td>§5.2</td></tr>
+    <tr><td>网关、并行与汇聚</td><td>FR-6</td><td><span class="badge b-mvp">MVP</span></td><td>§3.6–3.7</td></tr>
+    <tr><td>流程上下文</td><td>FR-7</td><td><span class="badge b-mvp">MVP</span></td><td>§8.1–8.5</td></tr>
+    <tr><td>节点脚本</td><td>FR-8</td><td><span class="badge b-mvp">MVP</span></td><td>§8.6–8.8</td></tr>
+    <tr><td>服务节点与集成</td><td>FR-9</td><td><span class="badge b-p1">P1</span></td><td>§9.3–9.5</td></tr>
+    <tr><td>子流程</td><td>FR-10</td><td><span class="badge b-p1">P1</span></td><td>§9.6</td></tr>
+    <tr><td>定时与延时</td><td>FR-11</td><td><span class="badge b-p1">P1</span></td><td>§3.10、§4.4</td></tr>
+    <tr><td>通知</td><td>FR-12</td><td><span class="badge b-p1">P1</span></td><td>§9.2、§9.4</td></tr>
+    <tr><td>权限与组织</td><td>FR-13</td><td><span class="badge b-mvp">MVP</span></td><td>§3.9、§13.3</td></tr>
+    <tr><td>监控与运维</td><td>FR-14</td><td><span class="badge b-p1">P1</span></td><td>§3.11、§13.4、§12.6</td></tr>
+    <tr><td>开放 API / SDK</td><td>FR-15</td><td><span class="badge b-mvp">MVP</span></td><td>§10</td></tr>
+    <tr><td>长跑实例迁移</td><td>FR-16</td><td><span class="badge b-p2">P2</span></td><td>§6.5</td></tr>
+    <tr><td>多租户</td><td>FR-17</td><td><span class="badge b-p2">P2</span></td><td>§13.5</td></tr>
+    <tr><td>表单引擎</td><td>FR-18</td><td><span class="badge b-mvp">MVP</span></td><td>§7</td></tr>
+    <tr><td>表单高级能力</td><td>FR-19</td><td><span class="badge b-p1">P1</span></td><td>§7.6</td></tr>
+    <tr><td>表单数据与检索</td><td>FR-20</td><td><span class="badge b-p1">P1</span></td><td>§7.7</td></tr>
+    <tr><td>多端渲染</td><td>FR-21</td><td><span class="badge b-mvp">MVP</span></td><td>§12.7</td></tr>
+  </table>
+</section>
+
+<!-- ================= 02 ================= -->
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>总体架构与技术栈</h2>
+
+  <h3>2.1 分层架构</h3>
+  <div class="arch">
+    <div class="layer">
+      <div class="lbl">接入层</div>
+      <div class="body">
+        <span class="box">Web 前端（React SPA）</span>
+        <span class="box">移动端 / 飞书 H5</span>
+        <span class="box">开放 REST API</span>
+        <span class="box">Webhook 回调</span>
+        <span class="box">SSO / JWT / 服务 Token</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lbl">应用服务</div>
+      <div class="body">
+        <span class="box">定义与版本服务</span>
+        <span class="box">实例服务</span>
+        <span class="box">任务服务</span>
+        <span class="box">表单服务</span>
+        <span class="box">组织与权限</span>
+        <span class="box">运维干预</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lbl">引擎内核</div>
+      <div class="body">
+        <span class="box hi">图模型 / 快照加载</span>
+        <span class="box hi">令牌调度</span>
+        <span class="box hi">节点执行器</span>
+        <span class="box hi">签核引擎</span>
+        <span class="box hi">上下文与表达式</span>
+        <span class="box hi">状态机 / 作业重放</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lbl">基础设施</div>
+      <div class="body">
+        <span class="box blue">作业队列（PG）</span>
+        <span class="box blue">定时器</span>
+        <span class="box blue">Outbox Relay</span>
+        <span class="box blue">脚本 Runner 客户端</span>
+        <span class="box blue">对象存储客户端</span>
+        <span class="box blue">事件 / 通知</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="lbl">存储与中间件</div>
+      <div class="body">
+        <span class="box">PostgreSQL 16（事实源）</span>
+        <span class="box">Redis 7（缓存）</span>
+        <span class="box">RocketMQ 5（异步）</span>
+        <span class="box">MinIO（对象）</span>
+        <span class="box">Python Script Runner</span>
+      </div>
+    </div>
+  </div>
+  <p class="figcap">图 2-1 分层架构：引擎内核不直接依赖 MQ 与 Redis 的可用性，正确性只依赖 PostgreSQL。</p>
+
+  <h3>2.2 后端模块划分</h3>
+  <pre><code>pipewise/
+├── server/                         # Maven 多模块（新，替换 java-mvp）
+│   ├── pw-common/                  # 通用类型、错误码、工具、JWT
+│   ├── pw-definition/              # 定义、版本、发布、校验、快照
+│   ├── pw-engine/                  # 内核：图、令牌、执行器、签核、作业
+│   ├── pw-context/                 # 变量、表达式、审计
+│   ├── pw-form/                    # 表单 schema、权限矩阵、校验、数据
+│   ├── pw-integration/             # outbox、rocketmq、webhook、org、minio
+│   ├── pw-api/                     # controller、DTO、鉴权（api profile）
+│   └── pw-worker/                  # job worker、timer、relay（engine profile）
+├── script-runner/                  # Python 沙箱进程池（独立镜像）
+├── web/                            # React + Vite（已有）
+└── deploy/                         # compose / helm / nginx / SQL</code></pre>
+
+  <h4>模块依赖约束</h4>
+  <ul>
+    <li><code>pw-engine</code> 只依赖 <code>pw-common</code> 与 <code>pw-context</code>，不依赖 Web、MQ、Redis 客户端；所有外部能力通过接口注入。</li>
+    <li><code>pw-api</code> 与 <code>pw-worker</code> 是同一份领域代码的两种装配，保证「API 里能做的状态变更」与「Worker 里能做的」共用同一套不变量。</li>
+    <li>MyBatis Mapper 按领域拆包；引擎热路径 SQL 手写，管理端 CRUD 可用代码生成。</li>
+  </ul>
+
+  <h3>2.3 运行形态与部署</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>pipewise-api</h4>
+      <p>无状态，多副本；负责鉴权、定义/实例/任务/表单的同步接口；不跑调度线程。读多写少，可挂只读副本做列表查询。</p>
+    </div>
+    <div class="card">
+      <h4>pipewise-engine</h4>
+      <p>有状态仅体现在作业租约；多副本水平扩展。包含 Job Worker、Timer Scanner、Outbox Relay、Webhook Dispatcher、归档任务。</p>
+    </div>
+    <div class="card">
+      <h4>script-runner</h4>
+      <p>Python 进程池，独立部署、无网络、无数据库凭据；只接受 JSON 请求。按 CPU 配额横向扩展，与 engine 同机或独立节点。</p>
+    </div>
+    <div class="card">
+      <h4>web</h4>
+      <p>Vite 构建为静态资源，由 nginx 托管；API 反向代理到 <code>pipewise-api</code>；SSE/WebSocket 走同一入口。</p>
+    </div>
+  </div>
+
+  <h4>MVP 部署拓扑</h4>
+  <div class="figbox">
+    <svg viewBox="0 0 900 330" width="900" height="330" role="img" aria-label="部署拓扑">
+      <defs>
+        <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5F6B68"/></marker>
+        <style>.bx{fill:#fff;stroke:#D9DDD6;stroke-width:1}.tx{font:12px -apple-system,PingFang SC,sans-serif;fill:#141A19}.sm{font:10.5px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.ln{stroke:#5F6B68;stroke-width:1;fill:none}</style>
+      </defs>
+      <rect x="20" y="20" width="150" height="54" class="bx" rx="3"/><text x="95" y="42" text-anchor="middle" class="tx">浏览器 / 飞书 H5</text><text x="95" y="58" text-anchor="middle" class="sm">React SPA</text>
+      <rect x="235" y="20" width="150" height="54" class="bx" rx="3"/><text x="310" y="42" text-anchor="middle" class="tx">nginx</text><text x="310" y="58" text-anchor="middle" class="sm">静态 + 反代 + SSE</text>
+      <rect x="450" y="20" width="150" height="54" class="bx" rx="3"/><text x="525" y="42" text-anchor="middle" class="tx">pipewise-api ×N</text><text x="525" y="58" text-anchor="middle" class="sm">Spring Boot</text>
+      <rect x="665" y="20" width="190" height="54" class="bx" rx="3"/><text x="760" y="42" text-anchor="middle" class="tx">pipewise-engine ×M</text><text x="760" y="58" text-anchor="middle" class="sm">worker / timer / relay</text>
+      <line x1="170" y1="47" x2="231" y2="47" class="ln" marker-end="url(#ar)"/>
+      <line x1="385" y1="47" x2="446" y2="47" class="ln" marker-end="url(#ar)"/>
+      <line x1="600" y1="47" x2="661" y2="47" class="ln" marker-end="url(#ar)"/>
+
+      <rect x="450" y="130" width="150" height="50" class="bx" rx="3"/><text x="525" y="151" text-anchor="middle" class="tx">script-runner ×K</text><text x="525" y="167" text-anchor="middle" class="sm">Python 沙箱进程池</text>
+      <line x1="700" y1="74" x2="600" y2="126" class="ln" marker-end="url(#ar)"/>
+
+      <rect x="20" y="230" width="170" height="66" class="bx" rx="3"/><text x="105" y="255" text-anchor="middle" class="tx">PostgreSQL 16</text><text x="105" y="272" text-anchor="middle" class="sm">主 + 只读副本</text>
+      <rect x="220" y="230" width="140" height="66" class="bx" rx="3"/><text x="290" y="255" text-anchor="middle" class="tx">Redis 7</text><text x="290" y="272" text-anchor="middle" class="sm">缓存 / 限流</text>
+      <rect x="390" y="230" width="160" height="66" class="bx" rx="3"/><text x="470" y="255" text-anchor="middle" class="tx">RocketMQ 5</text><text x="470" y="272" text-anchor="middle" class="sm">事件 / 通知 / 回调</text>
+      <rect x="580" y="230" width="140" height="66" class="bx" rx="3"/><text x="650" y="255" text-anchor="middle" class="tx">MinIO</text><text x="650" y="272" text-anchor="middle" class="sm">附件 / 导出</text>
+      <rect x="750" y="230" width="130" height="66" class="bx" rx="3"/><text x="815" y="255" text-anchor="middle" class="tx">组织服务</text><text x="815" y="272" text-anchor="middle" class="sm">只读适配</text>
+
+      <line x1="500" y1="74" x2="180" y2="226" class="ln" marker-end="url(#ar)"/>
+      <line x1="540" y1="74" x2="420" y2="226" class="ln" marker-end="url(#ar)"/>
+      <line x1="560" y1="74" x2="620" y2="226" class="ln" marker-end="url(#ar)"/>
+      <line x1="590" y1="74" x2="800" y2="226" class="ln" marker-end="url(#ar)"/>
+    </svg>
+  </div>
+  <p class="figcap">图 2-2 MVP 部署拓扑。engine 是唯一写运行态的核心进程，api 不直接推进流程。</p>
+
+  <h3>2.4 请求链路与事务边界</h3>
+  <table>
+    <tr><th>链路</th><th>同步部分（API 事务内）</th><th>异步部分（Engine）</th></tr>
+    <tr><td>创建实例</td><td>校验定义与变量、插入 instance / 初始 token / 首个 job / outbox / 审计，提交后返回 instanceId</td><td>Worker 领取 job，激活 start 节点并继续流转</td></tr>
+    <tr><td>完成任务</td><td>CAS 校验任务状态与版本、写 task / 表单数据 / 变量、签核裁决、必要时流转令牌、写 job 与 outbox</td><td>后续节点激活；通知、Webhook、脚本节点由 Engine 异步推进</td></tr>
+    <tr><td>发布版本</td><td>校验快照、写 version、更新 default version、审计</td><td>缓存失效广播；灰度规则生效</td></tr>
+    <tr><td>外部回调</td><td>验签、幂等校验、写信号与 job</td><td>Engine 唤醒等待节点</td></tr>
+  </table>
+  <div class="callout blue">
+    <span class="t">统一原则</span>
+    API 只做「一次原子状态变更」，不做长流程推进。所有会触发多节点流转的动作都转成 Engine 作业，避免 HTTP 请求持有长事务，也让重试与恢复有统一入口。
+  </div>
+
+  <h3>2.5 技术栈清单</h3>
+  <table>
+    <tr><th>层</th><th>组件</th><th>版本建议</th><th>用途</th></tr>
+    <tr><td>语言/运行时</td><td>Java (Temurin)</td><td>21 LTS</td><td>虚拟线程、记录类、模式匹配</td></tr>
+    <tr><td>框架</td><td>Spring Boot</td><td>3.5.x</td><td>Web、校验、Actuator、事务</td></tr>
+    <tr><td>持久层</td><td>MyBatis / MyBatis-Plus</td><td>3.5.x</td><td>手写引擎 SQL + 管理端 CRUD</td></tr>
+    <tr><td>迁移</td><td>Flyway</td><td>10.x</td><td>schema 版本化</td></tr>
+    <tr><td>数据库</td><td>PostgreSQL</td><td>16.x</td><td>事实源、JSONB、分区、SKIP LOCKED</td></tr>
+    <tr><td>缓存</td><td>Redis</td><td>7.x</td><td>快照缓存、组织缓存、限流、SSE 路由</td></tr>
+    <tr><td>消息</td><td>Apache RocketMQ</td><td>5.3.x</td><td>领域事件、通知、Webhook 投递</td></tr>
+    <tr><td>对象存储</td><td>MinIO</td><td>RELEASE.2025+</td><td>S3 兼容对象存储</td></tr>
+    <tr><td>表达式</td><td>AviatorScript</td><td>5.4.x</td><td>条件表达式（白名单）</td></tr>
+    <tr><td>脚本</td><td>Python</td><td>3.11+</td><td>节点脚本（独立 Runner）</td></tr>
+    <tr><td>前端</td><td>React + TypeScript</td><td>18 / 5.x</td><td>SPA</td></tr>
+    <tr><td>构建</td><td>Vite</td><td>6.x</td><td>前端构建</td></tr>
+    <tr><td>UI</td><td>Tailwind + shadcn/ui + Radix</td><td>3.x / latest</td><td>组件与设计令牌</td></tr>
+    <tr><td>画布</td><td>React Flow (@xyflow/react)</td><td>12.x</td><td>流程设计器</td></tr>
+    <tr><td>数据层</td><td>TanStack Query</td><td>5.x</td><td>服务端状态与缓存</td></tr>
+    <tr><td>本地状态</td><td>Zustand + zundo</td><td>5.x / 2.x</td><td>设计器状态与撤销重做</td></tr>
+    <tr><td>代码编辑</td><td>Monaco Editor</td><td>0.5x</td><td>脚本/JSON 编辑</td></tr>
+    <tr><td>可观测</td><td>Micrometer + OpenTelemetry + Prometheus + Grafana + Loki</td><td>—</td><td>指标、追踪、日志</td></tr>
+  </table>
+</section>
+
+<!-- ================= 03 ================= -->
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>执行内核：令牌与状态机</h2>
+
+  <p class="lead">内核只做一件事：在不可变图快照上，维护「令牌在节点间流动」的持久化状态。所有业务差异由节点配置、表单与脚本表达，内核不为任何业务分支写代码。</p>
+
+  <h3>3.1 领域模型与不变量</h3>
+  <table>
+    <tr><th>对象</th><th>表</th><th>职责</th><th>关键约束</th></tr>
+    <tr><td>流程定义</td><td><code>wf_definition</code></td><td>稳定业务标识（key），跨版本不变</td><td><code>(tenant_id, key)</code> 唯一</td></tr>
+    <tr><td>流程版本</td><td><code>wf_definition_version</code></td><td>发布时冻结的图快照，运行期只读</td><td>发布后不可修改；版本号单调递增</td></tr>
+    <tr><td>流程实例</td><td><code>wf_instance</code></td><td>一次运行，钉住 version_id 与表单版本</td><td><code>(tenant_id, definition_key, business_key)</code> 唯一</td></tr>
+    <tr><td>令牌</td><td><code>wf_token</code></td><td>执行游标；并行时多个令牌共存</td><td>一个令牌同一时刻只在一个节点；消费后不可复活</td></tr>
+    <tr><td>节点实例</td><td><code>wf_node_instance</code></td><td>某节点的一次激活，持有局部上下文</td><td>同一令牌 + 节点 + 轮次最多一条 ACTIVE/WAITING 记录</td></tr>
+    <tr><td>签核会话</td><td><code>wf_sign_session</code></td><td>一个人工节点上的裁决集合</td><td>每个节点实例最多一个 OPEN 会话</td></tr>
+    <tr><td>任务</td><td><code>wf_task</code></td><td>指派给具体人的待办</td><td>状态机单调；完成必须 CAS 版本号</td></tr>
+    <tr><td>变量</td><td><code>wf_variable</code></td><td>流程级上下文当前值</td><td><code>(instance_id, scope, name)</code> 唯一；带 version</td></tr>
+    <tr><td>作业</td><td><code>wf_execution_job</code></td><td>一次待执行的引擎步进</td><td>租约到期可重领；处理必须幂等</td></tr>
+  </table>
+
+  <div class="callout">
+    <span class="t">六条不变量（代码评审的硬标准）</span>
+    <ol style="margin-bottom:0">
+      <li>任何状态变更必须在数据库事务内完成，并同时递增实例的 <code>state_version</code>。</li>
+      <li>令牌只能被消费一次；消费动作与后继令牌创建在同一事务。</li>
+      <li>节点实例状态单调前进，不允许从终态回到非终态。</li>
+      <li>并行分支不共享可写的局部上下文；写流程级变量必须经过版本号 CAS。</li>
+      <li>外部副作用（HTTP、MQ、通知、Webhook）不进入数据库事务，统一走 Outbox 或两阶段作业。</li>
+      <li>实例只有在「没有 ACTIVE 令牌、没有 WAITING 节点实例」时才可判定完成。</li>
+    </ol>
+  </div>
+
+  <h3>3.2 令牌驱动执行模型</h3>
+  <p>令牌（token）是执行游标。节点激活时创建一个节点实例，令牌挂在该节点上；节点完成后消费令牌并为其每条出边各创建一个新令牌。并行 fork 即「一个令牌消费、多个令牌产生」，并行 join 即「多个令牌到达、合并为一个」。这样并行、嵌套并行、回环都不需要额外状态字段。</p>
+
+  <div class="figbox">
+    <svg viewBox="0 0 860 250" width="860" height="250" role="img" aria-label="令牌并行分叉与汇聚">
+      <defs>
+        <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5F6B68"/></marker>
+        <style>.n{fill:#fff;stroke:#1A6357;stroke-width:1.2}.n2{fill:#E1EDE8;stroke:#1A6357;stroke-width:1.2}.t{font:12px -apple-system,PingFang SC,sans-serif;fill:#141A19}.s{font:10.5px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.e{stroke:#5F6B68;stroke-width:1.1;fill:none}.tk{fill:#1A6357}</style>
+      </defs>
+      <rect x="20" y="100" width="86" height="40" class="n2" rx="20"/><text x="63" y="124" text-anchor="middle" class="t">start</text>
+      <rect x="146" y="100" width="86" height="40" class="n2" rx="4"/><text x="189" y="118" text-anchor="middle" class="t">审批</text><text x="189" y="132" text-anchor="middle" class="s">或签</text>
+      <rect x="272" y="100" width="86" height="40" class="n" rx="4"/><text x="315" y="118" text-anchor="middle" class="t">Fork</text><text x="315" y="132" text-anchor="middle" class="s">并行网关</text>
+      <rect x="408" y="34" width="118" height="40" class="n" rx="4"/><text x="467" y="58" text-anchor="middle" class="t">HR 备案（并签）</text>
+      <rect x="408" y="166" width="118" height="40" class="n" rx="4"/><text x="467" y="190" text-anchor="middle" class="t">总监审批（或签）</text>
+      <rect x="576" y="100" width="86" height="40" class="n" rx="4"/><text x="619" y="118" text-anchor="middle" class="t">Join</text><text x="619" y="132" text-anchor="middle" class="s">等待 2 条令牌</text>
+      <rect x="712" y="100" width="86" height="40" class="n" rx="4"/><text x="755" y="118" text-anchor="middle" class="t">脚本</text><text x="755" y="132" text-anchor="middle" class="s">算年假</text>
+      <rect x="828" y="106" width="20" height="28" class="n2" rx="10"/>
+
+      <line x1="106" y1="120" x2="142" y2="120" class="e" marker-end="url(#a2)"/>
+      <line x1="232" y1="120" x2="268" y2="120" class="e" marker-end="url(#a2)"/>
+      <path d="M358,112 C380,112 386,54 404,54" class="e" marker-end="url(#a2)"/>
+      <path d="M358,128 C380,128 386,186 404,186" class="e" marker-end="url(#a2)"/>
+      <path d="M526,54 C554,54 560,112 572,112" class="e" marker-end="url(#a2)"/>
+      <path d="M526,186 C554,186 560,128 572,128" class="e" marker-end="url(#a2)"/>
+      <line x1="662" y1="120" x2="708" y2="120" class="e" marker-end="url(#a2)"/>
+      <line x1="798" y1="120" x2="824" y2="120" class="e" marker-end="url(#a2)"/>
+
+      <circle cx="128" cy="120" r="4" class="tk"/><text x="128" y="104" text-anchor="middle" class="s">T1</text>
+      <circle cx="392" cy="54" r="4" class="tk"/><text x="392" y="40" text-anchor="middle" class="s">T2</text>
+      <circle cx="392" cy="186" r="4" class="tk"/><text x="392" y="204" text-anchor="middle" class="s">T3</text>
+      <circle cx="560" cy="78" r="4" class="tk"/><text x="548" y="76" class="s">到达</text>
+      <circle cx="560" cy="162" r="4" class="tk"/><text x="548" y="160" class="s">到达</text>
+      <text x="619" y="174" text-anchor="middle" class="s">两条都到才产生 T4</text>
+    </svg>
+  </div>
+  <p class="figcap">图 3-1 并行分叉与汇聚：Fork 消费 T1 产生 T2/T3，Join 收到两条令牌后合并为一条继续。</p>
+
+  <h4>令牌字段与状态</h4>
+  <pre><code>wf_token(
+  id            BIGSERIAL PRIMARY KEY,
+  instance_id   VARCHAR(40) NOT NULL,
+  node_id       VARCHAR(64) NOT NULL,
+  status        VARCHAR(16) NOT NULL, -- ACTIVE / WAITING / CONSUMED / CANCELLED
+  parent_token_id BIGINT,             -- 由哪条令牌分叉而来
+  scope_id      BIGINT,               -- 所属并行/包容作用域（join 配对用）
+  branch_key    VARCHAR(64),          -- 分支标识（可选，便于排障）
+  round         INT NOT NULL DEFAULT 1,-- 退回重提的轮次
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  consumed_at   TIMESTAMPTZ
+)</code></pre>
+  <p><code>WAITING</code> 表示令牌已到达节点但节点在等外部事件（人工任务、定时器、回调、子流程），对应节点实例也是 WAITING；<code>ACTIVE</code> 表示待引擎继续推进；<code>CONSUMED</code> 表示已被节点消费并产生后继。</p>
+
+  <h3>3.3 状态机</h3>
+
+  <h4>实例状态</h4>
+  <div class="figbox">
+    <svg viewBox="0 0 820 260" width="820" height="260" role="img" aria-label="实例状态机">
+      <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5F6B68"/></marker>
+      <style>.st{fill:#fff;stroke:#1A6357;stroke-width:1.2}.st2{fill:#E1EDE8;stroke:#1A6357;stroke-width:1.2}.lt{font:12px -apple-system,PingFang SC,sans-serif;fill:#141A19}.ls{font:10px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.le{stroke:#5F6B68;stroke-width:1;fill:none}</style></defs>
+      <rect x="20" y="100" width="100" height="44" class="st2" rx="4"/><text x="70" y="126" text-anchor="middle" class="lt">CREATED</text>
+      <rect x="180" y="100" width="100" height="44" class="st" rx="4"/><text x="230" y="126" text-anchor="middle" class="lt">RUNNING</text>
+      <rect x="180" y="20" width="100" height="40" class="st" rx="4"/><text x="230" y="45" text-anchor="middle" class="lt">SUSPENDED</text>
+      <rect x="360" y="100" width="110" height="44" class="st2" rx="4"/><text x="415" y="126" text-anchor="middle" class="lt">COMPLETED</text>
+      <rect x="360" y="190" width="110" height="44" class="st" rx="4"/><text x="415" y="216" text-anchor="middle" class="lt">TERMINATED</text>
+      <rect x="360" y="20" width="110" height="40" class="st" rx="4"/><text x="415" y="45" text-anchor="middle" class="lt">FAILED</text>
+      <line x1="120" y1="122" x2="176" y2="122" class="le" marker-end="url(#a3)"/><text x="148" y="114" text-anchor="middle" class="ls">start</text>
+      <line x1="205" y1="100" x2="205" y2="64" class="le" marker-end="url(#a3)"/><text x="196" y="84" class="ls">挂起</text>
+      <line x1="240" y1="60" x2="240" y2="96" class="le" marker-end="url(#a3)"/><text x="250" y="84" class="ls">恢复</text>
+      <line x1="280" y1="115" x2="356" y2="115" class="le" marker-end="url(#a3)"/><text x="318" y="107" text-anchor="middle" class="ls">无活动令牌</text>
+      <line x1="280" y1="132" x2="356" y2="205" class="le" marker-end="url(#a3)"/><text x="318" y="190" text-anchor="middle" class="ls">admin 终止</text>
+      <line x1="230" y1="100" x2="356" y2="45" class="le" marker-end="url(#a3)"/><text x="300" y="80" text-anchor="middle" class="ls">不可恢复失败</text>
+      <line x1="415" y1="60" x2="415" y2="96" class="le" marker-end="url(#a3)"/><text x="425" y="82" class="ls">修复后重试</text>
+      <line x1="230" y1="144" x2="230" y2="180" class="le" marker-end="url(#a3)"/><text x="270" y="176" class="ls">terminate</text><rect x="196" y="184" width="68" height="30" class="st" rx="4"/><text x="230" y="204" text-anchor="middle" class="ls">TERMINATED</text>
+    </svg>
+  </div>
+  <p class="figcap">图 3-2 实例状态机。挂起态冻结所有任务操作与定时器计时；终止态回收全部在途任务与令牌。</p>
+
+  <h4>节点实例状态</h4>
+  <pre><code>ACTIVE ──► WAITING ──► COMPLETED
+  │           │
+  │           ├──► FAILED ──► (重跑) ACTIVE
+  │           └──► CANCELLED（实例终止/退回/被跳过）
+  └──────────────► SKIPPED（人工干预）</code></pre>
+
+  <h4>任务状态</h4>
+  <pre><code>CREATED ──► CLAIMED ──► COMPLETED(verdict=approve|reject|return|submit)
+   │            │
+   ├──► CANCELLED（或签/竞签他人已定、实例终止、退回）
+   ├──► EXPIRED（超时策略）
+   └──► DELEGATED（转交，生成新任务，原任务终结）</code></pre>
+
+  <h3>3.4 一次引擎步进</h3>
+  <p>每个作业（job）代表一次「在某个节点实例上做一次确定性推进」。处理流程固定为：加实例锁 → 状态校验 → 执行器计算 → 原子落库 → 提交。执行器内部不直接写库，只产出变更指令（Command），便于测试与回放。</p>
+
+  <pre><code>// pw-engine: EngineWorker
+@Transactional
+public void process(Job job) {
+    lockInstance(job.instanceId());                 // pg_advisory_xact_lock(hash(instanceId))
+    Instance inst = instanceRepo.loadForUpdate(job.instanceId());
+    if (inst.status().isTerminal()) { jobRepo.done(job); return; }
+
+    NodeInstance ni = nodeRepo.load(job.nodeInstanceId());
+    if (!ni.status().equals(job.expectedStatus())) { // 重复投递 / 已被处理
+        jobRepo.done(job); return;                   // 幂等空操作
+    }
+
+    Snapshot snap = snapshotCache.get(inst.versionId()); // 不可变，命中率接近 100%
+    Node node = snap.node(ni.nodeId());
+    StepResult result = executorRegistry.get(node.type())
+        .execute(new StepContext(inst, ni, node, snap, job));
+
+    commandApplier.apply(result.commands());        // token / node / task / var / timer / job
+    instanceRepo.bumpStateVersion(inst, result.stepDelta());
+    audit.append(inst, result.auditEvents());
+    outbox.append(inst, result.domainEvents());     // 同事务，事务提交后投递
+    jobRepo.done(job);
+}</code></pre>
+
+  <h4>Command 类型</h4>
+  <table>
+    <tr><th>Command</th><th>作用</th><th>典型来源</th></tr>
+    <tr><td><code>CreateToken</code></td><td>在指定节点创建令牌</td><td>开始、分叉、汇聚、退回</td></tr>
+    <tr><td><code>ConsumeToken</code></td><td>标记令牌已消费</td><td>所有自动节点、节点完成</td></tr>
+    <tr><td><code>ActivateNode</code></td><td>创建节点实例并调度</td><td>令牌到达节点</td></tr>
+    <tr><td><code>CompleteNode</code></td><td>节点实例完成</td><td>脚本、网关、审批裁决</td></tr>
+    <tr><td><code>CreateTasks</code></td><td>批量创建待办</td><td>审批、表单节点</td></tr>
+    <tr><td><code>WriteVariable</code></td><td>带版本号的变量写入</td><td>表单提交、脚本输出</td></tr>
+    <tr><td><code>CreateTimer</code></td><td>持久化定时器</td><td>超时、延时、提醒</td></tr>
+    <tr><td><code>EnqueueJob</code></td><td>投递下一引擎作业</td><td>所有阶段推进</td></tr>
+    <tr><td><code>EmitEvent</code></td><td>写 Outbox 领域事件</td><td>所有对外可见状态变化</td></tr>
+  </table>
+
+  <div class="callout">
+    <span class="t">为什么执行器只产出 Command</span>
+    内核逻辑可以在无数据库的单元测试中穷举：给定快照、实例状态、作业，断言产出的 Command 序列。数据库只负责原子落库，复杂判断全部可测。这也是自研内核能被验证的前提。
+  </div>
+
+  <h3>3.5 节点执行器</h3>
+  <table>
+    <tr><th>节点类型</th><th>KEY</th><th>执行行为</th><th>阻塞点</th><th>优先级</th></tr>
+    <tr><td>开始</td><td><code>start</code></td><td>校验必填变量 → 沿出边创建令牌</td><td>无</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>结束</td><td><code>end</code></td><td>消费令牌；无其余活动令牌时完成实例，触发结束回调</td><td>无</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>审批</td><td><code>approval</code></td><td>解析审批人 → 创建签核会话与任务 → 节点 WAITING</td><td>人工任务</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>表单</td><td><code>form</code></td><td>创建表单任务（无同意/否决语义），提交即完成</td><td>人工填写</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>抄送</td><td><code>cc</code></td><td>发通知，不创建令牌等待，直接通过</td><td>无</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>脚本</td><td><code>script</code></td><td>两阶段：沙箱计算 → 事务内写回并推进</td><td>Runner 执行</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>服务</td><td><code>service</code></td><td>HTTP / MQ 调用；同步或异步等待回调</td><td>外部系统</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>排他网关</td><td><code>exclusive_gateway</code></td><td>按出边顺序求值，命中第一条即走</td><td>无</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>并行网关</td><td><code>parallel_gateway</code></td><td>fork 全发 / join 等全部</td><td>join 等待</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>包容网关</td><td><code>inclusive_gateway</code></td><td>fork 按条件发多路 / join 只等实际激活分支</td><td>join 等待</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>定时</td><td><code>timer</code></td><td>创建定时器，节点 WAITING；到点推进</td><td>时间</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>等待</td><td><code>wait</code></td><td>等待外部信号（Webhook/API），带超时策略</td><td>外部信号</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>子流程</td><td><code>sub_process</code></td><td>内嵌：同实例新令牌域；外调：创建子实例并等待</td><td>子流程结束</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>扩展</td><td><code>plugin</code></td><td>SPI 注册的自定义执行器</td><td>自定义</td><td><span class="badge b-p2">P2</span></td></tr>
+  </table>
+
+  <h4>节点激活的通用步骤</h4>
+  <ol>
+    <li>校验令牌与节点状态，计算 <code>activation_seq = 该实例该节点历史激活数 + 1</code>。</li>
+    <li>创建 <code>wf_node_instance</code>，初始化局部上下文（可选从流程上下文拷贝白名单变量）。</li>
+    <li>按节点类型执行：自动节点直接产出后继 Command；人工/等待节点转入 WAITING。</li>
+    <li>节点完成时：合并局部变量（按映射规则）→ 消费令牌 → 沿出边创建令牌或结束实例。</li>
+    <li>每次激活累计实例步数；超过阈值触发保护性挂起。</li>
+  </ol>
+
+  <h3>3.6 网关与汇聚算法</h3>
+
+  <h4>排他网关（XOR）</h4>
+  <ul>
+    <li>出边按快照中的顺序求值（设计器保存顺序即优先级），第一条为 <code>true</code> 的边被选中。</li>
+    <li>校验期强制存在默认边（条件为 <code>true</code> 或显式 <code>default: true</code>）；运行期若仍无匹配，走默认边并记 <code>GATEWAY_NO_MATCH</code> 告警事件。</li>
+    <li>表达式只读上下文，不允许赋值与函数副作用；求值超时 50ms。</li>
+  </ul>
+
+  <h4>并行网关（AND）</h4>
+  <pre><code>fork:
+  scope = new JoinScope(forkNodeId, pairedJoinNodeId, expected = outgoingEdges)
+  consume(token)
+  for edge in outgoingEdges: createToken(edge.to, scope, branch=edge.id)
+
+join:
+  scope.arrive(token.branchKey)
+  if scope.arrived == scope.expected:
+      consume(all arrived tokens); close(scope)
+      createToken(join.outgoing[0])
+  else:
+      token.status = WAITING; node.status = WAITING</code></pre>
+  <p><code>JoinScope</code> 持久化在 <code>wf_join_scope</code>（含 <code>expected_branches</code>、<code>arrived_branches</code>、<code>parent_scope_id</code>），因此进程崩溃后仍能判断「还差哪条分支」。嵌套并行的 scope 形成树，深度默认限制 3 层。</p>
+
+  <h4>包容网关（OR）</h4>
+  <ul>
+    <li>fork 时对全部出边求值，激活所有为真的分支（至少一条，否则走默认边）。</li>
+    <li>fork 把「实际激活集合」写入 scope；join 只等待该集合内的分支。</li>
+    <li>join 的匹配范围必须在设计期由 fork 配对确定，禁止一个 join 被多个 fork 复用（校验期阻断）。</li>
+  </ul>
+
+  <h4>死锁与循环保护</h4>
+  <table>
+    <tr><th>风险</th><th>检测</th><th>处理</th></tr>
+    <tr><td>join 永远等不齐（分支被条件跳过）</td><td>scope 处于 WAITING 且超过阈值（默认 1 小时）</td><td>标记 <code>DEADLOCK_SUSPECT</code>，告警；不自动跳过</td></tr>
+    <tr><td>回环无终止条件</td><td><code>step_count &gt; 1000</code></td><td>实例 SUSPENDED，告警，等待人工处理</td></tr>
+    <tr><td>单节点被无限激活</td><td>同一节点激活数 &gt; 100</td><td>同上</td></tr>
+    <tr><td>结构错误（fork 无配对 join）</td><td>发布校验</td><td>阻断发布，不允许上线</td></tr>
+  </table>
+
+  <h3>3.7 实例完成判定</h3>
+  <p>结束节点消费令牌后，在事务内检查：该实例是否还存在 <code>ACTIVE</code>/<code>WAITING</code> 令牌，或非终态的节点实例。若都不存在，置实例 <code>COMPLETED</code>，记录 <code>outcome</code>（approve / reject / terminated），写入结束事件，并触发结束回调（Outbox）。</p>
+  <div class="callout warn">
+    <span class="t">常见错误：只看「到达 end 的令牌数」</span>
+    并行实例中一条分支已到 end，另一条仍在审批，实例不能完成。完成判定必须基于「全局是否还有活动令牌」，而不是单条令牌的位置。
+  </div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>调度、恢复与幂等</h2>
+
+  <p class="lead">自研内核的可靠性不来自「不崩溃」，而来自「崩溃后能确定地接着跑」。本章定义作业模型、租约、实例级串行、恢复矩阵与幂等体系。</p>
+
+  <h3>4.1 作业模型</h3>
+  <pre><code>wf_execution_job(
+  id             BIGSERIAL PRIMARY KEY,
+  tenant_id      VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id    VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  job_type       VARCHAR(32) NOT NULL,   -- ACTIVATE_NODE / COMPLETE_TASK / FIRE_TIMER / SIGNAL / RESUME
+  expected_status VARCHAR(16),           -- 处理前节点实例/任务的期望状态（幂等校验）
+  payload        JSONB NOT NULL DEFAULT '{}',
+  status         VARCHAR(16) NOT NULL,   -- PENDING / RUNNING / DONE / FAILED / DEAD
+  priority       SMALLINT NOT NULL DEFAULT 100,
+  available_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  lease_until    TIMESTAMPTZ,
+  worker_id      VARCHAR(64),
+  attempts       INT NOT NULL DEFAULT 0,
+  max_attempts   INT NOT NULL DEFAULT 10,
+  last_error     TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_job_pick ON wf_execution_job(status, available_at, priority)
+  WHERE status = 'PENDING';</code></pre>
+  <p>作业负载保持最小：只带「实例 ID + 节点实例 ID + 期望状态 + 触发原因」。Worker 总是重新读取权威状态，防止用过期 payload 推进流程。</p>
+
+  <h3>4.2 领取、租约与回收</h3>
+  <pre><code>-- Worker 批量领取（PG 9.5+ SKIP LOCKED）
+WITH picked AS (
+  SELECT id FROM wf_execution_job
+  WHERE status = 'PENDING' AND available_at &lt;= now()
+  ORDER BY priority, id
+  LIMIT #{batch}
+  FOR UPDATE SKIP LOCKED
+)
+UPDATE wf_execution_job j
+SET status='RUNNING', worker_id=#{workerId},
+    lease_until=now() + interval '30 seconds',
+    attempts=attempts+1, updated_at=now()
+FROM picked WHERE j.id=picked.id
+RETURNING j.*;</code></pre>
+  <ul>
+    <li><strong>心跳</strong>：长任务每 10s 续租；续租失败说明作业已被回收，立即停止写入（避免双写）。</li>
+    <li><strong>回收器</strong>：每 10s 扫描 <code>status='RUNNING' AND lease_until &lt; now()</code>，重置为 PENDING；超过 <code>max_attempts</code> 置 DEAD 并告警。</li>
+    <li><strong>退避</strong>：失败重试按 <code>min(2^attempts, 300)s</code> 计算 <code>available_at</code>，避免故障时风暴。</li>
+    <li><strong>优雅停机</strong>：停止领取 → 等待在途作业完成或租约到期 → 退出。</li>
+  </ul>
+
+  <h3>4.3 实例级串行</h3>
+  <p>同一个实例的并发推进（双击提交、重复消息、两个 Worker 同时领到作业）必须串行化。采用 PostgreSQL 事务级 advisory lock，锁粒度就是实例：</p>
+  <pre><code>SELECT pg_advisory_xact_lock(hashtextextended(#{instanceId}, 0));
+-- 或对 wf_instance 行加 FOR UPDATE
+SELECT * FROM wf_instance WHERE id = #{instanceId} FOR UPDATE;</code></pre>
+  <div class="grid2">
+    <div class="card">
+      <h4>为什么不用 Redis 分布式锁</h4>
+      <p>锁的持有者崩溃后只能等过期，且锁与数据库事务不在同一原子边界。advisory lock 随事务自动释放，不会出现「锁过期但事务还在跑」。</p>
+    </div>
+    <div class="card">
+      <h4>锁顺序</h4>
+      <p>固定顺序：实例 → 任务 → 变量（按 name 排序）。跨实例操作（子流程、迁移）按实例 ID 升序加锁，避免死锁。</p>
+    </div>
+  </div>
+
+  <h3>4.4 崩溃恢复矩阵</h3>
+  <table>
+    <tr><th>崩溃时点</th><th>数据库状态</th><th>恢复动作</th><th>是否重复副作用</th></tr>
+    <tr><td>事务提交前</td><td>全部回滚，作业仍为 RUNNING 或 PENDING</td><td>租约到期后重领，重新执行</td><td>否（未提交）</td></tr>
+    <tr><td>事务提交后、标记 DONE 前</td><td>状态已变，作业 RUNNING</td><td>重领后 <code>expected_status</code> 不匹配 → 空操作</td><td>否（幂等校验）</td></tr>
+    <tr><td>脚本/HTTP 调用后、写库前</td><td>外部副作用已发生</td><td>重试时携带同一幂等键，由下游/脚本语义收敛</td><td>可能重复调用，但效果一次</td></tr>
+    <tr><td>Outbox 已提交、消息未发</td><td>outbox PENDING</td><td>Relay 重试投递</td><td>消费端按 event_id 去重</td></tr>
+    <tr><td>Redis 全部丢失</td><td>PG 完整</td><td>缓存重建，不影响正确性</td><td>否</td></tr>
+    <tr><td>RocketMQ 不可用</td><td>Outbox 积压</td><td>恢复后继续投递；页面功能不受阻</td><td>消费端去重</td></tr>
+  </table>
+
+  <h3>4.5 定时器与超时</h3>
+  <pre><code>wf_timer(
+  id             BIGSERIAL PRIMARY KEY,
+  instance_id    VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  task_id        BIGINT,
+  timer_type     VARCHAR(32) NOT NULL,  -- NODE_TIMEOUT / TASK_REMIND / DELAY / SLA
+  fire_at        TIMESTAMPTZ NOT NULL,
+  payload        JSONB NOT NULL DEFAULT '{}',
+  status         VARCHAR(16) NOT NULL,  -- PENDING / FIRED / CANCELLED
+  fired_at       TIMESTAMPTZ
+);
+CREATE INDEX ix_timer_fire ON wf_timer(status, fire_at) WHERE status='PENDING';</code></pre>
+  <ul>
+    <li><strong>扫描器</strong>：每秒领取到期定时器（同样使用 SKIP LOCKED），转成 <code>FIRE_TIMER</code> 作业；定时器本身只作为「时间事实」。</li>
+    <li><strong>精确性</strong>：允许 ±1s 误差；同一时刻大量定时器按实例 ID 分批，避免单次扫描过长。</li>
+    <li><strong>挂起语义</strong>：实例挂起时，未到期的任务超时定时器计算剩余时间并标记暂停；恢复时按剩余时间重算 <code>fire_at</code>。</li>
+    <li><strong>工作日历</strong>：按组织时区计算下一个工作时刻；节假日数据来自配置表，缓存于 Redis。</li>
+    <li><strong>重复提醒</strong>：一次提醒触发后，按策略创建下一次定时器（次数上限可配）。</li>
+  </ul>
+
+  <h3>4.6 幂等体系</h3>
+  <table>
+    <tr><th>层级</th><th>键</th><th>实现</th></tr>
+    <tr><td>API 写请求</td><td><code>Idempotency-Key</code> + 租户 + scope</td><td><code>wf_idempotency</code> 唯一索引；同键返回首次响应（含状态码与 body）</td></tr>
+    <tr><td>任务完成</td><td><code>task_id + 期望 version</code></td><td><code>UPDATE wf_task SET status='COMPLETED', version=version+1 WHERE id=? AND status IN ('CREATED','CLAIMED') AND version=?</code>；影响行数为 0 则返回当前状态</td></tr>
+    <tr><td>引擎作业</td><td><code>job_id + expected_status</code></td><td>处理前校验节点实例状态；重复投递为空操作</td></tr>
+    <tr><td>领域事件</td><td><code>event_id (UUID)</code></td><td>消费端去重表 <code>wf_consumed_event</code> 或 Redis SETNX + 短期 TTL</td></tr>
+    <tr><td>外部调用</td><td><code>instance_id + node_instance_id + attempt</code></td><td>请求头 <code>X-Idempotency-Key</code> 传给下游；下游应支持</td></tr>
+  </table>
+
+  <h3>4.7 吞吐与背压</h3>
+  <ul>
+    <li>Worker 批量领取（默认 32 条），按实例哈希分片到本地队列，避免多个线程争抢同一实例锁。</li>
+    <li>作业表、任务表、审计表按时间分区；PENDING 部分索引只保留活跃作业。</li>
+    <li>当 PENDING 作业年龄 P95 超过阈值（如 30s），自动扩容 Worker；超过 5 分钟触发告警并暂停低优先级作业（提醒类）。</li>
+    <li>创建实例接口在作业积压时仍保持同步写入与返回，不做同步流转，保证 P99 延迟目标。</li>
+  </ul>
+</section>
+
+<!-- ================= 05 ================= -->
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>签核、退回与人工干预</h2>
+
+  <p class="lead">签核是 PRD 冻结的核心口径。本方案把「一人一任务」与「一节点一裁决会话」分开建模：任务记录个人的动作，签核会话记录节点的裁决，任何签核模式都只是对会话计数器的不同解释。</p>
+
+  <h3>5.1 任务与签核会话</h3>
+  <div class="figbox">
+    <svg viewBox="0 0 820 220" width="820" height="220" role="img" aria-label="节点实例与签核会话、任务的关系">
+      <defs><style>.q{fill:#fff;stroke:#1A6357;stroke-width:1.1}.q2{fill:#E1EDE8;stroke:#1A6357;stroke-width:1.1}.qt{font:12px -apple-system,PingFang SC,sans-serif;fill:#141A19}.qs{font:10.5px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.ql{stroke:#5F6B68;stroke-width:1;fill:none}</style></defs>
+      <rect x="20" y="80" width="140" height="56" class="q2" rx="3"/><text x="90" y="103" text-anchor="middle" class="qt">节点实例</text><text x="90" y="120" text-anchor="middle" class="qs">approval · WAITING</text>
+      <rect x="230" y="80" width="170" height="56" class="q" rx="3"/><text x="315" y="103" text-anchor="middle" class="qt">签核会话 sign_session</text><text x="315" y="120" text-anchor="middle" class="qs">mode=ALL · OPEN · 2/3 完成</text>
+      <rect x="480" y="24" width="150" height="46" class="q" rx="3"/><text x="555" y="43" text-anchor="middle" class="qt">任务 A（法务）</text><text x="555" y="58" text-anchor="middle" class="qs">COMPLETED · approve</text>
+      <rect x="480" y="86" width="150" height="46" class="q" rx="3"/><text x="555" y="105" text-anchor="middle" class="qt">任务 B（财务）</text><text x="555" y="120" text-anchor="middle" class="qs">COMPLETED · approve</text>
+      <rect x="480" y="148" width="150" height="46" class="q" rx="3"/><text x="555" y="167" text-anchor="middle" class="qt">任务 C（风控）</text><text x="555" y="182" text-anchor="middle" class="qs">CREATED · pending</text>
+      <line x1="160" y1="108" x2="226" y2="108" class="ql"/><line x1="400" y1="98" x2="476" y2="50" class="ql"/><line x1="400" y1="108" x2="476" y2="108" class="ql"/><line x1="400" y1="118" x2="476" y2="168" class="ql"/>
+    </svg>
+  </div>
+  <p class="figcap">图 5-1 一个审批节点实例对应一个签核会话，会话下挂 N 个任务；会话负责裁决，任务只记录个人动作。</p>
+
+  <pre><code>wf_sign_session(
+  id               BIGSERIAL PRIMARY KEY,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT NOT NULL,
+  node_id          VARCHAR(64) NOT NULL,
+  mode             VARCHAR(8)  NOT NULL,   -- ANY / ALL / RACE
+  sign_style       VARCHAR(8)  NOT NULL,   -- PARALLEL / SERIAL
+  status           VARCHAR(16) NOT NULL,   -- OPEN / DECIDED / CANCELLED
+  decision         VARCHAR(16),            -- APPROVE / REJECT
+  pass_rule        JSONB NOT NULL DEFAULT '{"type":"ALL"}',
+  reject_rule      VARCHAR(24) NOT NULL DEFAULT 'VETO_IMMEDIATE',
+  expected_count   INT NOT NULL,           -- 含加签后的总人数
+  completed_count  INT NOT NULL DEFAULT 0,
+  approve_count    INT NOT NULL DEFAULT 0,
+  reject_count     INT NOT NULL DEFAULT 0,
+  turn_index       INT NOT NULL DEFAULT 1, -- 串行会签当前轮次
+  decided_at       TIMESTAMPTZ,
+  version          INT NOT NULL DEFAULT 0
+);</code></pre>
+
+  <h3>5.2 三种签核模式</h3>
+  <table>
+    <tr><th>场景</th><th>或签 ANY</th><th>并签 ALL</th><th>竞签 RACE</th></tr>
+    <tr><td>任务发放</td><td>N 人同时收到</td><td>并行：N 人同时；串行：逐个</td><td>N 人同时收到</td></tr>
+    <tr><td>同意时</td><td>立即裁决 <code>APPROVE</code>，其余任务取消</td><td>计数 +1；达到通过规则才裁决</td><td>立即裁决 <code>APPROVE</code>，其余任务取消</td></tr>
+    <tr><td>否决时</td><td><strong>不终止</strong>，记录否决；其他人继续；全部结束仍无人同意才裁决 <code>REJECT</code></td><td>默认一票否决立即 <code>REJECT</code>；可配「收集完再判」</td><td>立即裁决 <code>REJECT</code>，其余任务取消</td></tr>
+    <tr><td>其余任务</td><td>裁决后置 <code>CANCELLED</code></td><td>裁决后置 <code>CANCELLED</code></td><td>裁决后置 <code>CANCELLED</code>，草稿表单数据作废</td></tr>
+    <tr><td>并发提交</td><td>行锁串行；第二个看到会话已裁决，返回「任务已结束」</td><td>计数在会话行锁内累加，不会丢更新</td><td>先提交者生效；后到者返回「任务已结束」</td></tr>
+  </table>
+
+  <h4>裁决算法（统一入口）</h4>
+  <pre><code>// 在实例锁内执行，session 行 FOR UPDATE
+void onTaskCompleted(Session s, Task t, Verdict v) {
+    s.completedCount++;
+    if (v == APPROVE) s.approveCount++;
+    if (v == REJECT)  s.rejectCount++;
+
+    switch (s.mode) {
+      case ANY -> {
+        if (v == APPROVE) return decide(s, APPROVE);          // 任一同意即通过
+        if (s.completedCount == s.expectedCount) return decide(s, REJECT); // 全否决
+      }
+      case ALL -> {
+        if (v == REJECT && s.rejectRule == VETO_IMMEDIATE) return decide(s, REJECT);
+        if (passRuleSatisfied(s)) return decide(s, APPROVE);   // 全同意或达比例
+        if (s.completedCount == s.expectedCount) return decide(s, REJECT);
+        if (s.signStyle == SERIAL && v == APPROVE) activateNextTurn(s);
+      }
+      case RACE -> decide(s, v == APPROVE ? APPROVE : REJECT); // 第一人定音
+    }
+}
+
+boolean passRuleSatisfied(Session s) {
+    return switch (s.passRule.type) {
+      case "ALL"   -> s.approveCount == s.expectedCount;
+      case "RATIO" -> s.approveCount * 1.0 / s.expectedCount
+                        &gt;= s.passRule.ratio.doubleValue();
+    };
+}</code></pre>
+
+  <div class="callout warn">
+    <span class="t">或签最常见的实现错误</span>
+    把「任一否决」当成节点否决。PRD 口径是：或签的否决只是意见记录，节点仍等其他人；只有「全部人都否决」或「全部结束后仍无人同意」才裁决否决。代码评审必须覆盖这个用例。
+  </div>
+
+  <h3>5.3 并行会签与串行会签</h3>
+  <ul>
+    <li><strong>并行</strong>：一次性创建全部任务，<code>expected_count = 候选人数</code>。</li>
+    <li><strong>串行</strong>：只创建当前轮次任务；上一人同意后创建下一个，<code>expected_count</code> 保持总人数不变。任一环节否决按 <code>reject_rule</code> 处理。</li>
+    <li>串行会签的超时从「任务创建」开始计，不包含排队等待时间；节点总 SLA 另配。</li>
+  </ul>
+
+  <h3>5.4 加签、转交、委托、改派</h3>
+  <table>
+    <tr><th>动作</th><th>执行时机</th><th>数据变更</th><th>签核影响</th></tr>
+    <tr><td>前加签</td><td>当前任务未完成</td><td>创建新任务 <code>sign_seq = 当前 - 1</code>；当前任务挂起</td><td>新任务完成后再激活原任务</td></tr>
+    <tr><td>后加签</td><td>当前任务完成后</td><td>在当前任务之后创建新任务</td><td>纳入同一会话裁决集合</td></tr>
+    <tr><td>会签加签</td><td>并签会话 OPEN</td><td><code>expected_count++</code>，创建新任务</td><td>通过规则按新的总人数重新计算</td></tr>
+    <tr><td>转交</td><td>任务未完成</td><td>原任务 <code>DELEGATED</code>，新建任务给目标人</td><td>原审批人失去该任务；仅一次</td></tr>
+    <tr><td>委托</td><td>委托期内</td><td>任务创建时检查委托表，同时抄送代理人或直接改派</td><td>按委托配置；可撤销</td></tr>
+    <tr><td>改派</td><td>管理员操作</td><td>任务 assignee 直接修改 + 审计</td><td>不改变会话人数</td></tr>
+  </table>
+  <p>加签后的任务与原任务共享同一个 <code>sign_session_id</code>，因此自动遵循原签核模式：竞签加签后仍是「先处理者定音」，或签加签后仍是「任一同意即通过」。</p>
+
+  <h3>5.5 退回、撤回与重提</h3>
+  <table>
+    <tr><th>策略</th><th>令牌处理</th><th>任务处理</th><th>重提语义</th></tr>
+    <tr><td><code>to_start</code></td><td>取消全部活动令牌，在 start 创建新令牌，<code>round++</code></td><td>全部 <code>CANCELLED</code></td><td>默认保留已通过节点（自动跳过）；可配全部重走</td></tr>
+    <tr><td><code>to_prev</code></td><td>取消全部活动令牌（整单退回），在上一个审批节点创建令牌</td><td>当前及之后任务取消</td><td>从上一节点重新审批</td></tr>
+    <tr><td><code>to_node</code></td><td>取消全部令牌，在指定节点创建令牌（白名单校验）</td><td>全部取消</td><td>从指定节点重新走</td></tr>
+    <tr><td><code>terminate</code></td><td>全部取消</td><td>全部取消</td><td>实例结束，结论为否决</td></tr>
+  </table>
+  <p><strong>保留已通过节点的实现</strong>：上一轮完成的节点实例保留 <code>round</code> 与 <code>verdict</code>。新一轮令牌到达这些节点时，若节点配置 <code>preserveApproved=true</code>，引擎写入一条 <code>carried_over</code> 审计并沿原同意边继续，不创建任务。两种语义必须在发布校验时显式选择，不能隐式默认。</p>
+  <p><strong>撤回</strong>：发起人在「首个任务被处理前」（可配时间窗）可撤回。两种模式：<code>TERMINATE</code> 实例终止；<code>BACK_TO_DRAFT</code> 取消运行态令牌与任务，实例回到 CREATED，表单数据保留为草稿，重新提交时开启新轮次。</p>
+
+  <h3>5.6 审批人解析器</h3>
+  <table>
+    <tr><th>解析器</th><th>配置</th><th>解析结果</th></tr>
+    <tr><td><code>user</code></td><td>用户 ID / 上下文变量</td><td>单人</td></tr>
+    <tr><td><code>role</code></td><td>角色 code</td><td>角色下全部有效用户</td></tr>
+    <tr><td><code>managerOf</code></td><td>用户变量 + 层级 N</td><td>沿汇报线上溯 N 级</td></tr>
+    <tr><td><code>deptLeader</code></td><td>部门变量 / 部门 ID</td><td>部门负责人（可配多级）</td></tr>
+    <tr><td><code>initiator</code></td><td>—</td><td>实例发起人</td></tr>
+    <tr><td><code>expr</code></td><td>表达式</td><td>表达式返回的用户 ID 集合</td></tr>
+    <tr><td><code>script</code></td><td>脚本引用</td><td>脚本返回的用户 ID 集合（复杂规则）</td></tr>
+  </table>
+  <h4>空结果与离职处理</h4>
+  <table>
+    <tr><th>情况</th><th>默认行为</th><th>可配置项</th></tr>
+    <tr><td>解析结果为空</td><td>指派给流程管理员，节点挂起并告警</td><td>自动通过 / 报错挂起 / 指派管理员</td></tr>
+    <tr><td>审批人已离职/停用</td><td>任务保留并标记「人员异常」</td><td>自动转其上级 / 自动改派管理员</td></tr>
+    <tr><td>解析超时</td><td>使用本地组织缓存；缓存过期则挂起</td><td>缓存 TTL、降级策略</td></tr>
+  </table>
+  <p>组织数据采用「本地 PG 镜像 + Redis 缓存 + 定时增量同步」：<code>wf_org_user</code> / <code>wf_org_dept</code> 保存用户、部门、汇报线、角色，带 <code>source_version</code>；同步失败时继续使用上次快照，并在监控面板标记数据陈旧。</p>
+
+  <h3>5.7 人工干预</h3>
+  <table>
+    <tr><th>操作</th><th>实现</th><th>保护</th></tr>
+    <tr><td>强制通过/否决</td><td>以管理员身份完成当前任务，写 <code>actor_type=admin</code></td><td>必填原因；可选第二人复核</td></tr>
+    <tr><td>跳过节点</td><td>取消节点实例与任务，消费令牌，沿指定出边继续</td><td>必须指定出边；审计</td></tr>
+    <tr><td>跳转到节点</td><td>取消全部活动令牌，在目标节点创建令牌</td><td>二次确认 + 原因 + 审计；生产默认关闭</td></tr>
+    <tr><td>重跑节点</td><td>节点实例 FAILED → ACTIVE，投递新作业</td><td>脚本/服务执行器需幂等标记</td></tr>
+    <tr><td>修改变量</td><td>带版本号 CAS 写入，写 variable_log</td><td>敏感变量需二次确认；可配四眼原则</td></tr>
+    <tr><td>终止实例</td><td>取消全部令牌与任务，实例 TERMINATED</td><td>二次确认 + 原因</td></tr>
+  </table>
+  <p>所有干预进入 <code>wf_audit_log</code>，形成独立时间线节点，包含操作者、原因、前后状态快照。</p>
+
+  <h3>5.8 待办查询模型</h3>
+  <pre><code>-- 个人待办：覆盖 assignee 索引与状态过滤
+SELECT id, instance_id, node_id, title_snapshot, status, due_at, created_at
+FROM wf_task
+WHERE tenant_id = #{tenant} AND assignee = #{user} AND status IN ('CREATED','CLAIMED')
+ORDER BY created_at DESC
+LIMIT 50;
+
+-- 已办：按完成时间倒序，走 (assignee, status, completed_at) 索引
+-- 节点维度的在途任务：走 (instance_id, status)</code></pre>
+  <p>任务列表展示的 <code>title_snapshot</code> 在任务创建时从实例上下文冗余写入，避免列表查询回表拼接表单数据；实例标题变化时异步刷新。</p>
+</section>
+
+<!-- ================= 06 ================= -->
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>版本、发布与长跑迁移</h2>
+
+  <h3>6.1 版本状态机与发布流水线</h3>
+  <div class="flow">
+    <div class="step"><b>草稿 DRAFT</b><span>多人编辑 · 乐观锁 rev</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>提交 SUBMITTED</b><span>结构/脚本/变量校验</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>试跑回归</b><span>用例集 · 不影响线上</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>发布审批</b><span>管理员 · 生产强制</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>PUBLISHED</b><span>不可变快照 · 灰度</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>RETIRED</b><span>只阻断新实例</span></div>
+  </div>
+
+  <h4>发布前校验清单（阻断发布）</h4>
+  <table>
+    <tr><th>类别</th><th>校验项</th></tr>
+    <tr><td>图结构</td><td>有且仅有一个 start；至少一个 end；非 start 节点必须有人边、非 end 必须有出边；无孤立节点</td></tr>
+    <tr><td>网关</td><td>XOR 必须有默认边；fork/join 成对且分支闭合；OR 的 fork 与 join 一一配对；嵌套深度 ≤ 3</td></tr>
+    <tr><td>变量</td><td>表达式中引用的变量已声明或有上游产出；类型匹配；必填变量有默认值或来源</td></tr>
+    <tr><td>脚本</td><td>语法检查；只引用白名单模块；返回值可序列化；脚本版本已发布</td></tr>
+    <tr><td>表单</td><td>每个节点引用的表单版本存在且已发布；权限矩阵覆盖所有字段；子表单列定义为合法类型</td></tr>
+    <tr><td>审批人</td><td>每个解析器可模拟解析出候选人，或显式配置空集策略</td></tr>
+    <tr><td>退回</td><td>退回策略与目标节点显式配置；重提语义（保留/重走）显式选择</td></tr>
+    <tr><td>超时</td><td>超时动作已配置；工作日历存在</td></tr>
+  </table>
+
+  <h3>6.2 快照与不可变性</h3>
+  <ul>
+    <li>发布时把设计态完整序列化为 <code>snapshot_json</code>，并计算 SHA-256 存入 <code>content_hash</code>；任何字节变化都会产生新哈希。</li>
+    <li>快照包含：节点、边、变量声明、表单绑定、字段权限矩阵、脚本版本引用、超时策略、审批人解析器、灰度规则。</li>
+    <li>实例创建时记录 <code>version_id</code> 与 <code>snapshot_hash</code>；运行期只读快照，不反查设计态。</li>
+    <li>脚本与表单以「版本 ID」引用，而非内容内联，避免快照过大；引用版本同样不可变。</li>
+    <li>快照缓存于 Redis（key 含 hash），进程内再有 Caffeine 一级缓存；发布时按 key 失效。</li>
+  </ul>
+
+  <h3>6.3 灰度与默认版本</h3>
+  <table>
+    <tr><th>灰度维度</th><th>规则</th><th>实例选择方式</th></tr>
+    <tr><td>租户</td><td>指定租户白名单</td><td>创建时匹配 tenant_id</td></tr>
+    <tr><td>发起人</td><td>用户/部门白名单</td><td>匹配 initiator 或其部门</td></tr>
+    <tr><td>比例</td><td>0–100%</td><td><code>hash(business_key) % 100 &lt; ratio</code>，同一业务键稳定命中</td></tr>
+    <tr><td>默认</td><td>definition.current_version_id</td><td>未命中灰度规则时使用</td></tr>
+  </table>
+  <p>灰度规则随版本发布生效；命中结果写入实例（<code>version_id</code> + <code>gray_bucket</code>），便于事后解释「为什么这个实例走了 v2」。</p>
+
+  <h3>6.4 下线保护</h3>
+  <ul>
+    <li>下线版本只阻断新实例创建；运行中实例继续使用原版本。</li>
+    <li>下线前展示钉在该版本的运行中实例数量与最早开始时间。</li>
+    <li>不允许删除任何已发布版本；历史版本永久保留用于审计与回溯。</li>
+    <li>默认版本切换是独立操作，与发布解耦，避免「发布即全量」。</li>
+  </ul>
+
+  <h3>6.5 长跑实例迁移（P2）</h3>
+  <p>默认策略是<strong>不迁移</strong>。显式迁移作为高危工具，流程如下：</p>
+  <div class="flow">
+    <div class="step"><b>1 选择源/目标版本</b><span>仅 PUBLISHED 版本</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>2 静态 diff</b><span>节点/边/变量/表单差异</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>3 扫描受影响实例</b><span>当前活动节点在目标版本不存在或语义变化</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>4 活动映射</b><span>等价节点 / 跳过 / 回退</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>5 预演报告</b><span>冲突清单 + 影响面</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>6 白名单试迁</b><span>1 个实例验证</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>7 批量迁移</b><span>分批作业 · 可暂停</span></div>
+  </div>
+  <ul>
+    <li>迁移前对每个实例生成 <code>migration_snapshot</code>（令牌、节点实例、变量、任务），失败可一键回滚。</li>
+    <li>迁移在实例锁内进行：暂停实例 → 替换 version_id 与快照 → 按映射重建活动令牌/节点实例 → 恢复。</li>
+    <li>迁移后的实例带 <code>migrated_from_version</code> 与迁移批次 ID，时间线可见。</li>
+    <li>表单版本不随流程迁移自动升级；需要单独的表单迁移策略（默认保持旧表单版本）。</li>
+  </ul>
+</section>
+
+<!-- ================= 07 ================= -->
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>表单引擎</h2>
+
+  <p class="lead">表单是流程上下文的人机接口：字段即变量，提交即写入。核心不是「能画表单」，而是「同一张表单在不同节点对不同人呈现不同的可见性、可编辑性与必填约束」，且服务端不可被前端绕过。</p>
+
+  <h3>7.1 表单 Schema</h3>
+  <pre><code>{
+  "key": "expense_form",
+  "name": "费用报销单",
+  "version": 3,
+  "fields": [
+    { "key": "amount", "type": "decimal", "label": "报销金额",
+      "required": true, "searchable": true, "props": { "precision": 2, "min": 0 } },
+    { "key": "category", "type": "select", "label": "费用类型",
+      "options": [{"value":"travel","label":"差旅"},{"value":"meal","label":"餐饮"}] },
+    { "key": "items", "type": "subform", "label": "费用明细", "maxRows": 200,
+      "columns": [
+        { "key": "date", "type": "date", "label": "日期", "required": true },
+        { "key": "amount", "type": "decimal", "label": "金额", "required": true },
+        { "key": "note", "type": "text", "label": "说明" }
+      ] },
+    { "key": "total", "type": "computed", "label": "合计",
+      "expr": "sum(items[*].amount)", "readonly": true }
+  ],
+  "layout": [
+    { "type": "group", "label": "基本信息", "fields": ["amount","category"] },
+    { "type": "group", "label": "明细", "fields": ["items","total"] }
+  ],
+  "rules": [
+    { "type": "linkage", "when": "category == 'travel'", "then": { "show": ["items"] } }
+  ]
+}</code></pre>
+  <p>Schema 只描述<strong>结构与约束</strong>，不描述某个节点的权限。权限在绑定关系中单独配置，保证同一张表单可被多个流程、多个节点复用。</p>
+
+  <h3>7.2 字段类型</h3>
+  <table>
+    <tr><th>分类</th><th>类型</th><th>优先级</th></tr>
+    <tr><td>基础</td><td>单行文本、多行文本、数字、金额 decimal、日期、日期时间、开关、单选、多选、下拉、评分</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>组织</td><td>人员单选/多选、部门选择、角色选择</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>数据</td><td>字典下拉、级联选择、关联业务对象</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>附件</td><td>文件上传、图片上传、富文本</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>高级</td><td>计算字段、只读展示、子表单（明细表）</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>布局</td><td>分组、分栏、折叠面板、标签页、说明文字</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>系统</td><td>审批意见、系统附件、操作人、操作时间</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>扩展</td><td>手写签名、定位、二维码/条码</td><td><span class="badge b-p2">P2</span></td></tr>
+  </table>
+
+  <h3>7.3 节点 × 字段权限矩阵</h3>
+  <pre><code>wf_form_binding(
+  definition_version_id BIGINT NOT NULL,
+  node_id              VARCHAR(64) NOT NULL,
+  form_version_id      BIGINT NOT NULL,
+  field_permissions    JSONB NOT NULL,
+  default_policy       VARCHAR(16) NOT NULL DEFAULT 'READONLY', -- READONLY / INHERIT
+  UNIQUE (definition_version_id, node_id)
+);
+
+-- field_permissions 示例
+{
+  "amount":         "EDIT_REQUIRED",
+  "category":       "EDIT",
+  "items":          "EDIT",
+  "manager_comment":"EDIT_REQUIRED",
+  "hr_no":          "HIDDEN",
+  "approve_result": "HIDDEN",
+  "system_comment": "READONLY"
+}</code></pre>
+  <table>
+    <tr><th>权限</th><th>前端</th><th>服务端</th></tr>
+    <tr><td><code>HIDDEN</code></td><td>不渲染，不返回字段值</td><td>提交值直接丢弃并记审计</td></tr>
+    <tr><td><code>READONLY</code></td><td>灰化展示</td><td>提交值丢弃并记审计</td></tr>
+    <tr><td><code>EDIT</code></td><td>可编辑，非必填</td><td>接受符合类型与校验的值</td></tr>
+    <tr><td><code>EDIT_REQUIRED</code></td><td>可编辑且必填</td><td>为空则拒绝提交，返回字段级错误</td></tr>
+  </table>
+  <p><strong>解析规则</strong>：节点显式配置优先；未配置字段按 <code>default_policy</code>（默认只读）；<code>INHERIT</code> 时沿流程入边回溯最近一个配置了该字段的节点；均无则只读。</p>
+  <div class="callout danger">
+    <span class="t">安全底线</span>
+    前端权限只影响体验，<strong>服务端必须以绑定矩阵为准重新过滤提交体</strong>。审批人提交只读字段的新值时，按 PRD §17-20 丢弃越权字段并记审计，不报错、不落库。所有表单提交接口都必须走同一过滤器，禁止各接口自行解析。
+  </div>
+
+  <h3>7.4 表单与上下文双向绑定</h3>
+  <ul>
+    <li>字段 key 直接映射流程变量名；提交时按权限矩阵过滤后写入 <code>wf_variable</code>（流程级）。</li>
+    <li>节点局部字段先写 <code>wf_node_instance.local_context</code>，按节点配置的 <code>outputMapping</code> 合并到流程级。</li>
+    <li>脚本修改上下文后，表单再次打开时展示最新值；提交前前端重新拉取 <code>GET /instances/{id}/form</code>，避免基于旧值提交。</li>
+    <li>文件字段只存 MinIO 对象 key；表单数据里保存 <code>{key, filename, size, sha256}</code>。</li>
+  </ul>
+
+  <h3>7.5 三层校验</h3>
+  <table>
+    <tr><th>层</th><th>触发</th><th>内容</th><th>失败表现</th></tr>
+    <tr><td>前端即时</td><td>输入/失焦</td><td>必填、类型、长度、正则、数值范围、子表单行内校验</td><td>字段下方红字提示</td></tr>
+    <tr><td>服务端提交</td><td>提交表单/完成任务</td><td>重新执行全部规则；权限过滤；跨字段表达式；唯一性；异步校验</td><td>结构化错误，定位字段与行号</td></tr>
+    <tr><td>流转前</td><td>节点完成、令牌流转前</td><td>关键字段完整性、业务守卫（如金额与明细一致）</td><td>停留当前节点，实例不推进</td></tr>
+  </table>
+  <pre><code>// 统一错误结构
+{
+  "code": "FORM_VALIDATION_FAILED",
+  "message": "表单校验未通过",
+  "traceId": "8f2c...",
+  "details": [
+    { "field": "amount", "row": null, "rule": "required", "message": "报销金额必填" },
+    { "field": "items[3].amount", "row": 3, "rule": "gt", "message": "金额必须大于 0" }
+  ]
+}</code></pre>
+
+  <h3>7.6 子表单、联动与计算（P1）</h3>
+  <ul>
+    <li><strong>子表单</strong>：最多 200 行（服务端硬限制）；支持行内校验、列合计；脚本可按整体数组读写。</li>
+    <li><strong>联动</strong>：字段 A 变化触发 B 的取值/显隐/必填/选项；联动规则在客户端执行，服务端在提交时按同一规则复核关键项。</li>
+    <li><strong>计算字段</strong>：前端实时计算仅用于展示；服务端提交时<strong>强制复算</strong>并以服务端结果为准，防止篡改。</li>
+    <li><strong>数据源</strong>：静态字典（本地缓存）、接口动态拉取（超时 3s、结果缓存、失败降级为空）、级联数据源。</li>
+    <li>复杂联动一律建议落到脚本节点，表单只负责展示与采集，避免规则引擎变成第二套编程语言。</li>
+  </ul>
+
+  <h3>7.7 存储与检索</h3>
+  <pre><code>wf_form_data(
+  id               BIGSERIAL PRIMARY KEY,
+  tenant_id        VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  task_id          BIGINT,
+  form_version_id  BIGINT NOT NULL,
+  round            INT NOT NULL DEFAULT 1,
+  data_json        JSONB NOT NULL,          -- 全量表单值（敏感字段加密）
+  indexed_json     JSONB NOT NULL DEFAULT '{}', -- 可查询字段投影
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_form_data_instance ON wf_form_data(instance_id);
+CREATE INDEX ix_form_data_search ON wf_form_data USING GIN (indexed_json jsonb_path_ops);</code></pre>
+  <ul>
+    <li>字段标记 <code>searchable</code> 才进入 <code>indexed_json</code>；未标记字段只存 JSONB，避免全字段索引拖慢写入。</li>
+    <li>敏感字段使用 AES-GCM 加密后存储，密钥来自环境变量/KMS；<code>indexed_json</code> 存脱敏值或不存。</li>
+    <li>实例检索按 <code>indexed_json @&gt; '{"field":"value"}'</code> 走 GIN；高频字段可加表达式索引，超大规模再引入 ES（P2）。</li>
+    <li>表单数据与实例同生命周期：实例归档时一并迁入 <code>wf_form_data_archive</code> 或冷存储。</li>
+  </ul>
+
+  <h3>7.8 草稿、版本与附件</h3>
+  <ul>
+    <li><strong>草稿</strong>：存 <code>wf_form_draft</code>，不启动实例、不产生待办、不发通知；草稿与正式提交隔离。</li>
+    <li><strong>版本钉住</strong>：实例创建时记录所用表单版本；表单升级不影响旧实例，旧实例按旧 Schema 渲染。</li>
+    <li><strong>附件</strong>：前端向 MinIO 申请预签名上传 URL（5 分钟有效）→ 直传 → 调确认接口登记 <code>wf_attachment</code>；确认时校验大小、类型、SHA-256。</li>
+    <li><strong>打印/导出</strong>：服务端生成 PDF（含流转记录与意见）与 Excel；生成任务异步执行，结果存 MinIO，链接短时有效。</li>
+  </ul>
+
+  <h3>7.9 表单提交与任务完成的原子性</h3>
+  <pre><code>POST /api/v1/tasks/{taskId}/submit-form
+  ├─ 鉴权：任务确实指派给当前用户（或管理员代操作）
+  ├─ 加载绑定矩阵，过滤提交体
+  ├─ 服务端复算计算字段
+  ├─ 三层校验（提交层 + 流转前层）
+  ├─ 事务开始（实例锁）
+  │   ├─ 写 wf_form_data（本轮生效数据）
+  │   ├─ 写 wf_variable（带版本号）
+  │   ├─ 完成任务 + 签核裁决
+  │   ├─ 推进令牌 / 创建后继任务
+  │   ├─ 写审计与 Outbox
+  │   └─ 提交
+  └─ 返回新任务或实例状态</code></pre>
+  <p>校验、写表单、写上下文、完成任务、流转令牌必须在同一事务内，绝不允许「表单存了但流程没走」或反之。竞签场景下，后到者的提交在任务已被取消时直接返回 <code>TASK_ALREADY_FINISHED</code>，其表单数据不落库，仅保留审计。</p>
+
+  <h3>7.10 外部表单兜底通道</h3>
+  <p>内置表单覆盖常规审批，但历史系统或高度定制的表单仍需保留嵌入能力。节点的 <code>formRef</code> 可指向外部表单 URL，平台以 iframe 或微前端方式嵌入，并只负责三件事：鉴权、结果校验、写回上下文。</p>
+  <table>
+    <tr><th>环节</th><th>设计</th></tr>
+    <tr><td>嵌入</td><td>节点配置 <code>externalForm: { url, height, sandbox }</code>；URL 必须在发布期通过域名白名单校验</td></tr>
+    <tr><td>上下文注入</td><td>平台通过 <code>postMessage</code> 或 URL 参数下发 <code>instanceId</code>、<code>taskId</code>、只读上下文与一次性签名 token</td></tr>
+    <tr><td>结果回传</td><td>外部表单提交时回调 <code>POST /api/v1/tasks/{id}/external-submit</code>，携带签名、表单数据与幂等键</td></tr>
+    <tr><td>服务端处理</td><td>验签 → 按绑定矩阵过滤字段 → 类型与必填校验 → 与内置表单相同的原子提交流程</td></tr>
+    <tr><td>安全</td><td>iframe <code>sandbox</code> 最小权限；CSP 限制；token 单次有效且 5 分钟过期；禁止外部页面直接访问平台 cookie</td></tr>
+    <tr><td>限制</td><td>外部表单无法参与平台的字段级权限矩阵渲染，权限需由外部系统自行保证；平台仍在服务端做白名单字段过滤</td></tr>
+  </table>
+</section>
+
+<!-- ================= 08 ================= -->
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>上下文、表达式与脚本沙箱</h2>
+
+  <h3>8.1 作用域</h3>
+  <table>
+    <tr><th>作用域</th><th>存储</th><th>可见范围</th><th>生命周期</th></tr>
+    <tr><td>流程级 <code>ctx</code></td><td><code>wf_variable</code></td><td>全实例</td><td>实例创建 → 结束</td></tr>
+    <tr><td>节点局部 <code>local</code></td><td><code>wf_node_instance.local_context</code></td><td>仅当前节点实例</td><td>节点激活 → 结束</td></tr>
+    <tr><td>子流程级</td><td>子实例的流程级变量</td><td>子流程内</td><td>子流程实例生命周期</td></tr>
+    <tr><td>只读全局 <code>env</code></td><td>配置表 + Redis</td><td>全平台只读</td><td>配置驱动</td></tr>
+  </table>
+  <p>并行分支各自持有独立的 <code>local</code>；写回流程级变量必须通过显式输出映射。子流程默认不共享上下文，通过 <code>in</code>/<code>out</code> 映射交互。</p>
+
+  <h3>8.2 类型系统与契约</h3>
+  <table>
+    <tr><th>类型</th><th>存储</th><th>校验</th></tr>
+    <tr><td><code>string</code></td><td>JSON string</td><td>长度、正则</td></tr>
+    <tr><td><code>number</code> / <code>decimal</code></td><td>JSON number / string（decimal 保精度）</td><td>范围、精度</td></tr>
+    <tr><td><code>bool</code></td><td>JSON boolean</td><td>—</td></tr>
+    <tr><td><code>date</code> / <code>datetime</code></td><td>ISO-8601 UTC</td><td>格式、范围</td></tr>
+    <tr><td><code>json</code> / <code>object</code></td><td>JSONB</td><td>可选 JSON Schema</td></tr>
+    <tr><td><code>array</code></td><td>JSON array</td><td>元素类型、长度</td></tr>
+    <tr><td><code>file</code></td><td>对象引用</td><td>key 存在、大小、类型</td></tr>
+    <tr><td><code>user</code> / <code>org</code></td><td>ID 字符串</td><td>存在性（异步校验）</td></tr>
+  </table>
+  <ul>
+    <li>变量在快照 <code>variables</code> 中声明：名称、类型、必填、默认值、敏感、只读。</li>
+    <li><strong>严格模式</strong>：未声明变量写入直接拒绝；<strong>宽松模式</strong>（默认）：允许写入但记审计并告警。</li>
+    <li>类型不符：严格模式拒绝；宽松模式尝试转换，失败则记审计并按原值保留。</li>
+  </ul>
+
+  <h3>8.3 写入语义与并发保护</h3>
+  <pre><code>wf_variable(
+  id          BIGSERIAL PRIMARY KEY,
+  instance_id VARCHAR(40) NOT NULL,
+  scope       VARCHAR(16) NOT NULL DEFAULT 'FLOW',
+  name        VARCHAR(128) NOT NULL,
+  type        VARCHAR(16) NOT NULL,
+  value_json  JSONB,
+  version     BIGINT NOT NULL DEFAULT 0,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (instance_id, scope, name)
+);</code></pre>
+  <p>写入采用「读快照 → 计算 → 带版本号 CAS」：</p>
+  <pre><code>UPDATE wf_variable
+SET value_json = #{newValue}, version = version + 1, updated_at = now()
+WHERE instance_id = #{id} AND scope='FLOW' AND name = #{name}
+  AND version = #{expectedVersion};</code></pre>
+  <p>影响行数为 0 表示并发冲突，按节点配置处理：</p>
+  <table>
+    <tr><th>冲突策略</th><th>行为</th><th>适用</th></tr>
+    <tr><td><code>RETRY</code></td><td>重新加载上下文并重算（最多 3 次）</td><td>幂等脚本</td></tr>
+    <tr><td><code>SUSPEND</code></td><td>实例挂起，告警，等人工处理</td><td>金额、状态等强一致字段（默认）</td></tr>
+    <tr><td><code>LAST_WRITE_WINS</code></td><td>覆盖并写告警审计</td><td>非关键展示字段（显式开启）</td></tr>
+  </table>
+  <div class="callout">
+    <span class="t">推荐模式：分支写 local，Join 后汇总</span>
+    并行分支各写自己的局部变量，在 Join 后的脚本节点统一汇总写回流程级。设计器对「多个分支写同一流程级变量」给出结构性告警，并在发布校验中提示。
+  </div>
+
+  <h3>8.4 变更审计</h3>
+  <pre><code>wf_variable_log(
+  id               BIGSERIAL PRIMARY KEY,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  task_id          BIGINT,
+  name             VARCHAR(128) NOT NULL,
+  old_value        JSONB,
+  new_value        JSONB,
+  actor            VARCHAR(64) NOT NULL,  -- user:xxx / script / system / admin
+  actor_type       VARCHAR(16) NOT NULL,
+  masked           BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre>
+  <p>敏感变量在日志中记录脱敏值（如 <code>****1234</code>），原始值仅加密存储；审计表 append-only，数据库账号不授予 UPDATE/DELETE 权限。</p>
+
+  <h3>8.5 表达式引擎</h3>
+  <ul>
+    <li>采用 AviatorScript 的受限子集：变量引用、比较、布尔运算、<code>in</code>、三元表达式、白名单函数。</li>
+    <li>白名单函数：<code>len</code>、<code>contains</code>、<code>startsWith</code>、<code>endsWith</code>、<code>matches</code>、<code>daysBetween</code>、<code>now</code>（只读）、<code>isEmpty</code>、<code>toNumber</code>、<code>toDecimal</code>。</li>
+    <li>禁止：赋值、循环、反射、类加载、任意方法调用、随机数、IO。</li>
+    <li>编译缓存：按表达式文本哈希缓存编译结果（Caffeine，上限 10k）；求值超时 50ms。</li>
+    <li>发布校验：对表达式做变量引用检查与类型推断；引用未声明变量阻断发布。</li>
+  </ul>
+
+  <h3>8.6 脚本沙箱架构</h3>
+  <p>脚本语言为 Python（PRD 口径），但执行边界与 Java 内核严格隔离。Java 侧只负责调度、超时、重试与审计，Python 侧只做纯计算。</p>
+
+  <div class="figbox">
+    <svg viewBox="0 0 860 260" width="860" height="260" role="img" aria-label="脚本沙箱架构">
+      <defs><marker id="a8" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5F6B68"/></marker>
+      <style>.s8{fill:#fff;stroke:#1A6357;stroke-width:1.1}.s82{fill:#E1EDE8;stroke:#1A6357;stroke-width:1.1}.s8t{font:11.5px -apple-system,PingFang SC,sans-serif;fill:#141A19}.s8s{font:10px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.s8e{stroke:#5F6B68;stroke-width:1;fill:none}</style></defs>
+      <rect x="16" y="90" width="140" height="64" class="s82" rx="3"/><text x="86" y="115" text-anchor="middle" class="s8t">Engine Worker</text><text x="86" y="132" text-anchor="middle" class="s8s">两阶段作业</text>
+      <rect x="196" y="90" width="150" height="64" class="s8" rx="3"/><text x="271" y="115" text-anchor="middle" class="s8t">Script Runner Client</text><text x="271" y="132" text-anchor="middle" class="s8s">超时 / 重试 / 熔断</text>
+      <rect x="386" y="40" width="170" height="64" class="s8" rx="3"/><text x="471" y="65" text-anchor="middle" class="s8t">Runner 进程池</text><text x="471" y="82" text-anchor="middle" class="s8s">Python 3.11 · 非 root</text>
+      <rect x="386" y="140" width="170" height="64" class="s8" rx="3"/><text x="471" y="165" text-anchor="middle" class="s8t">受限执行环境</text><text x="471" y="182" text-anchor="middle" class="s8s">无网络 · 只读 FS · cgroup</text>
+      <rect x="606" y="90" width="150" height="64" class="s8" rx="3"/><text x="681" y="115" text-anchor="middle" class="s8t">上下文快照</text><text x="681" y="132" text-anchor="middle" class="s8s">只读 JSON</text>
+      <rect x="786" y="90" width="60" height="64" class="s82" rx="3"/><text x="816" y="118" text-anchor="middle" class="s8t">补丁</text><text x="816" y="134" text-anchor="middle" class="s8s">JSON</text>
+      <line x1="156" y1="122" x2="192" y2="122" class="s8e" marker-end="url(#a8)"/>
+      <line x1="346" y1="112" x2="382" y2="80" class="s8e" marker-end="url(#a8)"/>
+      <line x1="471" y1="104" x2="471" y2="136" class="s8e" marker-end="url(#a8)"/>
+      <line x1="556" y1="72" x2="602" y2="104" class="s8e" marker-end="url(#a8)"/>
+      <line x1="556" y1="174" x2="602" y2="140" class="s8e" marker-end="url(#a8)"/>
+      <line x1="756" y1="118" x2="782" y2="118" class="s8e" marker-end="url(#a8)"/>
+    </svg>
+  </div>
+  <p class="figcap">图 8-1 脚本执行边界：Runner 不连数据库、不连外网，只接收快照并返回补丁。</p>
+
+  <h4>入口约定</h4>
+  <pre><code>def run(ctx, local, env, logger, now):
+    days = ctx.get("trip_days", 0)
+    level = user(ctx.get("applicant_id")).level
+    rate = {"P5": 300, "P6": 500, "P7": 800}.get(level, 200)
+    allowance = days * rate
+    logger.info(f"allowance={allowance}")
+    return {"allowance": allowance, "need_vp": allowance &gt; 5000}</code></pre>
+
+  <h4>限制与隔离</h4>
+  <table>
+    <tr><th>项</th><th>默认值</th><th>说明</th></tr>
+    <tr><td>执行超时</td><td>3s</td><td>超时硬杀进程，作业按 onError 策略处理</td></tr>
+    <tr><td>内存</td><td>256MB</td><td>cgroup 限制，超限 OOM 退出</td></tr>
+    <tr><td>CPU</td><td>1 core / 2s CPU time</td><td>防止死循环</td></tr>
+    <tr><td>输出大小</td><td>1MB</td><td>补丁与日志合计上限</td></tr>
+    <tr><td>日志</td><td>64KB</td><td>超限截断并标记</td></tr>
+    <tr><td>网络</td><td>禁止</td><td>独立 network namespace</td></tr>
+    <tr><td>文件系统</td><td>只读</td><td>临时目录只读或无挂载</td></tr>
+    <tr><td>可用模块</td><td>json / datetime / decimal / math / re</td><td>import 钩子白名单</td></tr>
+    <tr><td>可用 API</td><td>ctx / local / env / logger / now / user / org / json / decimal / math / re</td><td>注入对象，无内置 open/eval/exec</td></tr>
+    <tr><td>确定性</td><td><code>now()</code> 注入；<code>rand(seed)</code> 可复现</td><td>便于重放与试跑</td></tr>
+  </table>
+
+  <h4>两阶段执行与重试</h4>
+  <ol>
+    <li>Java 侧加载上下文快照与脚本版本，调用 Runner，记录 <code>script_run</code>（入参哈希、耗时、结果摘要）。</li>
+    <li>Runner 返回补丁后，Java 开事务、校验实例状态与变量版本，写入补丁；版本冲突按 8.3 策略处理。</li>
+    <li>失败重试：默认最多 3 次，指数退避；重试复用同一 <code>script_run_id</code>，保证审计可追踪。</li>
+    <li>仍失败：走 <code>onError</code> 出边；无兜底则节点 FAILED、实例挂起并告警。</li>
+  </ol>
+
+  <h4>脚本版本与试算</h4>
+  <ul>
+    <li>脚本独立存储于 <code>wf_script</code> / <code>wf_script_version</code>，发布后不可变；快照引用 <code>script_version_id</code>。</li>
+    <li>设计器提供「试算」：输入模拟上下文，返回输出、日志、耗时，不影响任何实例。</li>
+    <li>脚本变更必须走发布流程；已发布版本的脚本不可原地修改。</li>
+  </ul>
+
+  <h3>8.7 脚本异常语义</h3>
+  <table>
+    <tr><th>策略</th><th>行为</th><th>适用</th></tr>
+    <tr><td>重试</td><td>可配次数与退避；幂等由补丁语义保证</td><td>临时错误</td></tr>
+    <tr><td>onError 边</td><td>走指定出边（如转人工处理）</td><td>可降级业务</td></tr>
+    <tr><td>挂起</td><td>节点 FAILED，实例 FAILED，等待运维重跑</td><td>默认</td></tr>
+    <tr><td>忽略</td><td>记录错误并继续</td><td>仅非关键脚本显式开启</td></tr>
+  </table>
+</section>
+
+<!-- ================= 09 ================= -->
+<section id="s9">
+  <h2 class="sec"><span class="num">09</span>事件、通知与服务节点</h2>
+
+  <h3>9.1 领域事件与 Outbox</h3>
+  <p>所有对外可见的状态变化（实例创建/完成/终止、任务创建/完成/转交、节点失败、回调）在业务事务内写入 <code>wf_event_outbox</code>，事务提交后由 Relay 投递到 RocketMQ。这样既保证「状态变了，事件一定不会凭空消失」，也不会把 MQ 可用性绑进业务流程。</p>
+  <div class="flow">
+    <div class="step"><b>业务事务</b><span>状态 + 审计 + outbox 同提交</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Outbox Relay</b><span>SKIP LOCKED 批量领取</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>RocketMQ</b><span>按事件类型分 Topic</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>消费者</b><span>通知 / Webhook / 统计</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>幂等去重</b><span>event_id 唯一</span></div>
+  </div>
+
+  <pre><code>wf_event_outbox(
+  id            BIGSERIAL PRIMARY KEY,
+  event_id      UUID NOT NULL DEFAULT gen_random_uuid(),
+  tenant_id     VARCHAR(64) NOT NULL DEFAULT 'default',
+  aggregate_type VARCHAR(32) NOT NULL,   -- INSTANCE / TASK / NODE
+  aggregate_id  VARCHAR(64) NOT NULL,
+  event_type    VARCHAR(64) NOT NULL,    -- instance.created / task.completed ...
+  payload       JSONB NOT NULL,
+  headers       JSONB,
+  status        VARCHAR(16) NOT NULL DEFAULT 'PENDING', -- PENDING / SENT / DEAD
+  attempts      INT NOT NULL DEFAULT 0,
+  next_retry_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_error    TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sent_at       TIMESTAMPTZ,
+  UNIQUE (event_id)
+);
+CREATE INDEX ix_outbox_pending ON wf_event_outbox(status, next_retry_at)
+  WHERE status='PENDING';</code></pre>
+
+  <h4>事件清单</h4>
+  <table>
+    <tr><th>事件</th><th>触发</th><th>主要消费者</th></tr>
+    <tr><td><code>instance.created</code></td><td>实例创建</td><td>通知、统计</td></tr>
+    <tr><td><code>instance.completed</code></td><td>实例完成</td><td>Webhook、通知、归档</td></tr>
+    <tr><td><code>instance.terminated</code></td><td>终止</td><td>Webhook、通知</td></tr>
+    <tr><td><code>task.created</code></td><td>任务创建</td><td>站内信/飞书、SSE</td></tr>
+    <tr><td><code>task.completed</code></td><td>任务完成</td><td>Webhook、统计</td></tr>
+    <tr><td><code>task.transferred</code></td><td>转交/改派</td><td>通知</td></tr>
+    <tr><td><code>node.failed</code></td><td>脚本/服务失败</td><td>告警</td></tr>
+    <tr><td><code>timer.fired</code></td><td>超时/提醒</td><td>通知</td></tr>
+  </table>
+
+  <h3>9.2 Webhook 回调</h3>
+  <ul>
+    <li>订阅方按事件类型与流程 key 订阅；URL 必须 HTTPS（或内网白名单）。</li>
+    <li>请求头：<code>X-PipeWise-Event</code>、<code>X-PipeWise-Delivery</code>（UUID）、<code>X-PipeWise-Timestamp</code>、<code>X-PipeWise-Signature</code>（HMAC-SHA256，签名体含时间戳防重放）。</li>
+    <li>重试：5s / 30s / 2m / 10m / 1h，最多 8 次；超限进入死信表并告警，可在运维后台手动重放。</li>
+    <li>2xx 视为成功；非 2xx 或超时（10s）视为失败。</li>
+    <li>投递记录独立于业务事务，可查询每次请求与响应摘要。</li>
+  </ul>
+
+  <h3>9.3 通知</h3>
+  <table>
+    <tr><th>渠道</th><th>实现</th><th>备注</th></tr>
+    <tr><td>站内信</td><td>写 <code>wf_notification</code> + SSE 推送角标</td><td>MVP</td></tr>
+    <tr><td>飞书</td><td>机器人/卡片消息，open_id 映射</td><td>P1</td></tr>
+    <tr><td>邮件</td><td>SMTP / 邮件服务 API</td><td>P1</td></tr>
+    <tr><td>短信</td><td>可插拔 Provider</td><td>P2</td></tr>
+  </table>
+  <ul>
+    <li>模板与流程解耦：模板 key + 变量插值，运营可配置。</li>
+    <li>去重：<code>(task_id, event_type, channel, recipient)</code> 唯一，防止重复轰炸。</li>
+    <li>通知失败不影响流程推进；失败重试与告警独立。</li>
+  </ul>
+
+  <h3>9.4 服务节点（P1）</h3>
+  <table>
+    <tr><th>能力</th><th>设计</th></tr>
+    <tr><td>HTTP 调用</td><td>URL 模板、方法、Header/Body 映射（上下文 → 请求）、响应映射；超时 3s；重试 0–3 次；熔断（Resilience4j）</td></tr>
+    <tr><td>MQ 投递</td><td>向指定 Topic 发消息，可等待回执；消息体由上下文映射</td></tr>
+    <tr><td>异步等待</td><td>发起后节点 WAITING；外部回调 <code>POST /api/v1/signals/{waitId}</code> 唤醒；超时走策略</td></tr>
+    <tr><td>幂等</td><td>请求头 <code>X-Idempotency-Key = instanceId:nodeInstanceId:attempt</code></td></tr>
+    <tr><td>安全</td><td>出站域名白名单；禁止访问元数据地址与内网敏感段；凭证存加密配置，不落快照明文</td></tr>
+  </table>
+
+  <h3>9.5 子流程（P1）</h3>
+  <ul>
+    <li><strong>内嵌子流程</strong>：同一实例内创建子作用域令牌，共享实例生命周期；输入输出通过映射。</li>
+    <li><strong>调用外部流程</strong>：创建子实例（记录 <code>parent_instance_id</code>），父节点 WAITING；子实例结束时通过 Outbox 事件唤醒父流程。</li>
+    <li>失败策略：子流程失败时父流程按配置「挂起 / 走异常边 / 终止」。</li>
+    <li>子实例的版本独立钉住；父实例迁移不影响子实例。</li>
+  </ul>
+
+  <h3>9.6 外部集成</h3>
+  <div class="grid3">
+    <div class="card"><h4>组织架构</h4><p>定时增量同步到本地镜像表；解析器只读本地/Redis；同步失败继续用旧快照并告警。</p></div>
+    <div class="card"><h4>对象存储</h4><p>附件预签名直传 + 确认登记；下载走短时签名 URL；病毒扫描异步进行。</p></div>
+    <div class="card"><h4>SSO</h4><p>OAuth2/OIDC 或企业令牌；服务间调用使用 client credentials；审批操作强校验任务归属。</p></div>
+  </div>
+</section>
+
+<!-- ================= 10 ================= -->
+<section id="s10">
+  <h2 class="sec"><span class="num">10</span>开放 API 与 SDK</h2>
+
+  <h3>10.1 通用约定</h3>
+  <table>
+    <tr><th>项</th><th>约定</th></tr>
+    <tr><td>Base URL</td><td><code>/api/v1</code></td></tr>
+    <tr><td>认证</td><td><code>Authorization: Bearer &lt;JWT&gt;</code>；服务身份使用 client credentials 换取短期 token</td></tr>
+    <tr><td>幂等</td><td>所有 POST/PUT/DELETE 接受 <code>Idempotency-Key</code>；24 小时内同键返回首次响应</td></tr>
+    <tr><td>分页</td><td>游标分页 <code>?cursor=&amp;limit=</code>；列表接口不使用 offset 深分页</td></tr>
+    <tr><td>时间</td><td>全部 ISO-8601 UTC；展示层按用户时区转换</td></tr>
+    <tr><td>错误</td><td><code>{code, message, traceId, details[]}</code>；HTTP 状态码语义化</td></tr>
+    <tr><td>版本</td><td>URL 版本 + 向后兼容字段演进；破坏性变更升 v2</td></tr>
+    <tr><td>限流</td><td>按租户与服务身份限流；超限返回 429 + <code>Retry-After</code></td></tr>
+  </table>
+
+  <h3>10.2 核心接口</h3>
+  <table>
+    <tr><th>方法</th><th>路径</th><th>说明</th><th>优先级</th></tr>
+    <tr><td>POST</td><td><code>/instances</code></td><td>创建并启动实例（businessKey + 变量 + 幂等键）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>GET</td><td><code>/instances/{id}</code></td><td>实例状态、当前节点、变量（按权限脱敏）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>GET</td><td><code>/instances?businessKey=</code></td><td>按业务键反查</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/instances/{id}/suspend</code></td><td>挂起</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/instances/{id}/resume</code></td><td>恢复</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/instances/{id}/terminate</code></td><td>终止</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>GET</td><td><code>/tasks?assignee=&amp;status=</code></td><td>待办/已办</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>GET</td><td><code>/tasks/{id}</code></td><td>任务详情（含表单权限过滤后的数据）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/tasks/{id}/complete</code></td><td>完成（verdict + 意见 + 变量增量）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/tasks/{id}/submit-form</code></td><td>提交表单并完成任务（同一事务）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/tasks/{id}/delegate</code></td><td>转交</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>POST</td><td><code>/tasks/{id}/add-sign</code></td><td>加签</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>POST</td><td><code>/tasks/{id}/return</code></td><td>退回</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/tasks/{id}/remind</code></td><td>催办</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>GET</td><td><code>/instances/{id}/form</code></td><td>当前节点表单 Schema + 数据 + 权限</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/instances/{id}/form/draft</code></td><td>保存草稿</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>GET</td><td><code>/definitions</code></td><td>定义列表</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/definitions/{key}/versions</code></td><td>创建草稿版本</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>GET</td><td><code>/definitions/{key}/versions</code></td><td>版本列表</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/definitions/{key}/publish</code></td><td>发布</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/definitions/{key}/versions/{v}/retire</code></td><td>下线</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/definitions/{key}/dry-run</code></td><td>试跑（不落真实数据）</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>GET</td><td><code>/forms</code></td><td>表单列表</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/forms/{key}/versions</code></td><td>表单版本</td><td><span class="badge b-mvp">MVP</span></td></tr>
+    <tr><td>POST</td><td><code>/signals/{waitId}</code></td><td>外部信号唤醒等待节点</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>GET</td><td><code>/admin/instances?status=</code></td><td>运维检索</td><td><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>POST</td><td><code>/admin/instances/{id}/intervene</code></td><td>强制通过/跳过/跳转/重跑</td><td><span class="badge b-p1">P1</span></td></tr>
+  </table>
+
+  <h3>10.3 关键接口示例</h3>
+  <h4>创建实例</h4>
+  <pre><code>POST /api/v1/instances
+Authorization: Bearer &lt;token&gt;
+Idempotency-Key: EXP-2026-000123
+
+{
+  "key": "expense_approval",
+  "businessKey": "EXP-2026-000123",
+  "initiator": "u_10086",
+  "title": "张三的差旅报销 ¥6,800",
+  "variables": { "amount": 6800, "dept": "RD", "trip_days": 4 }
+}
+
+HTTP/1.1 201 Created
+{
+  "id": "inst_01J9...",
+  "status": "RUNNING",
+  "version": 3,
+  "currentNodes": ["mgr"],
+  "createdAt": "2026-10-18T09:30:00Z"
+}</code></pre>
+
+  <h4>完成任务</h4>
+  <pre><code>POST /api/v1/tasks/12345/complete
+If-Match: "7"            // 任务 version，防双击
+{
+  "verdict": "approve",
+  "comment": "同意",
+  "variables": { "manager_comment": "同意" },
+  "attachments": ["att_9f2c"]
+}
+
+HTTP/1.1 200 OK
+{
+  "task": { "id": 12345, "status": "COMPLETED" },
+  "instance": { "id": "inst_01J9...", "status": "RUNNING" },
+  "nextNodes": ["hr", "vp"]
+}</code></pre>
+
+  <h3>10.4 SDK</h3>
+  <ul>
+    <li>以 OpenAPI 3.1 描述全部接口，生成 Java 与 Python SDK；SDK 内置幂等键生成、重试与错误映射。</li>
+    <li>Python SDK 保持 PRD 示例的调用形态（<code>client.instances.create(...)</code>）。</li>
+    <li>Webhook 事件与 SDK 共用同一套事件 DTO，避免两套字段定义漂移。</li>
+  </ul>
+
+  <h3>10.5 错误码（节选）</h3>
+  <table>
+    <tr><th>HTTP</th><th>code</th><th>含义</th></tr>
+    <tr><td>400</td><td><code>VALIDATION_FAILED</code></td><td>请求参数或表达式校验失败</td></tr>
+    <tr><td>404</td><td><code>INSTANCE_NOT_FOUND</code></td><td>实例不存在或无权访问</td></tr>
+    <tr><td>409</td><td><code>BUSINESS_KEY_DUPLICATED</code></td><td>同定义下业务键重复</td></tr>
+    <tr><td>409</td><td><code>TASK_ALREADY_FINISHED</code></td><td>任务已被处理或取消</td></tr>
+    <tr><td>409</td><td><code>VERSION_CONFLICT</code></td><td>任务/变量版本冲突</td></tr>
+    <tr><td>422</td><td><code>FORM_VALIDATION_FAILED</code></td><td>表单校验失败（含字段定位）</td></tr>
+    <tr><td>403</td><td><code>NOT_ASSIGNEE</code></td><td>当前用户不是任务处理人</td></tr>
+    <tr><td>503</td><td><code>ENGINE_BACKLOG</code></td><td>引擎积压，写操作暂时拒绝（保护性）</td></tr>
+  </table>
+</section>
+
+<!-- ================= 11 ================= -->
+<section id="s11">
+  <h2 class="sec"><span class="num">11</span>数据模型</h2>
+
+  <p class="lead">所有表使用 <code>wf_</code> 前缀；运行态与定义态分离；审计与事件只追加。PostgreSQL 是唯一事实源，Redis 中不存任何「只此一份」的数据。</p>
+
+  <h3>11.1 核心关系</h3>
+  <div class="figbox">
+    <svg viewBox="0 0 900 300" width="900" height="300" role="img" aria-label="运行时核心 ER">
+      <defs><marker id="a11" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5F6B68"/></marker>
+      <style>.er{fill:#fff;stroke:#1A6357;stroke-width:1.1}.er2{fill:#E1EDE8;stroke:#1A6357;stroke-width:1.1}.ert{font:11.5px -apple-system,PingFang SC,sans-serif;fill:#141A19}.ers{font:9.5px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.erl{stroke:#5F6B68;stroke-width:1;fill:none}</style></defs>
+      <rect x="330" y="20" width="200" height="46" class="er2" rx="3"/><text x="430" y="40" text-anchor="middle" class="ert">wf_instance</text><text x="430" y="56" text-anchor="middle" class="ers">钉版本 · 状态机 · business_key</text>
+      <rect x="60" y="120" width="170" height="46" class="er" rx="3"/><text x="145" y="140" text-anchor="middle" class="ert">wf_token</text><text x="145" y="156" text-anchor="middle" class="ers">执行游标 · 并行</text>
+      <rect x="260" y="120" width="190" height="46" class="er" rx="3"/><text x="355" y="140" text-anchor="middle" class="ert">wf_node_instance</text><text x="355" y="156" text-anchor="middle" class="ers">节点激活 · 局部上下文</text>
+      <rect x="480" y="120" width="170" height="46" class="er" rx="3"/><text x="565" y="140" text-anchor="middle" class="ert">wf_sign_session</text><text x="565" y="156" text-anchor="middle" class="ers">裁决会话</text>
+      <rect x="680" y="120" width="170" height="46" class="er" rx="3"/><text x="765" y="140" text-anchor="middle" class="ert">wf_task</text><text x="765" y="156" text-anchor="middle" class="ers">个人待办</text>
+      <rect x="60" y="220" width="170" height="46" class="er" rx="3"/><text x="145" y="240" text-anchor="middle" class="ert">wf_variable</text><text x="145" y="256" text-anchor="middle" class="ers">流程级上下文 · version</text>
+      <rect x="260" y="220" width="190" height="46" class="er" rx="3"/><text x="355" y="240" text-anchor="middle" class="ert">wf_execution_job</text><text x="355" y="256" text-anchor="middle" class="ers">作业队列 · 租约</text>
+      <rect x="480" y="220" width="170" height="46" class="er" rx="3"/><text x="565" y="240" text-anchor="middle" class="ert">wf_timer</text><text x="565" y="256" text-anchor="middle" class="ers">超时 / 延时</text>
+      <rect x="680" y="220" width="170" height="46" class="er" rx="3"/><text x="765" y="240" text-anchor="middle" class="ert">wf_event_outbox</text><text x="765" y="256" text-anchor="middle" class="ers">事件投递</text>
+
+      <line x1="330" y1="43" x2="150" y2="116" class="erl" marker-end="url(#a11)"/><text x="215" y="78" class="ers">1:N 令牌</text>
+      <line x1="400" y1="66" x2="380" y2="116" class="erl" marker-end="url(#a11)"/><text x="405" y="96" class="ers">1:N</text>
+      <line x1="450" y1="130" x2="478" y2="136" class="erl" marker-end="url(#a11)"/><text x="462" y="122" class="ers">1:1</text>
+      <line x1="650" y1="143" x2="678" y2="143" class="erl" marker-end="url(#a11)"/><text x="664" y="134" class="ers">1:N</text>
+      <line x1="355" y1="166" x2="220" y2="218" class="erl" marker-end="url(#a11)"/><text x="278" y="198" class="ers">写入</text>
+      <line x1="430" y1="66" x2="380" y2="218" class="erl" marker-end="url(#a11)"/><text x="380" y="105" class="ers">1:N</text>
+      <line x1="430" y1="66" x2="550" y2="218" class="erl" marker-end="url(#a11)"/><text x="500" y="150" class="ers">1:N</text>
+      <line x1="530" y1="43" x2="700" y2="218" class="erl" marker-end="url(#a11)"/><text x="628" y="120" class="ers">1:N</text>
+    </svg>
+  </div>
+  <p class="figcap">图 11-1 运行态核心表。所有 1:N 关系都以 instance_id 为分区与索引的第一列。</p>
+
+  <h3>11.2 表清单</h3>
+  <table>
+    <tr><th>分组</th><th>表</th><th>职责</th></tr>
+    <tr><td rowspan="3">定义与版本</td><td><code>wf_definition</code></td><td>流程定义（稳定 key）</td></tr>
+    <tr><td><code>wf_definition_version</code></td><td>不可变快照与发布状态</td></tr>
+    <tr><td><code>wf_publish_request</code></td><td>发布审批记录</td></tr>
+    <tr><td rowspan="5">运行态</td><td><code>wf_instance</code></td><td>实例</td></tr>
+    <tr><td><code>wf_token</code></td><td>令牌</td></tr>
+    <tr><td><code>wf_node_instance</code></td><td>节点激活</td></tr>
+    <tr><td><code>wf_join_scope</code></td><td>并行/包容汇聚作用域</td></tr>
+    <tr><td><code>wf_execution_job</code></td><td>引擎作业</td></tr>
+    <tr><td rowspan="4">人工任务</td><td><code>wf_sign_session</code></td><td>签核会话</td></tr>
+    <tr><td><code>wf_task</code></td><td>任务</td></tr>
+    <tr><td><code>wf_task_action</code></td><td>任务动作流水</td></tr>
+    <tr><td><code>wf_comment</code></td><td>审批意见与附件</td></tr>
+    <tr><td rowspan="3">上下文</td><td><code>wf_variable</code></td><td>当前变量值</td></tr>
+    <tr><td><code>wf_variable_log</code></td><td>变量变更审计（分区）</td></tr>
+    <tr><td><code>wf_audit_log</code></td><td>全量审计（分区，append-only）</td></tr>
+    <tr><td rowspan="5">表单</td><td><code>wf_form</code></td><td>表单定义</td></tr>
+    <tr><td><code>wf_form_version</code></td><td>表单版本</td></tr>
+    <tr><td><code>wf_form_binding</code></td><td>节点绑定 + 字段权限矩阵</td></tr>
+    <tr><td><code>wf_form_data</code></td><td>表单提交数据</td></tr>
+    <tr><td><code>wf_form_draft</code></td><td>未启动实例的草稿</td></tr>
+    <tr><td rowspan="2">脚本</td><td><code>wf_script</code></td><td>脚本定义</td></tr>
+    <tr><td><code>wf_script_version</code> / <code>wf_script_run</code></td><td>脚本版本与执行记录</td></tr>
+    <tr><td rowspan="3">事件与集成</td><td><code>wf_event_outbox</code></td><td>事务性事件</td></tr>
+    <tr><td><code>wf_webhook</code> / <code>wf_webhook_delivery</code></td><td>订阅与投递记录</td></tr>
+    <tr><td><code>wf_notification</code></td><td>通知与去重</td></tr>
+    <tr><td rowspan="3">组织与权限</td><td><code>wf_org_user</code> / <code>wf_org_dept</code></td><td>组织镜像</td></tr>
+    <tr><td><code>wf_delegate</code></td><td>委托代理</td></tr>
+    <tr><td><code>wf_user_role</code></td><td>平台角色（设计者/管理员/运维）</td></tr>
+    <tr><td rowspan="3">其他</td><td><code>wf_timer</code></td><td>定时器</td></tr>
+    <tr><td><code>wf_idempotency</code></td><td>接口幂等</td></tr>
+    <tr><td><code>wf_attachment</code></td><td>MinIO 附件登记</td></tr>
+    <tr><td>P2</td><td><code>wf_tenant</code> / <code>wf_migration_job</code></td><td>租户与迁移</td></tr>
+  </table>
+
+  <h3>11.3 核心 DDL</h3>
+
+  <h4>定义与版本</h4>
+  <pre><code>CREATE TABLE wf_definition (
+  id                 BIGSERIAL PRIMARY KEY,
+  tenant_id          VARCHAR(64) NOT NULL DEFAULT 'default',
+  def_key            VARCHAR(128) NOT NULL,
+  name               VARCHAR(200) NOT NULL,
+  category           VARCHAR(64),
+  description        TEXT,
+  status             VARCHAR(16) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE / RETIRED
+  current_version_id BIGINT,
+  draft_json         JSONB NOT NULL DEFAULT '{}',
+  draft_rev          INT NOT NULL DEFAULT 1,                -- 多人编辑乐观锁
+  created_by         VARCHAR(64),
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, def_key)
+);
+
+CREATE TABLE wf_definition_version (
+  id             BIGSERIAL PRIMARY KEY,
+  definition_id  BIGINT NOT NULL REFERENCES wf_definition(id),
+  version        INT NOT NULL,
+  snapshot_json  JSONB NOT NULL,
+  content_hash   CHAR(64) NOT NULL,
+  variables_schema JSONB NOT NULL DEFAULT '[]',
+  status         VARCHAR(16) NOT NULL,       -- SUBMITTED / PUBLISHED / RETIRED
+  gray_rule      JSONB,
+  change_summary TEXT,
+  submitted_by   VARCHAR(64), submitted_at TIMESTAMPTZ,
+  published_by   VARCHAR(64), published_at TIMESTAMPTZ,
+  UNIQUE (definition_id, version)
+);</code></pre>
+
+  <h4>实例、令牌、节点实例、汇聚作用域</h4>
+  <pre><code>CREATE TABLE wf_instance (
+  id             VARCHAR(40) PRIMARY KEY,     -- inst_ + ULID
+  tenant_id      VARCHAR(64) NOT NULL DEFAULT 'default',
+  definition_id  BIGINT NOT NULL,
+  definition_key VARCHAR(128) NOT NULL,
+  version_id     BIGINT NOT NULL,
+  snapshot_hash  CHAR(64) NOT NULL,
+  business_key   VARCHAR(128) NOT NULL,
+  title          VARCHAR(300),
+  initiator      VARCHAR(64) NOT NULL,
+  status         VARCHAR(16) NOT NULL,        -- CREATED/RUNNING/SUSPENDED/COMPLETED/TERMINATED/FAILED
+  outcome        VARCHAR(16),                 -- approve/reject/terminated
+  round          INT NOT NULL DEFAULT 1,
+  step_count     INT NOT NULL DEFAULT 0,
+  state_version  BIGINT NOT NULL DEFAULT 0,
+  gray_bucket    VARCHAR(64),
+  migrated_from_version INT,
+  started_at     TIMESTAMPTZ,
+  ended_at       TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, definition_key, business_key)
+);
+CREATE INDEX ix_instance_status ON wf_instance(status, started_at);
+CREATE INDEX ix_instance_initiator ON wf_instance(initiator, created_at DESC);
+
+CREATE TABLE wf_token (
+  id              BIGSERIAL PRIMARY KEY,
+  instance_id     VARCHAR(40) NOT NULL,
+  node_id         VARCHAR(64) NOT NULL,
+  status          VARCHAR(16) NOT NULL,       -- ACTIVE/WAITING/CONSUMED/CANCELLED
+  parent_token_id BIGINT,
+  scope_id        BIGINT,
+  branch_key      VARCHAR(64),
+  round           INT NOT NULL DEFAULT 1,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  consumed_at     TIMESTAMPTZ
+);
+CREATE INDEX ix_token_instance ON wf_token(instance_id, status);
+
+CREATE TABLE wf_node_instance (
+  id               BIGSERIAL PRIMARY KEY,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_id          VARCHAR(64) NOT NULL,
+  node_type        VARCHAR(32) NOT NULL,
+  token_id         BIGINT,
+  activation_seq   INT NOT NULL,
+  status           VARCHAR(16) NOT NULL,      -- ACTIVE/WAITING/COMPLETED/FAILED/CANCELLED/SKIPPED
+  local_context    JSONB NOT NULL DEFAULT '{}',
+  round            INT NOT NULL DEFAULT 1,
+  carried_over     BOOLEAN NOT NULL DEFAULT FALSE,
+  error_code       VARCHAR(64),
+  error_detail     TEXT,
+  started_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at         TIMESTAMPTZ,
+  UNIQUE (instance_id, node_id, activation_seq)
+);
+CREATE INDEX ix_node_instance_waiting ON wf_node_instance(instance_id, status);
+
+CREATE TABLE wf_join_scope (
+  id                BIGSERIAL PRIMARY KEY,
+  instance_id       VARCHAR(40) NOT NULL,
+  fork_node_id      VARCHAR(64) NOT NULL,
+  join_node_id      VARCHAR(64) NOT NULL,
+  parent_scope_id   BIGINT,
+  expected_branches JSONB NOT NULL,           -- ["e5","e6"] 或 ["e5"]
+  arrived_branches  JSONB NOT NULL DEFAULT '[]',
+  status            VARCHAR(16) NOT NULL,     -- WAITING / CLOSED
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  closed_at         TIMESTAMPTZ
+);
+CREATE INDEX ix_scope_open ON wf_join_scope(instance_id, status);</code></pre>
+
+  <h4>作业与定时器</h4>
+  <pre><code>CREATE TABLE wf_execution_job (
+  id               BIGSERIAL PRIMARY KEY,
+  tenant_id        VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  job_type         VARCHAR(32) NOT NULL,
+  expected_status  VARCHAR(16),
+  payload          JSONB NOT NULL DEFAULT '{}',
+  status           VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+  priority         SMALLINT NOT NULL DEFAULT 100,
+  available_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  lease_until      TIMESTAMPTZ,
+  worker_id        VARCHAR(64),
+  attempts         INT NOT NULL DEFAULT 0,
+  max_attempts     INT NOT NULL DEFAULT 10,
+  last_error       TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_job_pick ON wf_execution_job(status, available_at, priority)
+  WHERE status = 'PENDING';
+CREATE INDEX ix_job_instance ON wf_execution_job(instance_id, status);
+
+CREATE TABLE wf_timer (
+  id               BIGSERIAL PRIMARY KEY,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  task_id          BIGINT,
+  timer_type       VARCHAR(32) NOT NULL,
+  fire_at          TIMESTAMPTZ NOT NULL,
+  payload          JSONB NOT NULL DEFAULT '{}',
+  status           VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+  fired_at         TIMESTAMPTZ
+);
+CREATE INDEX ix_timer_fire ON wf_timer(status, fire_at) WHERE status = 'PENDING';</code></pre>
+
+  <h4>签核与任务</h4>
+  <pre><code>CREATE TABLE wf_sign_session (
+  id               BIGSERIAL PRIMARY KEY,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT NOT NULL,
+  node_id          VARCHAR(64) NOT NULL,
+  mode             VARCHAR(8) NOT NULL,        -- ANY / ALL / RACE
+  sign_style       VARCHAR(8) NOT NULL,        -- PARALLEL / SERIAL
+  status           VARCHAR(16) NOT NULL,       -- OPEN / DECIDED / CANCELLED
+  decision         VARCHAR(16),
+  pass_rule        JSONB NOT NULL DEFAULT '{"type":"ALL"}',
+  reject_rule      VARCHAR(24) NOT NULL DEFAULT 'VETO_IMMEDIATE',
+  expected_count   INT NOT NULL,
+  completed_count  INT NOT NULL DEFAULT 0,
+  approve_count    INT NOT NULL DEFAULT 0,
+  reject_count     INT NOT NULL DEFAULT 0,
+  turn_index       INT NOT NULL DEFAULT 1,
+  version          INT NOT NULL DEFAULT 0,
+  decided_at       TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_session_open ON wf_sign_session(instance_id, status);
+CREATE UNIQUE INDEX ux_session_one_open ON wf_sign_session(node_instance_id)
+  WHERE status = 'OPEN';
+
+CREATE TABLE wf_task (
+  id               BIGSERIAL PRIMARY KEY,
+  tenant_id        VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT NOT NULL,
+  node_id          VARCHAR(64) NOT NULL,
+  sign_session_id  BIGINT,
+  task_kind        VARCHAR(16) NOT NULL,       -- APPROVAL / FORM / RESUBMIT / CC
+  assignee         VARCHAR(64) NOT NULL,
+  assignee_type    VARCHAR(16) NOT NULL DEFAULT 'user',
+  candidate_group  VARCHAR(128),
+  status           VARCHAR(16) NOT NULL,       -- CREATED/CLAIMED/COMPLETED/CANCELLED/EXPIRED/DELEGATED
+  verdict          VARCHAR(16),                -- approve/reject/return/submit
+  comment          TEXT,
+  title_snapshot   VARCHAR(300),
+  due_at           TIMESTAMPTZ,
+  claimed_at       TIMESTAMPTZ,
+  completed_at     TIMESTAMPTZ,
+  version          INT NOT NULL DEFAULT 0,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_task_assignee ON wf_task(assignee, status, created_at DESC);
+CREATE INDEX ix_task_instance ON wf_task(instance_id, created_at);
+CREATE INDEX ix_task_due ON wf_task(status, due_at) WHERE status IN ('CREATED','CLAIMED');
+
+CREATE TABLE wf_task_action (
+  id          BIGSERIAL PRIMARY KEY,
+  instance_id VARCHAR(40) NOT NULL,
+  task_id     BIGINT,
+  node_id     VARCHAR(64),
+  action      VARCHAR(32) NOT NULL,
+  actor       VARCHAR(64) NOT NULL,
+  actor_type  VARCHAR(16) NOT NULL,            -- user/admin/system
+  verdict     VARCHAR(16),
+  comment     TEXT,
+  attachments JSONB,
+  detail      JSONB,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_task_action_instance ON wf_task_action(instance_id, created_at);</code></pre>
+
+  <h4>上下文、表单与脚本</h4>
+  <pre><code>CREATE TABLE wf_variable (
+  id          BIGSERIAL PRIMARY KEY,
+  instance_id VARCHAR(40) NOT NULL,
+  scope       VARCHAR(16) NOT NULL DEFAULT 'FLOW',
+  name        VARCHAR(128) NOT NULL,
+  value_type  VARCHAR(16) NOT NULL,
+  value_json  JSONB,
+  version     BIGINT NOT NULL DEFAULT 0,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (instance_id, scope, name)
+);
+
+CREATE TABLE wf_variable_log (
+  id               BIGSERIAL,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  task_id          BIGINT,
+  name             VARCHAR(128) NOT NULL,
+  old_value        JSONB,
+  new_value        JSONB,
+  actor            VARCHAR(64) NOT NULL,
+  actor_type       VARCHAR(16) NOT NULL,
+  masked           BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (id, created_at)          -- 分区表主键必须包含分区键
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE wf_form (
+  id          BIGSERIAL PRIMARY KEY,
+  tenant_id   VARCHAR(64) NOT NULL DEFAULT 'default',
+  form_key    VARCHAR(128) NOT NULL,
+  name        VARCHAR(200) NOT NULL,
+  category    VARCHAR(64),
+  draft_schema JSONB NOT NULL DEFAULT '{}',
+  draft_rev   INT NOT NULL DEFAULT 1,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, form_key)
+);
+
+CREATE TABLE wf_form_version (
+  id           BIGSERIAL PRIMARY KEY,
+  form_id      BIGINT NOT NULL REFERENCES wf_form(id),
+  version      INT NOT NULL,
+  schema_json  JSONB NOT NULL,
+  status       VARCHAR(16) NOT NULL,           -- PUBLISHED / RETIRED
+  published_at TIMESTAMPTZ,
+  UNIQUE (form_id, version)
+);
+
+CREATE TABLE wf_form_binding (
+  id                    BIGSERIAL PRIMARY KEY,
+  definition_version_id BIGINT NOT NULL,
+  node_id               VARCHAR(64) NOT NULL,
+  form_version_id       BIGINT NOT NULL,
+  field_permissions     JSONB NOT NULL DEFAULT '{}',
+  default_policy        VARCHAR(16) NOT NULL DEFAULT 'READONLY',
+  UNIQUE (definition_version_id, node_id)
+);
+
+CREATE TABLE wf_form_data (
+  id               BIGSERIAL PRIMARY KEY,
+  tenant_id        VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT,
+  task_id          BIGINT,
+  form_version_id  BIGINT NOT NULL,
+  round            INT NOT NULL DEFAULT 1,
+  data_json        JSONB NOT NULL,
+  indexed_json     JSONB NOT NULL DEFAULT '{}',
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_form_data_instance ON wf_form_data(instance_id);
+CREATE INDEX ix_form_data_search ON wf_form_data USING GIN (indexed_json jsonb_path_ops);
+
+CREATE TABLE wf_script (
+  id         BIGSERIAL PRIMARY KEY,
+  tenant_id  VARCHAR(64) NOT NULL DEFAULT 'default',
+  script_key VARCHAR(128) NOT NULL,
+  name       VARCHAR(200),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, script_key)
+);
+
+CREATE TABLE wf_script_version (
+  id          BIGSERIAL PRIMARY KEY,
+  script_id   BIGINT NOT NULL REFERENCES wf_script(id),
+  version     INT NOT NULL,
+  code        TEXT NOT NULL,
+  status      VARCHAR(16) NOT NULL,
+  published_at TIMESTAMPTZ,
+  UNIQUE (script_id, version)
+);
+
+CREATE TABLE wf_script_run (
+  id               BIGSERIAL PRIMARY KEY,
+  instance_id      VARCHAR(40) NOT NULL,
+  node_instance_id BIGINT NOT NULL,
+  script_version_id BIGINT NOT NULL,
+  attempt          INT NOT NULL DEFAULT 1,
+  status           VARCHAR(16) NOT NULL,       -- SUCCESS / TIMEOUT / ERROR
+  input_hash       CHAR(64),
+  output_patch     JSONB,
+  logs             TEXT,
+  duration_ms      INT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre>
+
+  <h4>审计、Outbox、幂等、附件</h4>
+  <pre><code>CREATE TABLE wf_audit_log (
+  id          BIGSERIAL,
+  tenant_id   VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id VARCHAR(40),
+  task_id     BIGINT,
+  node_id     VARCHAR(64),
+  action      VARCHAR(64) NOT NULL,
+  actor       VARCHAR(64) NOT NULL,
+  actor_type  VARCHAR(16) NOT NULL,
+  trace_id    VARCHAR(64),
+  detail      JSONB NOT NULL DEFAULT '{}',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (id, created_at)          -- 分区表主键必须包含分区键
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE wf_event_outbox (
+  id             BIGSERIAL PRIMARY KEY,
+  event_id       UUID NOT NULL DEFAULT gen_random_uuid(),
+  tenant_id      VARCHAR(64) NOT NULL DEFAULT 'default',
+  aggregate_type VARCHAR(32) NOT NULL,
+  aggregate_id   VARCHAR(64) NOT NULL,
+  event_type     VARCHAR(64) NOT NULL,
+  payload        JSONB NOT NULL,
+  headers        JSONB,
+  status         VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+  attempts       INT NOT NULL DEFAULT 0,
+  next_retry_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_error     TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sent_at        TIMESTAMPTZ,
+  UNIQUE (event_id)
+);
+CREATE INDEX ix_outbox_pending ON wf_event_outbox(status, next_retry_at)
+  WHERE status = 'PENDING';
+
+CREATE TABLE wf_idempotency (
+  id            BIGSERIAL PRIMARY KEY,
+  tenant_id     VARCHAR(64) NOT NULL DEFAULT 'default',
+  scope         VARCHAR(128) NOT NULL,
+  idem_key      VARCHAR(200) NOT NULL,
+  request_hash  CHAR(64),
+  response_code INT,
+  response_json JSONB,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at    TIMESTAMPTZ NOT NULL,
+  UNIQUE (tenant_id, scope, idem_key)
+);
+CREATE INDEX ix_idem_expire ON wf_idempotency(expires_at);
+
+CREATE TABLE wf_attachment (
+  id           BIGSERIAL PRIMARY KEY,
+  tenant_id    VARCHAR(64) NOT NULL DEFAULT 'default',
+  instance_id  VARCHAR(40),
+  task_id      BIGINT,
+  field_name   VARCHAR(128),
+  bucket       VARCHAR(64) NOT NULL,
+  object_key   VARCHAR(500) NOT NULL,
+  filename     VARCHAR(255),
+  content_type VARCHAR(128),
+  size_bytes   BIGINT,
+  sha256       CHAR(64),
+  uploaded_by  VARCHAR(64),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_attachment_instance ON wf_attachment(instance_id);</code></pre>
+
+  <h3>11.4 索引、分区与归档</h3>
+  <table>
+    <tr><th>表</th><th>分区键</th><th>保留策略</th><th>说明</th></tr>
+    <tr><td><code>wf_instance</code></td><td>按 <code>created_at</code> 月分区（可选）</td><td>热 90 天，之后归档</td><td>运行态查询走状态索引；归档后只保留摘要</td></tr>
+    <tr><td><code>wf_token</code> / <code>wf_node_instance</code></td><td>跟随实例归档</td><td>实例结束后可归档</td><td>归档前导出完整时间线</td></tr>
+    <tr><td><code>wf_task</code></td><td>按 <code>created_at</code> 月分区</td><td>已办保留 180 天</td><td>待办永远在热分区</td></tr>
+    <tr><td><code>wf_variable_log</code></td><td>按月分区</td><td>合规要求（默认 2 年）</td><td>append-only</td></tr>
+    <tr><td><code>wf_audit_log</code></td><td>按月分区</td><td>合规要求（默认 2 年）</td><td>append-only，禁止 UPDATE/DELETE</td></tr>
+    <tr><td><code>wf_form_data</code></td><td>随实例归档</td><td>与实例一致</td><td>GIN 索引只建在当前分区</td></tr>
+    <tr><td><code>wf_execution_job</code></td><td>按状态清理</td><td>DONE 保留 7 天</td><td>PENDING 部分索引</td></tr>
+    <tr><td><code>wf_event_outbox</code></td><td>按状态清理</td><td>SENT 保留 7 天</td><td>失败进 DEAD 并告警</td></tr>
+  </table>
+
+  <h3>11.5 约定</h3>
+  <ul>
+    <li><strong>ID</strong>：实例使用 <code>inst_</code> + ULID（可排序、无中心依赖）；内部表用 <code>BIGSERIAL</code>；事件用 UUID。</li>
+    <li><strong>时间</strong>：全部 <code>TIMESTAMPTZ</code>，存 UTC；应用层按用户时区展示。</li>
+    <li><strong>租户</strong>：所有业务表带 <code>tenant_id</code>，唯一索引包含租户；P2 前默认 <code>default</code>。</li>
+    <li><strong>软删</strong>：定义用 <code>RETIRED</code> 状态代替删除；运行态不允许删除，只归档。</li>
+    <li><strong>枚举</strong>：数据库存字符串常量，应用层用枚举校验，避免数字魔法值。</li>
+    <li><strong>大字段</strong>：快照、表单 Schema、脚本正文存 JSONB/TEXT；单条超过 1MB 时改为 MinIO 引用。</li>
+  </ul>
+
+  <h3>11.6 容量估算（按 PRD 首年目标）</h3>
+  <div class="kpi">
+    <div><span class="n">5 万/日</span><span class="l">实例创建（年均 ~0.6/s）</span></div>
+    <div><span class="n">1000/s</span><span class="l">峰值创建吞吐（短时）</span></div>
+    <div><span class="n">~40 万/日</span><span class="l">节点激活（按 8 步/实例）</span></div>
+    <div><span class="n">~1800 万/年</span><span class="l">实例总量（归档前）</span></div>
+  </div>
+  <ul>
+    <li>单实例平均写入量估算：实例 2KB + 节点实例 8KB + 任务 3KB + 审计/变量日志 10KB + 表单 5KB ≈ 28KB；5 万/日约 1.4GB/日，含索引约 2–3GB/日。</li>
+    <li>百万在跑实例：<code>wf_instance</code> 约 2GB，令牌/节点实例约 8–15GB，索引另计；单主库可承载，关键在于分区与归档，而非分库。</li>
+    <li>作业峰值：1000 创建/s × 8 步 ≈ 8000 作业/s；Worker 单实例约 200–500 job/s（含 5ms 事务），需 16–40 个 Worker 或按批处理优化。</li>
+    <li>快照缓存：热定义 200 个 × 200KB ≈ 40MB，Redis 压力可忽略。</li>
+  </ul>
+</section>
+
+<!-- ================= 12 ================= -->
+<section id="s12">
+  <h2 class="sec"><span class="num">12</span>前端技术方案</h2>
+
+  <h3>12.1 技术栈与工程结构</h3>
+  <table>
+    <tr><th>能力</th><th>选型</th><th>说明</th></tr>
+    <tr><td>框架</td><td>React 18 + TypeScript 5</td><td>沿用现有 <code>web/</code> 工程</td></tr>
+    <tr><td>构建</td><td>Vite 6</td><td>开发热更新、生产静态构建</td></tr>
+    <tr><td>路由</td><td>React Router 6</td><td>嵌套路由 + 权限守卫</td></tr>
+    <tr><td>UI</td><td>Tailwind 3 + shadcn/ui + Radix</td><td>与现有设计令牌一致；不引入重型组件库</td></tr>
+    <tr><td>流程画布</td><td>@xyflow/react（React Flow 12）</td><td>自定义节点、连线、缩放、小地图</td></tr>
+    <tr><td>表单设计</td><td>dnd-kit</td><td>字段拖拽排序（非像素级自由布局，符合 PRD 边界）</td></tr>
+    <tr><td>服务端状态</td><td>TanStack Query 5</td><td>缓存、失效、乐观更新、请求去重</td></tr>
+    <tr><td>本地状态</td><td>Zustand + zundo</td><td>设计器画布状态与撤销重做</td></tr>
+    <tr><td>编辑器</td><td>Monaco Editor</td><td>脚本、JSON、表达式输入</td></tr>
+    <tr><td>校验</td><td>自研规则引擎 + Ajv（JSON Schema）</td><td>与后端共享规则定义（OpenAPI/JSON Schema）</td></tr>
+    <tr><td>测试</td><td>Vitest + Testing Library + MSW + Playwright</td><td>单测、组件、契约、E2E</td></tr>
+  </table>
+
+  <pre><code>web/src/
+├── app/                 # 路由、布局、权限守卫、全局错误边界
+├── pages/
+│   ├── definitions/     # 定义列表、设计器、版本与发布
+│   ├── forms/           # 表单列表、表单设计器、模板库
+│   ├── instances/       # 实例列表、详情、时间线
+│   ├── tasks/           # 我的待办、已办、任务详情
+│   ├── admin/           # 运维干预、监控、审计
+│   └── auth/            # 登录与回调
+├── components/
+│   ├── flow/            # React Flow 节点、边、面板
+│   ├── form-renderer/   # Schema 渲染器、字段注册表
+│   ├── permission-matrix/
+│   └── timeline/
+├── lib/                 # api client、query keys、权限、格式化
+├── stores/              # zustand stores
+└── styles/              # tailwind、设计令牌</code></pre>
+
+  <h3>12.2 路由与页面</h3>
+  <table>
+    <tr><th>路由</th><th>页面</th><th>关键能力</th></tr>
+    <tr><td><code>/definitions</code></td><td>流程列表</td><td>搜索、分类、当前版本、运行实例数、进入设计器</td></tr>
+    <tr><td><code>/definitions/:key/designer</code></td><td>流程设计器</td><td>画布、节点配置、校验、试跑、保存草稿</td></tr>
+    <tr><td><code>/definitions/:key/versions</code></td><td>版本与发布</td><td>版本列表、diff、发布审批、灰度、下线</td></tr>
+    <tr><td><code>/forms</code></td><td>表单列表</td><td>表单资产、模板库、引用关系</td></tr>
+    <tr><td><code>/forms/:key/designer</code></td><td>表单设计器</td><td>字段拖拽、属性面板、预览、移动端预览</td></tr>
+    <tr><td><code>/instances</code></td><td>实例列表</td><td>条件检索、可查询字段过滤、导出</td></tr>
+    <tr><td><code>/instances/:id</code></td><td>实例详情</td><td>当前节点、表单、变量、时间线、操作</td></tr>
+    <tr><td><code>/tasks</code></td><td>我的待办/已办</td><td>筛选、批量、角标、移动端适配</td></tr>
+    <tr><td><code>/tasks/:id</code></td><td>任务处理</td><td>表单渲染、同意/否决/退回/加签/转交</td></tr>
+    <tr><td><code>/admin/ops</code></td><td>运维控制台</td><td>卡点实例、作业积压、干预操作</td></tr>
+    <tr><td><code>/admin/audit</code></td><td>审计检索</td><td>按实例/操作人/动作检索</td></tr>
+  </table>
+
+  <h3>12.3 流程设计器</h3>
+  <h4>数据模型</h4>
+  <pre><code>type FlowDoc = {
+  nodes: FlowNode[]        // id, type, position, data: 配置
+  edges: FlowEdge[]        // id, source, target, condition, order, default
+  variables: VariableDecl[]
+  formBindings: Record&lt;nodeId, { formKey, formVersion, permissions }&gt;
+  settings: { maxSteps, maxActivations, timezone }
+}</code></pre>
+  <ul>
+    <li><strong>画布</strong>：React Flow 自定义节点组件按类型渲染图标与摘要；连线支持条件标签；小地图、缩放、对齐吸附、自动布局（dagre 算法）。</li>
+    <li><strong>状态</strong>：Zustand + zundo 记录每次结构性变更；撤销/重做 50 步；拖拽过程中的高频更新合并为一次历史记录。</li>
+    <li><strong>保存</strong>：自动保存草稿（防抖 2s），携带 <code>draft_rev</code> 乐观锁；冲突时提示「他人已修改」并给出合并视图。</li>
+    <li><strong>校验</strong>：前端实现与后端一致的规则子集，保存前实时提示；发布时以服务端校验为准。</li>
+    <li><strong>试跑</strong>：弹窗输入变量 → 调用 <code>/definitions/{key}/dry-run</code> → 返回路径节点序列与每步变量变化 → 画布高亮路径，侧栏展示每步进出。</li>
+    <li><strong>JSON 双向</strong>：提供 JSON 面板（Monaco），可直接编辑并导入；导出为快照格式，便于研发代码化定义。</li>
+    <li><strong>协作</strong>：草稿锁定提示（编辑者心跳），发布动作串行；不做实时多人协同光标（MVP 不需要）。</li>
+  </ul>
+
+  <h4>节点配置面板</h4>
+  <table>
+    <tr><th>节点类型</th><th>配置项</th></tr>
+    <tr><td>审批</td><td>审批人解析器、签核模式、通过规则、否决规则、串行/并行、表单绑定、字段权限、退回策略、超时策略</td></tr>
+    <tr><td>表单</td><td>表单绑定、权限矩阵、提交后变量映射</td></tr>
+    <tr><td>脚本</td><td>脚本选择/版本、超时、重试、onError 出边、输出映射</td></tr>
+    <tr><td>服务</td><td>HTTP/MQ、URL、方法、映射、超时、重试、异步回调</td></tr>
+    <tr><td>网关</td><td>方向（fork/join）、出边条件、默认边、配对 join</td></tr>
+    <tr><td>定时</td><td>延时/ cron、工作日历、超时动作</td></tr>
+  </table>
+
+  <h3>12.4 表单设计器与渲染器</h3>
+
+  <h4>渲染管线</h4>
+  <div class="flow">
+    <div class="step"><b>Schema</b><span>字段 + 布局 + 规则</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>权限过滤</b><span>节点 × 字段矩阵</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>字段注册表</b><span>type → 组件</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>联动/计算</b><span>客户端即时反馈</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>校验</b><span>即时 + 提交前</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>提交</b><span>服务端复算与复校验</span></div>
+  </div>
+
+  <ul>
+    <li><strong>字段注册表</strong>：<code>type → React 组件</code> 的映射，新增字段类型只注册组件与校验器，不改渲染器主流程。</li>
+    <li><strong>权限过滤</strong>：<code>HIDDEN</code> 字段不进入渲染树，也不返回数据；<code>READONLY</code> 渲染为 disabled；<code>EDIT_REQUIRED</code> 注入必填规则。</li>
+    <li><strong>表单设计器</strong>：左侧字段面板、中间画布（列表式布局，非像素级自由拖拽）、右侧属性面板；支持分组/分栏/折叠/标签页；移动端预览切换。</li>
+    <li><strong>权限矩阵编辑器</strong>：表格视图，行=字段、列=节点；单元格下拉选择四种权限；支持批量填充、从上一节点继承、默认策略设置；实时显示「哪些字段在该节点不可见」。</li>
+    <li><strong>子表单</strong>：表格组件，新增/删除行、行内校验、列合计、行数上限提示；提交时服务端再次校验行数。</li>
+    <li><strong>附件</strong>：上传组件直接向 MinIO 预签名地址上传，进度与失败重试；确认后拿到 attachmentId。</li>
+    <li><strong>移动端</strong>：同一 Schema，渲染器根据断点切换布局（单列、底部操作栏、大按钮）；飞书 H5 内嵌时隐藏外部导航。</li>
+  </ul>
+
+  <h3>12.5 实例详情与时间线</h3>
+  <ul>
+    <li>顶部：标题、业务键、状态、发起人、当前节点、耗时。</li>
+    <li>中部：当前节点表单（只读或可编辑，按权限）；变量面板（敏感值脱敏）。</li>
+    <li>底部：时间线，虚拟滚动，支持按类型过滤（节点/任务/变量/脚本/干预/异常）。</li>
+    <li>操作区：按角色与状态显示挂起、终止、干预、催办；危险操作二次确认并必填原因。</li>
+    <li>轮询策略：详情页 10s 轮询；任务页使用 SSE 接收新任务角标；不做全站 WebSocket。</li>
+  </ul>
+
+  <h3>12.6 状态管理与 API 层</h3>
+  <pre><code>// query keys 统一管理，避免失效遗漏
+export const qk = {
+  definitions: ['definitions'] as const,
+  definition: (key: string) => ['definition', key] as const,
+  instance: (id: string) => ['instance', id] as const,
+  tasks: (filter: TaskFilter) => ['tasks', filter] as const,
+  form: (instanceId: string, nodeId: string) => ['form', instanceId, nodeId] as const,
+}
+
+// 任务完成：乐观更新列表 + 失效实例详情
+useMutation({
+  mutationFn: (cmd) =&gt; api.tasks.complete(taskId, cmd),
+  onSuccess: () =&gt; {
+    qc.invalidateQueries({ queryKey: qk.tasks(currentFilter) })
+    qc.invalidateQueries({ queryKey: qk.instance(task.instanceId) })
+  },
+})</code></pre>
+  <ul>
+    <li>API client 统一注入 token、<code>traceId</code>、幂等键；错误统一映射为可展示文案，保留原始 code 供排障。</li>
+    <li>所有写操作按钮在请求中禁用并显示 loading，服务端仍是最终幂等防线。</li>
+    <li>列表页使用游标分页 + 虚拟滚动；筛选条件写入 URL，便于分享与刷新恢复。</li>
+  </ul>
+
+  <h3>12.7 多端与可访问性</h3>
+  <ul>
+    <li>响应式断点：≥1280 桌面三栏设计器；768–1280 两栏；&lt;768 移动单列。</li>
+    <li>任务处理页为移动优先：表单单列、操作按钮固定底部、附件拍照上传。</li>
+    <li>飞书 H5：通过 UA/查询参数识别容器，隐藏外部导航，适配安全区。</li>
+    <li>可访问性：表单 label 关联、键盘操作、焦点管理、颜色对比度符合 WCAG AA。</li>
+  </ul>
+
+  <h3>12.8 前端性能与稳定性</h3>
+  <ul>
+    <li>路由级代码分割；设计器与 Monaco 懒加载，首屏不加载重依赖。</li>
+    <li>画布节点超过 200 个时启用简化渲染（隐藏次要文本），拖拽使用 requestAnimationFrame 节流。</li>
+    <li>长列表虚拟滚动；表单大子表单分页渲染。</li>
+    <li>全局错误边界 + 错误上报（含 traceId）；API 超时统一 15s，重试仅限幂等 GET。</li>
+    <li>静态资源 hash 文件名 + 长缓存；index.html 短缓存，避免旧版本白屏。</li>
+  </ul>
+
+  <h3>12.9 前端测试</h3>
+  <table>
+    <tr><th>层</th><th>工具</th><th>覆盖</th></tr>
+    <tr><td>单元</td><td>Vitest</td><td>校验规则、权限解析、表达式预览、状态 reducer</td></tr>
+    <tr><td>组件</td><td>Testing Library + MSW</td><td>表单渲染、权限矩阵、任务操作</td></tr>
+    <tr><td>契约</td><td>OpenAPI 生成类型 + mock</td><td>接口字段与前端类型一致</td></tr>
+    <tr><td>E2E</td><td>Playwright</td><td>设计→发布→发起→审批→完成全链路（S1 场景）</td></tr>
+    <tr><td>视觉</td><td>可选截图对比</td><td>设计器与表单关键页面</td></tr>
+  </table>
+</section>
+
+<!-- ================= 13 ================= -->
+<section id="s13">
+  <h2 class="sec"><span class="num">13</span>非功能设计</h2>
+
+  <h3>13.1 性能目标与设计响应</h3>
+  <table>
+    <tr><th>指标</th><th>PRD 目标</th><th>设计响应</th></tr>
+    <tr><td>实例创建吞吐</td><td>≥1000/s（峰值）</td><td>同步写路径固定 7 次插入；批量提交；无同步流转；分区与连接池按峰值配置；压测验收</td></tr>
+    <tr><td>创建延迟</td><td>P99 &lt; 300ms</td><td>不调用脚本/组织远程服务；快照从缓存读取；只做变量基本校验</td></tr>
+    <tr><td>任务完成到下一步激活</td><td>P99 &lt; 500ms</td><td>作业轮询 50ms；Worker 本地队列；完成事务只做必要写；通知异步</td></tr>
+    <tr><td>待办查询</td><td>P99 &lt; 200ms</td><td><code>(assignee,status,created_at)</code> 复合索引；列表只取摘要字段；游标分页</td></tr>
+    <tr><td>单实例并发令牌</td><td>≤100</td><td>超过阈值告警并拒绝继续分叉（保护性失败）</td></tr>
+    <tr><td>在跑实例量</td><td>百万级</td><td>分区、归档、只读副本、热点查询走覆盖索引</td></tr>
+    <tr><td>引擎可用性</td><td>≥99.95%</td><td>无状态多副本；PG 主备；MQ 与 Redis 降级不影响核心写路径</td></tr>
+  </table>
+
+  <h4>关键路径耗时预算</h4>
+  <table>
+    <tr><th>环节</th><th>预算</th><th>说明</th></tr>
+    <tr><td>鉴权 + 参数校验</td><td>5ms</td><td>JWT 本地验签，无远程调用</td></tr>
+    <tr><td>快照读取</td><td>1ms</td><td>Caffeine 一级 + Redis 二级</td></tr>
+    <tr><td>实例写入事务</td><td>40–80ms</td><td>7–10 次插入 + 索引</td></tr>
+    <tr><td>作业入队</td><td>3ms</td><td>同事务插入</td></tr>
+    <tr><td>Worker 领取延迟</td><td>≤100ms</td><td>50ms 轮询 + SKIP LOCKED</td></tr>
+    <tr><td>节点推进事务</td><td>20–50ms</td><td>按节点类型不同</td></tr>
+  </table>
+
+  <h4>PRD §19 成功指标的技术支撑</h4>
+  <table>
+    <tr><th>指标</th><th>技术支撑</th></tr>
+    <tr><td>接入流程数 / 日均实例数</td><td>开放 API + 幂等键 + SDK；实例创建不依赖人工操作</td></tr>
+    <tr><td>流程流转时长缩短</td><td>并行网关、超时提醒、移动端待办；时间线可定位卡点</td></tr>
+    <tr><td>业务方自助改流程 ≥80%</td><td>设计器 + 表单设计器 + 试跑 + 发布审批，无需研发发版</td></tr>
+    <tr><td>流转失败率 &lt;0.1% / 脚本错误率 &lt;0.5%</td><td>作业重试 + onError 边 + FAILED 挂起；脚本失败率指标与告警</td></tr>
+    <tr><td>需人工干预实例 &lt;0.5%</td><td>审批人解析兜底、超时策略、死锁检测、运维干预工具</td></tr>
+    <tr><td>创建 P99 &lt;300ms / 完成 P99 &lt;500ms</td><td>同步短事务 + 异步引擎；作业轮询 50ms；索引与缓存</td></tr>
+    <tr><td>可用性 ≥99.95%</td><td>api/engine 多副本；PG 主备；MQ/Redis 降级不影响核心写路径</td></tr>
+  </table>
+
+  <h3>13.2 高可用与故障恢复</h3>
+  <table>
+    <tr><th>组件</th><th>部署</th><th>故障表现</th><th>恢复</th></tr>
+    <tr><td>pipewise-api</td><td>≥2 副本，滚动发布</td><td>单副本故障</td><td>负载均衡摘除；无状态</td></tr>
+    <tr><td>pipewise-engine</td><td>≥2 副本</td><td>作业租约到期</td><td>其他副本重领；幂等校验防重复推进</td></tr>
+    <tr><td>PostgreSQL</td><td>主 + 同步/异步备（Patroni）</td><td>主库故障</td><td>自动切换；应用重连；未提交事务回滚</td></tr>
+    <tr><td>Redis</td><td>Sentinel / Cluster</td><td>缓存失效</td><td>回源 PG；限流/角标短暂降级</td></tr>
+    <tr><td>RocketMQ</td><td>DLedger 多副本</td><td>消息积压</td><td>Outbox 继续堆积，恢复后补投</td></tr>
+    <tr><td>MinIO</td><td>多节点纠删码</td><td>单节点故障</td><td>副本恢复；附件读写降级重试</td></tr>
+    <tr><td>script-runner</td><td>进程池 + 多副本</td><td>Runner 崩溃</td><td>作业重试；进程自动重建；超时硬杀</td></tr>
+  </table>
+  <div class="callout">
+    <span class="t">降级原则</span>
+    Redis 不可用 → 直接读 PG；RocketMQ 不可用 → 事件留在 Outbox，流程继续；组织服务不可用 → 用本地镜像；MinIO 不可用 → 上传失败提示，不影响审批流转；script-runner 不可用 → 脚本节点挂起，实例 FAILED 可重试。任何降级都不能静默丢状态。
+  </div>
+
+  <h3>13.3 安全设计</h3>
+  <table>
+    <tr><th>面</th><th>威胁</th><th>措施</th></tr>
+    <tr><td>认证</td><td>伪造身份</td><td>OIDC/JWT 短时令牌；服务身份 client credentials；签名校验</td></tr>
+    <tr><td>授权</td><td>越权审批 / 越权查看</td><td>每次任务操作校验 assignee 与实例数据范围；管理操作独立角色</td></tr>
+    <tr><td>表单</td><td>前端篡改只读字段</td><td>服务端按权限矩阵过滤，越权字段丢弃并审计</td></tr>
+    <tr><td>脚本</td><td>沙箱逃逸 / 资源耗尽</td><td>独立进程、无网络、只读 FS、cgroup、白名单模块、超时硬杀、安全评审</td></tr>
+    <tr><td>表达式</td><td>注入 / 反射</td><td>Aviator 白名单、无赋值与循环、编译期变量校验</td></tr>
+    <tr><td>服务节点</td><td>SSRF</td><td>出站域名白名单；禁止元数据地址、回环与内网敏感段；DNS 解析后二次校验</td></tr>
+    <tr><td>附件</td><td>恶意文件</td><td>类型白名单、大小限制、SHA-256、异步病毒扫描、下载短时签名 URL</td></tr>
+    <tr><td>数据</td><td>敏感信息泄露</td><td>敏感变量 AES-GCM 加密；日志与审计脱敏；导出需数据权限</td></tr>
+    <tr><td>审计</td><td>篡改</td><td>append-only 权限；按月分区；可选哈希链校验</td></tr>
+    <tr><td>API</td><td>重放 / 刷接口</td><td>幂等键、时间戳 + nonce（回调）、租户级限流</td></tr>
+    <tr><td>前端</td><td>XSS / CSRF</td><td>React 默认转义；富文本白名单；token 存 httpOnly cookie 或内存 + CSRF token</td></tr>
+  </table>
+
+  <h4>平台角色与能力矩阵（对应 PRD §18）</h4>
+  <table>
+    <tr><th>能力</th><th>设计者</th><th>流程管理员</th><th>业务开发者</th><th>审批人</th><th>申请人</th><th>运维</th></tr>
+    <tr><td>创建/编辑流程草稿</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>设计/编辑表单</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>配置字段权限矩阵</td><td>提交</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>查看表单数据</td><td>范围</td><td>✓（范围）</td><td>—</td><td>相关任务</td><td>仅自己</td><td>✓</td></tr>
+    <tr><td>导出表单数据</td><td>—</td><td>✓（范围）</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>发布版本</td><td>提交</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>下线版本</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>创建实例</td><td>✓（测试）</td><td>✓</td><td>✓（API）</td><td>—</td><td>✓（发起）</td><td>✓</td></tr>
+    <tr><td>审批任务</td><td>—</td><td>✓</td><td>—</td><td>✓（本人任务）</td><td>—</td><td>代操作</td></tr>
+    <tr><td>查看全部实例</td><td>—</td><td>✓（范围）</td><td>—</td><td>—</td><td>仅自己</td><td>✓</td></tr>
+    <tr><td>人工干预</td><td>—</td><td>部分</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>改派 / 改变量</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>✓（复核）</td></tr>
+  </table>
+  <p>实现方式：平台角色存 <code>wf_user_role</code>；权限判断统一在服务层做「角色能力 + 数据范围」两段校验；数据范围支持本人、本部门、本部门及下级、指定租户。前端只负责隐藏入口，不能作为权限依据。</p>
+
+  <h3>13.4 可观测性</h3>
+  <h4>指标</h4>
+  <table>
+    <tr><th>类别</th><th>指标</th><th>告警阈值</th></tr>
+    <tr><td>引擎</td><td>PENDING 作业数、最老作业年龄、作业失败率</td><td>年龄 &gt; 30s 警告，&gt; 5min 严重</td></tr>
+    <tr><td>引擎</td><td>单步耗时 P50/P95/P99</td><td>P99 &gt; 500ms 警告</td></tr>
+    <tr><td>实例</td><td>运行中实例数、卡在单节点 &gt; 24h 的实例数</td><td>&gt; 0 告警</td></tr>
+    <tr><td>任务</td><td>待办积压、超时任务数、平均处理时长</td><td>按业务阈值</td></tr>
+    <tr><td>脚本</td><td>执行失败率、超时率、P99 耗时</td><td>失败率 &gt; 0.5%</td></tr>
+    <tr><td>事件</td><td>Outbox 积压、投递失败率、Webhook 死信数</td><td>积压 &gt; 1000 或死信 &gt; 0</td></tr>
+    <tr><td>资源</td><td>PG 连接、慢查询、复制延迟；Redis 内存；MQ 堆积</td><td>连接 &gt; 80%、慢查询 &gt; 1s</td></tr>
+  </table>
+  <h4>追踪与日志</h4>
+  <ul>
+    <li>OpenTelemetry 贯穿 HTTP → 引擎作业 → 脚本 → 外部调用；<code>traceId</code> 写入审计与错误响应。</li>
+    <li>结构化日志字段：<code>tenant</code>、<code>instanceId</code>、<code>nodeInstanceId</code>、<code>taskId</code>、<code>jobId</code>、<code>traceId</code>。</li>
+    <li>审计检索提供「实例时间线」与「按操作人/动作」两种入口。</li>
+    <li>日志脱敏：敏感变量、附件内容、token 永不落日志。</li>
+  </ul>
+
+  <h3>13.5 多租户（P2）</h3>
+  <ul>
+    <li>所有表带 <code>tenant_id</code>，唯一索引包含租户；Repository 层强制注入租户上下文，禁止绕过。</li>
+    <li>定义、表单、脚本、组织镜像按租户隔离；平台管理员可跨租户只读运维。</li>
+    <li>配额：并发实例数、日创建量、附件容量、脚本 CPU 时间；超限返回明确错误。</li>
+    <li>缓存 key、消息 Topic tag、MinIO 路径均带租户前缀，避免串数据。</li>
+    <li>压测时按「单租户压力」与「租户数」两个维度评估。</li>
+  </ul>
+
+  <h3>13.6 数据生命周期</h3>
+  <table>
+    <tr><th>阶段</th><th>策略</th></tr>
+    <tr><td>热数据</td><td>运行中实例、近 90 天完成实例；主库全索引</td></tr>
+    <tr><td>温数据</td><td>90–365 天：分区保留，列表查询走摘要表/只读副本</td></tr>
+    <tr><td>归档</td><td>&gt;1 年：实例全量时间线与表单数据导出到 MinIO（Parquet/JSONL），主库只留摘要</td></tr>
+    <tr><td>审计</td><td>按合规要求保留（默认 2 年），不允许业务方删除</td></tr>
+    <tr><td>附件</td><td>随实例归档；MinIO 生命周期规则转冷存储</td></tr>
+    <tr><td>删除</td><td>仅支持按租户/合规流程删除归档数据；运行态不删除</td></tr>
+  </table>
+</section>
+
+<!-- ================= 14 ================= -->
+<section id="s14">
+  <h2 class="sec"><span class="num">14</span>技术难点专章</h2>
+
+  <p class="lead">以下问题决定自研内核能否成立。每项都给出「为什么难、方案、验收标准」，M0 阶段优先验证前四项。</p>
+
+  <h3>14.1 令牌与汇聚的正确性</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>并行分支、嵌套并行、条件跳过、回环叠加时，很容易出现「某条分支静默丢失」或「join 永远等不齐」。这类 bug 在测试环境不显眼，上线后表现为实例永久卡住。</p></div>
+    <div class="card"><h4>方案</h4><p>令牌模型 + 持久化 join scope（记录期望分支与实际到达）；fork/join 发布期强制配对；嵌套深度限制；死锁检测与告警；不自动跳过分支。</p></div>
+    <div class="card"><h4>验收</h4><p>状态机模型测试覆盖 fork/join 全部组合（含嵌套 3 层、条件跳过、回环）；构造 1000 个随机图与随机完成顺序，验证汇聚结果唯一且无丢分支。</p></div>
+    <div class="card"><h4>兜底</h4><p>实例卡住检测任务：同一 join scope WAITING 超过阈值告警；运维可查看「还差哪条分支」。</p></div>
+  </div>
+
+  <h3>14.2 崩溃恢复与「效果恰好一次」</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>进程可能在任意指令间崩溃：事务提交前、提交后标记完成前、外部调用后写库前。自研内核必须让每种中断都能收敛，而不是依赖「不崩溃」。</p></div>
+    <div class="card"><h4>方案</h4><p>状态变更与作业完成在同一事务；作业租约 + 重领；处理前校验 <code>expected_status</code>；外部副作用走 Outbox 或带幂等键的两阶段；脚本只返回补丁。</p></div>
+    <div class="card"><h4>验收</h4><p>故障注入：在事务提交前后、作业标记前后、Outbox 投递前后杀进程；恢复后断言实例状态与事件数量符合预期，无重复任务、无重复流转。</p></div>
+    <div class="card"><h4>边界</h4><p>不承诺外部系统副作用恰好一次；由幂等键 + 下游配合达成效果一次，文档与 SDK 明确声明。</p></div>
+  </div>
+
+  <h3>14.3 并发与幂等</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>双击提交、重复消息、两个 Worker 领到同一实例、竞签两人同时提交、并行分支写同一变量，都会造成重复流转或丢更新。</p></div>
+    <div class="card"><h4>方案</h4><p>实例级 advisory lock；任务与变量版本号 CAS；幂等键；竞签在会话行锁内裁决；变量冲突策略；作业重复投递空操作。</p></div>
+    <div class="card"><h4>验收</h4><p>并发压测：同一任务 100 并发提交，仅 1 次成功；竞签 50 并发，结论唯一且其余任务全部取消；并行写变量冲突全部被捕获。</p></div>
+    <div class="card"><h4>监控</h4><p>版本冲突率、重复作业空操作率、锁等待时间；异常升高时告警。</p></div>
+  </div>
+
+  <h3>14.4 签核语义的一致性</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>或签与竞签只差「否决算不算数」；加签、转交、串行会签会让计数与裁决规则交叉；业务方对「会签比例」理解不一致。</p></div>
+    <div class="card"><h4>方案</h4><p>任务与会话分离；统一裁决函数；三种模式的决策表固化为单元测试；加签只改会话人数不换模式；设计器显式展示当前语义。</p></div>
+    <div class="card"><h4>验收</h4><p>三种模式 × 并行/串行 × 同意/否决/加签/转交，穷举动作序列，断言裁决结果；PRD §8.1 的「或签 vs 竞签」用例作为回归基线。</p></div>
+    <div class="card"><h4>口径冻结</h4><p>PRD 第 8 章作为唯一语义来源；任何扩展先改 PRD 再改代码，避免实现漂移。</p></div>
+  </div>
+
+  <h3>14.5 长跑实例与版本迁移</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>实例可能存活数月，期间定义发布多版。强制迁移会让在途令牌落在不存在的节点上；不迁移则旧 bug 长期存在。</p></div>
+    <div class="card"><h4>方案</h4><p>默认不迁移；实例钉住快照；显式迁移工具做静态 diff + 活动映射 + 预演 + 白名单 + 快照回滚；迁移全程审计。</p></div>
+    <div class="card"><h4>验收</h4><p>构造 v1→v2 含节点删除、重命名、边条件变化的实例集；预演报告准确列出冲突；试迁 1 个实例后状态与令牌位置正确；回滚后字节级一致。</p></div>
+    <div class="card"><h4>约束</h4><p>P2 交付；M1–M3 只需保证「不迁移也完全正确」，这是绝大多数业务的真实需求。</p></div>
+  </div>
+
+  <h3>14.6 表单权限矩阵与越权防护</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>同一表单在 5 个节点有 5 套字段权限；前端隐藏不等于安全；退回重提后权限又变；子表单行级数据也要过滤。</p></div>
+    <div class="card"><h4>方案</h4><p>绑定矩阵作为唯一权威；服务端统一过滤器；隐藏字段不返回；越权写入丢弃并审计；表单版本钉住；退回后按目标节点权限重新计算。</p></div>
+    <div class="card"><h4>验收</h4><p>用审批人 token 直接构造包含只读/隐藏字段的请求，断言字段未落库且审计有记录；五个节点切换时权限矩阵渲染与提交结果一致。</p></div>
+    <div class="card"><h4>性能</h4><p>矩阵随快照缓存；过滤器只做内存判断，不产生额外查询。</p></div>
+  </div>
+
+  <h3>14.7 脚本沙箱</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>Python 默认能力过强：文件、网络、反射、无限循环。业务脚本由非安全专家编写，沙箱既要够用又要防逃逸。</p></div>
+    <div class="card"><h4>方案</h4><p>独立 Runner 进程池 + 无网络/只读 FS/cgroup；AST 检查 + import 白名单 + 受限内置；超时硬杀；输入输出限长；确定性 now/rand。</p></div>
+    <div class="card"><h4>验收</h4><p>安全用例：<code>import os</code>、<code>open()</code>、<code>socket</code>、死循环、内存炸弹、超大返回值全部被拒绝或超时；正常脚本性能 P99 &lt; 100ms（不含排队）。</p></div>
+    <div class="card"><h4>演进</h4><p>如需 JVM 内执行，可评估 GraalPy；Runner 协议不变，内核无感知。</p></div>
+  </div>
+
+  <h3>14.8 事务边界与外部调用</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>HTTP 调用可能耗时数秒；把它放进数据库事务会长时间持锁、拖垮连接池；放外面又可能「调用成功但状态没落库」。</p></div>
+    <div class="card"><h4>方案</h4><p>两阶段作业：先在事务外调用（带幂等键），再开短事务写结果；失败按重试/onError/挂起处理；事件走 Outbox。</p></div>
+    <div class="card"><h4>验收</h4><p>注入慢接口（5s）时，实例锁等待与连接池占用不升高；调用成功后杀进程，重试不会造成重复业务效果。</p></div>
+    <div class="card"><h4>原则</h4><p>数据库事务内只做内存计算与本地写，绝不做网络 IO。</p></div>
+  </div>
+
+  <h3>14.9 定时器规模化</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>百万实例 × 多个超时/提醒，定时器数量大；精确到秒会带来高频扫描；实例挂起、工作日历、时区让「到期」不再是简单时间比较。</p></div>
+    <div class="card"><h4>方案</h4><p>定时器表 + 部分索引 + 批量领取；按分钟分桶降低扫描量；挂起时暂停并重算；工作日历缓存；提醒链式创建下一次。</p></div>
+    <div class="card"><h4>验收</h4><p>100 万条 PENDING 定时器下，扫描器单次领取 &lt; 50ms；同一秒 10 万条到期时无大面积延迟；挂起/恢复后到期时间正确。</p></div>
+    <div class="card"><h4>可观测</h4><p>定时器延迟分布、单次扫描耗时、待触发数量。</p></div>
+  </div>
+
+  <h3>14.10 Outbox 与消息重复</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>业务事务与消息发送无法原子；RocketMQ 至少一次投递意味着重复；消费者可能先收到事件再看到数据库提交（不会，但重放会）。</p></div>
+    <div class="card"><h4>方案</h4><p>事务内写 Outbox；Relay 发送后标记；消费端按 event_id 去重；Webhook 带 delivery id；重放工具按事件重新投递。</p></div>
+    <div class="card"><h4>验收</h4><p>人为重复投递同一事件 10 次，通知只发 1 次、Webhook 只成功 1 次；Outbox 积压恢复后无丢失。</p></div>
+    <div class="card"><h4>顺序</h4><p>不承诺全局顺序；同一实例的事件带 <code>instance_id</code> 作为消息 key，RocketMQ 顺序队列保证实例内有序（可选）。</p></div>
+  </div>
+
+  <h3>14.11 百万实例的存储与查询</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>运行态与历史数据混在一张表，索引膨胀；列表页深分页；审计和变量日志增长最快。</p></div>
+    <div class="card"><h4>方案</h4><p>按月分区；完成实例归档；游标分页；覆盖索引；审计只追加并分区；只读副本承担列表与报表。</p></div>
+    <div class="card"><h4>验收</h4><p>1800 万实例下，待办列表 P99 &lt; 200ms；实例详情 &lt; 300ms；归档任务不影响在线写入。</p></div>
+    <div class="card"><h4>放弃项</h4><p>本期不做分库分表；单主库 + 分区足以覆盖首年目标，过早分片会增加事务与运维复杂度。</p></div>
+  </div>
+
+  <h3>14.12 设计器与表单渲染器的复杂度</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>流程画布、表单设计器、动态渲染器、权限矩阵四个编辑器叠加，容易走向「低代码平台失控」。</p></div>
+    <div class="card"><h4>方案</h4><p>严守 PRD 边界：不做像素级自由布局、不做通用 CRUD；字段类型按 MVP 清单冻结；渲染器用注册表扩展；复用同一套校验规则。</p></div>
+    <div class="card"><h4>验收</h4><p>新增一种字段类型只改「组件 + 校验器 + 后端类型」三处；S1/S2 两张表单从设计到发布全流程可自助完成。</p></div>
+    <div class="card"><h4>性能</h4><p>画布 200 节点可流畅拖拽；50 字段表单首屏 &lt; 1s；子表单 200 行不卡顿。</p></div>
+  </div>
+
+  <h3>14.13 审批人解析与组织可用性</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>审批人依赖组织架构，组织服务不可用或数据滞后会导致任务无人可派；空集处理不当会静默自动通过。</p></div>
+    <div class="card"><h4>方案</h4><p>本地镜像 + Redis 缓存 + 定时同步；空集默认指派管理员并挂起；离职审批人标记并告警；设计期模拟解析。</p></div>
+    <div class="card"><h4>验收</h4><p>组织服务宕机时新实例仍可创建（使用镜像）；空集策略按配置生效；模拟解析对 100 个典型用户返回正确候选人。</p></div>
+    <div class="card"><h4>数据新鲜度</h4><p>镜像表带 <code>source_version</code> 与同步时间，页面显示「组织数据更新于 X」，超阈值告警。</p></div>
+  </div>
+
+  <h3>14.14 多租户隔离</h3>
+  <div class="grid2">
+    <div class="card"><h4>为什么难</h4><p>行级隔离容易在某个查询漏加 tenant 条件；缓存、消息、对象存储路径都可能串租户。</p></div>
+    <div class="card"><h4>方案</h4><p>Repository 层统一注入租户；SQL 审计规则；缓存 key 与 MinIO 路径带租户前缀；跨租户操作只允许平台管理员且留审计。</p></div>
+    <div class="card"><h4>验收</h4><p>跨租户访问测试：A 租户 token 访问 B 租户实例/任务/附件全部 404；代码扫描无裸表查询。</p></div>
+    <div class="card"><h4>时机</h4><p>表结构从第一天就带 <code>tenant_id</code>；功能开关放 P2，避免后期迁移。</p></div>
+  </div>
+</section>
+
+<!-- ================= 15 ================= -->
+<section id="s15">
+  <h2 class="sec"><span class="num">15</span>测试与验收</h2>
+
+  <h3>15.1 测试分层</h3>
+  <table>
+    <tr><th>层</th><th>范围</th><th>工具</th><th>通过标准</th></tr>
+    <tr><td>内核单测</td><td>执行器、网关、签核裁决、表达式</td><td>JUnit 5 + AssertJ</td><td>分支覆盖 ≥ 90%，无数据库依赖</td></tr>
+    <tr><td>模型测试</td><td>随机图 + 随机动作序列</td><td>自研模型检验器 / jqwik</td><td>不变量始终成立；结果可重放</td></tr>
+    <tr><td>集成测试</td><td>Repository + PG（Testcontainers）</td><td>Testcontainers PostgreSQL</td><td>SQL、锁、分区、JSONB 行为正确</td></tr>
+    <tr><td>接口契约</td><td>OpenAPI 与实现一致</td><td>Spring REST Docs / Schemathesis</td><td>无契约漂移</td></tr>
+    <tr><td>端到端</td><td>S1/S2/S3 场景</td><td>Playwright + API 驱动</td><td>全链路通过，时间线完整</td></tr>
+    <tr><td>性能</td><td>创建、完成、列表、定时器</td><td>Gatling / k6</td><td>达到 §13.1 指标</td></tr>
+    <tr><td>混沌</td><td>进程/中间件故障</td><td>Chaos Mesh / 手工注入</td><td>无重复流转、无丢状态</td></tr>
+  </table>
+
+  <h3>15.2 内核正确性验证</h3>
+  <ul>
+    <li><strong>不变量断言</strong>：每个测试结束后检查六条不变量（§3.1），尤其是「无重复令牌消费」「无悬挂 WAITING 节点」。</li>
+    <li><strong>随机图测试</strong>：生成含 XOR/AND/OR、嵌套并行、回环的随机图，随机顺序完成任务，断言最终状态与预期路径集合一致。</li>
+    <li><strong>可重放</strong>：同一输入快照 + 同一作业序列，重复执行得到相同 Command 序列（脚本使用注入的 now/rand）。</li>
+    <li><strong>模型对照</strong>：用简化 Petri 网模型作为参照实现，随机用例双向对比。</li>
+  </ul>
+
+  <h3>15.3 性能测试场景</h3>
+  <table>
+    <tr><th>场景</th><th>负载</th><th>验收</th></tr>
+    <tr><td>实例创建</td><td>1000/s 持续 5 分钟</td><td>P99 &lt; 300ms；无错误；作业积压可恢复</td></tr>
+    <tr><td>任务完成</td><td>500/s 持续 10 分钟，多签核模式混合</td><td>完成到下一步激活 P99 &lt; 500ms</td></tr>
+    <tr><td>待办查询</td><td>10 万任务，200 QPS</td><td>P99 &lt; 200ms</td></tr>
+    <tr><td>定时器</td><td>100 万 PENDING，10 万同一秒到期</td><td>延迟 &lt; 5s，扫描不影响在线写</td></tr>
+    <tr><td>并行实例</td><td>单实例 50 分支并发完成</td><td>汇聚正确，无死锁，锁等待可控</td></tr>
+    <tr><td>长稳</td><td>日常负载 24 小时</td><td>内存无泄漏，连接池稳定，Outbox 无堆积</td></tr>
+  </table>
+
+  <h3>15.4 PRD §17 边界场景对照</h3>
+  <table>
+    <tr><th>#</th><th>边界场景</th><th>设计响应</th><th>验证方式</th></tr>
+    <tr><td>1</td><td>并行分支未全部到达 Join</td><td>阻塞等待 + join scope 持久化 + 超时告警，不自动跳过</td><td>集成测试 + 死锁检测用例</td></tr>
+    <tr><td>2</td><td>并行分支写同一变量</td><td>版本号 CAS；冲突按 RETRY/SUSPEND/LAST_WRITE_WINS</td><td>并发写测试</td></tr>
+    <tr><td>3</td><td>审批人解析为空</td><td>默认指派管理员并挂起，绝不静默通过</td><td>解析器单测</td></tr>
+    <tr><td>4</td><td>审批人离职/停用</td><td>保留任务并标记；可配转上级</td><td>组织镜像用例</td></tr>
+    <tr><td>5</td><td>同一任务并发提交</td><td>任务版本 CAS + 幂等键，第二次返回首次结果</td><td>100 并发压测</td></tr>
+    <tr><td>6</td><td>脚本超时/异常</td><td>重试 → onError 边 → FAILED 挂起</td><td>沙箱故障用例</td></tr>
+    <tr><td>7</td><td>死循环</td><td>实例步数 / 节点激活次数上限，超限挂起告警</td><td>回环压力测试</td></tr>
+    <tr><td>8</td><td>排他网关无匹配边</td><td>发布期强制默认边；运行期兜底并告警</td><td>网关单测</td></tr>
+    <tr><td>9</td><td>终止时仍有在途任务</td><td>全部 CANCELLED，令牌回收，通知与事件</td><td>终止集成测试</td></tr>
+    <tr><td>10</td><td>发布新版本</td><td>旧实例钉旧版本，新实例按默认版本/灰度</td><td>版本场景 E2E</td></tr>
+    <tr><td>11</td><td>退回后重提</td><td>策略显式配置；保留/重走两种语义均由 round 实现</td><td>退回场景用例</td></tr>
+    <tr><td>12</td><td>竞签两人同时提交</td><td>会话行锁；先提交生效，后到返回已结束</td><td>50 并发竞签测试</td></tr>
+    <tr><td>13</td><td>加签后裁决集合变化</td><td>会话人数增加，仍遵循原模式</td><td>加签用例</td></tr>
+    <tr><td>14</td><td>Webhook 回调失败</td><td>指数退避重试，超限死信 + 告警 + 手动重放</td><td>故障注入</td></tr>
+    <tr><td>15</td><td>跨时区/夏令时</td><td>UTC 存储；展示按用户时区；工作日历按组织时区</td><td>时区用例</td></tr>
+    <tr><td>16</td><td>服务重启时实例在跑</td><td>令牌/定时器/作业持久化，重启续跑</td><td>崩溃恢复测试</td></tr>
+    <tr><td>17</td><td>子流程失败</td><td>父流程按配置：挂起 / 异常边 / 终止</td><td>子流程用例</td></tr>
+    <tr><td>18</td><td>变量类型不符</td><td>严格模式拒绝；宽松模式转换并审计</td><td>类型系统单测</td></tr>
+    <tr><td>19</td><td>脚本改了上下文但表单已渲染</td><td>以服务端为准；提交前重新拉取表单数据</td><td>前端 E2E</td></tr>
+    <tr><td>20</td><td>提交只读字段的新值</td><td>服务端按矩阵丢弃并审计，不报错</td><td>越权提交测试</td></tr>
+    <tr><td>21</td><td>子表单行数超上限</td><td>服务端硬限制 200 行，拒绝并提示</td><td>表单集成测试</td></tr>
+    <tr><td>22</td><td>校验通过但流转前校验失败</td><td>停留当前节点，返回字段级错误，不推进</td><td>流转前守卫用例</td></tr>
+    <tr><td>23</td><td>竞签后到者数据</td><td>任务取消，草稿数据作废，仅留审计</td><td>竞签并发测试</td></tr>
+    <tr><td>24</td><td>表单 Schema 升级，旧实例在跑</td><td>实例钉住表单版本，旧实例按旧 Schema 渲染</td><td>版本兼容用例</td></tr>
+  </table>
+</section>
+
+<!-- ================= 16 ================= -->
+<section id="s16">
+  <h2 class="sec"><span class="num">16</span>实施计划与风险</h2>
+
+  <h3>16.1 里程碑</h3>
+  <table>
+    <tr><th>阶段</th><th>周期</th><th>交付内容</th><th>验收</th></tr>
+    <tr><td><strong>M0 内核验证</strong></td><td>2 周</td><td>快照模型、令牌内核、作业队列与租约、实例锁、崩溃恢复测试骨架、脚本 Runner PoC、表单 Schema 渲染 PoC</td><td>「定义 → 实例 → 审批 → 结束」最小闭环；故障注入通过</td></tr>
+    <tr><td><strong>M1 MVP</strong></td><td>8 周</td><td>流程设计器、发布/版本、串行审批、或签/并签、并行网关、上下文、脚本节点、开放 API；表单设计器、基础字段、权限矩阵、Schema 渲染、三层校验、PC/移动端</td><td>场景 S1 端到端跑通</td></tr>
+    <tr><td><strong>M2 完整审批与表单</strong></td><td>5 周</td><td>竞签、加签/转交/退回/撤回、包容网关、超时、通知、服务节点；子表单、联动、计算字段、数据源、草稿、模板库</td><td>场景 S2 跑通</td></tr>
+    <tr><td><strong>M3 运维与集成</strong></td><td>4 周</td><td>子流程、定时/等待、监控大盘、人工干预、Webhook；表单检索/打印/导出</td><td>场景 S3 跑通</td></tr>
+    <tr><td><strong>M4 企业化</strong></td><td>4 周</td><td>多租户、权限矩阵完善、审计加固、压测达标、实例迁移工具</td><td>压测与安全评审通过</td></tr>
+  </table>
+  <p>总周期约 23 周，与 PRD 排期一致。自研内核的额外风险集中在 M0：若 M0 的崩溃恢复与并行汇聚测试不达标，M1 不启动，避免把不确定性带到后面。</p>
+
+  <h3>16.2 团队与分工</h3>
+  <table>
+    <tr><th>角色</th><th>人数</th><th>职责</th></tr>
+    <tr><td>后端（引擎）</td><td>2</td><td>内核、调度、签核、上下文、脚本集成</td></tr>
+    <tr><td>后端（API/表单）</td><td>1–2</td><td>开放 API、表单、权限、组织、事件</td></tr>
+    <tr><td>前端</td><td>2</td><td>设计器、表单设计器/渲染器、任务中心、运维台</td></tr>
+    <tr><td>测试</td><td>1</td><td>内核模型测试、E2E、性能、混沌</td></tr>
+    <tr><td>运维/SRE</td><td>0.5</td><td>PG/MQ/Redis/MinIO、监控、发布</td></tr>
+    <tr><td>产品/设计</td><td>1</td><td>PRD 口径、交互与视觉</td></tr>
+  </table>
+
+  <h3>16.3 交付物</h3>
+  <ul>
+    <li>可运行的 <code>server/</code>（api + engine 两种 profile）、<code>script-runner/</code>、<code>web/</code>、<code>deploy/</code>（compose 与 helm）。</li>
+    <li>数据库迁移脚本（Flyway）、初始化数据、组织镜像同步任务。</li>
+    <li>OpenAPI 文档与 Java/Python SDK。</li>
+    <li>压测报告、故障注入报告、安全评审记录。</li>
+    <li>运维手册：部署、扩容、备份恢复、常见故障处理、干预操作指南。</li>
+  </ul>
+
+  <h3>16.4 风险与应对</h3>
+  <table>
+    <tr><th>风险</th><th>等级</th><th>应对</th></tr>
+    <tr><td>自研内核在并行/恢复上出现正确性缺陷</td><td>高</td><td>M0 门槛；不变量断言；随机图模型测试；故障注入；上线前灰度</td></tr>
+    <tr><td>脚本沙箱逃逸或资源耗尽</td><td>高</td><td>独立进程 + 无网络 + cgroup + 白名单；安全评审；Runner 资源隔离</td></tr>
+    <tr><td>表单引擎范围失控</td><td>高</td><td>严守 PRD 边界；字段类型冻结；新类型走 P2 评审</td></tr>
+    <tr><td>作业队列在峰值下积压</td><td>中</td><td>批量领取、分片、水平扩容、低优先级作业暂停、积压告警</td></tr>
+    <tr><td>组织数据不可用导致审批停摆</td><td>中</td><td>本地镜像 + 缓存；空集策略；降级告警</td></tr>
+    <tr><td>长跑迁移复杂</td><td>中</td><td>默认不迁移；P2 才交付；预演 + 回滚 + 白名单</td></tr>
+    <tr><td>前端四个编辑器工期超预期</td><td>中</td><td>设计器与表单设计器并行开发；优先保证 S1 所需能力；模板库后置</td></tr>
+    <tr><td>RocketMQ 运维经验不足</td><td>低</td><td>Outbox 兜底；MQ 只做异步；可替换为其他 MQ 而不改内核</td></tr>
+  </table>
+
+  <h3>16.5 待决策问题</h3>
+  <table>
+    <tr><th>#</th><th>问题</th><th>建议</th></tr>
+    <tr><td>Q1</td><td>脚本语言是否坚持 Python</td><td>坚持（PRD 已冻结）。Runner 独立部署；若运维不愿引入 Python，可评估 GraalPy，协议不变</td></tr>
+    <tr><td>Q2</td><td>表单渲染器自研还是用 formily</td><td>自研轻量渲染器：字段注册表 + 权限过滤 + 子表单，可控且与矩阵深度耦合；formily 作为备选</td></tr>
+    <tr><td>Q3</td><td>组织架构对接方式</td><td>本地镜像 + 增量同步；接口与 SLA 需组织平台确认</td></tr>
+    <tr><td>Q4</td><td>多租户是否提前</td><td>按 PRD 放 P2；但表结构与代码从第一天带租户维度</td></tr>
+    <tr><td>Q5</td><td>是否需要 BPMN 导入导出</td><td>本期不做；快照 JSON 为准，YAML 糖可选</td></tr>
+    <tr><td>Q6</td><td>附件病毒扫描与合规要求</td><td>确认是否接入现有安全扫描服务；未接入前限制类型与大小</td></tr>
+    <tr><td>Q7</td><td>部署环境与 CI/CD</td><td>沿用现有 nginx/容器体系；明确 PG/MQ/Redis 由谁运维</td></tr>
+  </table>
+</section>
+
+<!-- ================= 17 ================= -->
+<section id="s17">
+  <h2 class="sec"><span class="num">17</span>附录</h2>
+
+  <h3>17.1 流程快照完整示例</h3>
+  <pre><code>{
+  "key": "expense_approval",
+  "name": "费用报销审批",
+  "version": 3,
+  "tenant": "default",
+  "contentHash": "9f2c...",
+  "settings": {
+    "maxSteps": 1000,
+    "maxNodeActivations": 100,
+    "timezone": "Asia/Shanghai"
+  },
+  "variables": [
+    { "name": "amount", "type": "decimal", "required": true },
+    { "name": "dept", "type": "string" },
+    { "name": "tripDays", "type": "number", "default": 0 },
+    { "name": "applicantId", "type": "user", "required": true }
+  ],
+  "nodes": [
+    { "id": "start", "type": "start", "name": "发起",
+      "form": { "formVersionId": 101, "permissions": { "amount": "EDIT_REQUIRED", "applicantId": "EDIT_REQUIRED" } } },
+    { "id": "mgr", "type": "approval", "name": "直属主管审批",
+      "assignee": { "type": "managerOf", "user": "ctx.applicantId", "level": 1 },
+      "signMode": "any",
+      "emptyPolicy": "ASSIGN_ADMIN",
+      "rejectStrategy": "to_start",
+      "form": { "formVersionId": 101, "permissions": { "amount": "READONLY", "managerComment": "EDIT_REQUIRED" } },
+      "timeout": { "duration": "PT48H", "actions": ["REMIND", "ESCALATE"] } },
+    { "id": "fork", "type": "parallel_gateway", "direction": "fork",
+      "pairedJoin": "join" },
+    { "id": "hr", "type": "approval", "name": "HR 备案",
+      "assignee": { "type": "role", "role": "hr_bp" },
+      "signMode": "all", "signStyle": "parallel",
+      "passRule": { "type": "ALL" },
+      "form": { "formVersionId": 101, "permissions": { "hrNo": "EDIT_REQUIRED" } } },
+    { "id": "vp", "type": "approval", "name": "部门总监审批",
+      "assignee": { "type": "managerOf", "user": "ctx.applicantId", "level": 3 },
+      "signMode": "race",
+      "form": { "formVersionId": 101, "permissions": { "vpComment": "EDIT", "result": "EDIT_REQUIRED" } } },
+    { "id": "join", "type": "parallel_gateway", "direction": "join",
+      "pairedFork": "fork" },
+    { "id": "calc", "type": "script", "name": "计算剩余年假",
+      "scriptVersionId": 2201, "timeoutMs": 3000,
+      "retry": { "maxAttempts": 3, "backoff": "exponential" },
+      "onError": "manual" },
+    { "id": "manual", "type": "form", "name": "人工处理",
+      "assignee": { "type": "role", "role": "ops" } },
+    { "id": "end", "type": "end", "name": "结束",
+      "callback": { "event": "instance.completed" } }
+  ],
+  "edges": [
+    { "id": "e1", "from": "start", "to": "mgr" },
+    { "id": "e2", "from": "mgr", "to": "fork", "condition": "verdict == 'approve'" },
+    { "id": "e3", "from": "mgr", "to": "end", "condition": "verdict == 'reject'" },
+    { "id": "e4", "from": "fork", "to": "hr", "condition": "ctx.amount &gt; 50000" },
+    { "id": "e5", "from": "fork", "to": "vp" },
+    { "id": "e6", "from": "hr", "to": "join" },
+    { "id": "e7", "from": "vp", "to": "join" },
+    { "id": "e8", "from": "join", "to": "calc" },
+    { "id": "e9", "from": "calc", "to": "end" },
+    { "id": "e10", "from": "calc", "to": "manual", "role": "onError" }
+  ],
+  "forms": {
+    "start": { "formVersionId": 101 },
+    "mgr": { "formVersionId": 101 },
+    "hr": { "formVersionId": 101 },
+    "vp": { "formVersionId": 101 }
+  },
+  "grayRule": { "type": "percentage", "ratio": 20, "salt": "v3" }
+}</code></pre>
+
+  <h3>17.2 技术术语</h3>
+  <table>
+    <tr><th>术语</th><th>含义</th></tr>
+    <tr><td>快照 snapshot</td><td>发布时冻结的流程图与配置 JSON，运行期只读</td></tr>
+    <tr><td>令牌 token</td><td>执行游标，沿边流动，支持并行</td></tr>
+    <tr><td>节点实例 node_instance</td><td>节点的一次激活，持有局部上下文</td></tr>
+    <tr><td>签核会话 sign_session</td><td>人工节点上的裁决集合，决定节点结论</td></tr>
+    <tr><td>Outbox</td><td>事务内事件表，提交后异步投递，保证不丢事件</td></tr>
+    <tr><td>租约 lease</td><td>Worker 对作业的临时独占权，到期可被回收</td></tr>
+    <tr><td>advisory lock</td><td>PostgreSQL 事务级咨询锁，用于实例级串行</td></tr>
+    <tr><td>两阶段作业</td><td>事务外执行外部调用，事务内落结果</td></tr>
+    <tr><td>钉版本</td><td>实例创建时固定定义/表单/脚本版本，之后不随发布变化</td></tr>
+  </table>
+
+  <h3>17.3 参考资料</h3>
+  <ul>
+    <li>《流程引擎平台 PRD v1.1》— https://davisu-china.github.io/pipewise/</li>
+    <li>PostgreSQL 16 文档：<code>SELECT ... FOR UPDATE SKIP LOCKED</code>、advisory locks、declarative partitioning</li>
+    <li>RocketMQ 5.x 文档：事务消息、延迟消息、消费重试</li>
+    <li>React Flow 文档：自定义节点与状态管理</li>
+    <li>OpenAPI 3.1 规范</li>
+  </ul>
+
+  <h3>17.4 变更记录</h3>
+  <table>
+    <tr><th>版本</th><th>日期</th><th>变更</th></tr>
+    <tr><td>v1.0</td><td>2026-10-18</td><td>首版：Java 自研内核 + React 全量技术方案，覆盖 PRD v1.1</td></tr>
+  </table>
+
+  <div class="callout" style="margin-top:36px">
+    <span class="t">结论</span>
+    自研流程引擎的风险不在「能不能写出令牌模型」，而在「崩溃恢复、并发幂等、签核语义、表单越权」四处细节。本方案把四处都收敛到可测试的状态机与统一入口，并用 PostgreSQL 单事实源 + 作业租约 + Outbox 把分布式不确定性挡在业务语义之外。只要 M0 的故障注入与模型测试通过，后续迭代就是节点类型与表单能力的增量，而不是架构返工。
+  </div>
+</section>
+
+<p class="small" style="text-align:center;margin-top:48px">PipeWise 技术方案 · v1.0 · 2026-10-18 · 对应 PRD v1.1 · 纯自研执行内核，无 Flowable 依赖</p>
+
+</div>
+</body>
+</html>
