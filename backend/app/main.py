@@ -43,6 +43,20 @@ app = FastAPI(title="PipeWise", version="0.1.0", lifespan=lifespan)
 app.add_middleware(DBSessionMiddleware)
 
 
+@app.middleware("http")
+async def no_cache_static(request, call_next):
+    """SPA 外壳与静态资源一律 no-cache（带 ETag 复验）。
+
+    没有构建步骤、文件名不带内容哈希，如果放任浏览器按 Last-Modified 做启发式缓存，
+    改完前端用户可能几小时都看不到新版本（本项目线上踩过：页面白屏，其实是旧 app.js）。
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path in ("/", "/index.html") or path.endswith((".js", ".css")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.exception_handler(ApiError)
 async def api_error_handler(request: Request, exc: ApiError):
     return JSONResponse(

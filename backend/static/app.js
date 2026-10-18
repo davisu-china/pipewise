@@ -1251,10 +1251,18 @@ function statCard(label, value) {
 // ----------------------------------------------------------------- 启动
 
 async function boot() {
+  try {
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
 
-  const users = await (await fetch(API + "/dev/demo-users")).json();
+  const res = await fetch(API + "/dev/demo-users");
+  if (!res.ok) {
+    throw new Error(res.status === 401
+      ? "演示账号接口被网关拒绝（Basic Auth 没带上？）"
+      : `演示账号接口返回 ${res.status}（PIPEWISE_DEMO 未开启？）`);
+  }
+  const users = await res.json();
+  if (!Array.isArray(users.items)) throw new Error("演示账号接口返回格式不对");
   state.users = users.items;
   const sel = document.getElementById("user-switch");
   for (const u of state.users) sel.append(h("option", { value: u.token }, `${u.name}（${u.roles.join("/")}）`));
@@ -1270,6 +1278,10 @@ async function boot() {
   await loadMe();
   window.addEventListener("hashchange", render);
   render();
+  } catch (e) {
+    // 启动阶段失败也要把原因画出来——白屏最难查
+    view.append(h("div", { class: "card empty" }, "页面初始化失败：" + (e && e.message ? e.message : String(e))));
+  }
 }
 
 async function loadMe() {
