@@ -11,6 +11,14 @@ AI 时代的流程引擎平台：**定义流程 → 发布版本 → 创建实�
 - **技术方案（Java 自研内核 + React）** → https://davisu-china.github.io/pipewise/tech-design/
   - 源文件：[docs/tech-design-self-built-java-react.html](docs/tech-design-self-built-java-react.html)
 
+## 中间件（单机）
+
+已在 `111.228.14.136` 部署 PostgreSQL 16 / Redis 7 / MinIO / RocketMQ 5.3.1，
+Docker Compose 管理，端口分别为 `5434 / 6380 / 9010·9011 / 9876·10911·10909`。
+连接方式、代码示例与外网放行说明见 [docs/middleware-deploy.md](docs/middleware-deploy.md)。
+密码不在仓库内：部署机 `/opt/pipewise-infra/credentials.txt`（root 600），或执行
+`sudo deploy/deploy.sh show` 查看；含密码的完整版部署手册由项目负责人私发。
+
 ## 目标架构
 
 - **后端**：Java 21 + Spring Boot 3.5，模块化单体，拆 `api` / `engine` 两种运行形态

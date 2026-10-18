@@ -1,5 +1,7 @@
-# 本机部署期配置（含 Basic Auth 密码），绝不提交
+# 本机部署配置与含密码的部署文档，绝不提交
 deploy/env.local
+deploy/*.local.html
+deploy/*.local.md
 
 # Java / Maven
 target/
