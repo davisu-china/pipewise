@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeWise 学员分期开发计划 · 18 周</title>
+<style>
+  :root{
+    --paper:#F5F6F3;--surface:#fff;--ink:#141A19;--ink2:#34403D;--muted:#5F6B68;
+    --line:#D9DDD6;--line2:#E7EAE4;--accent:#28527A;--accent2:#1E3F5F;
+    --accent-soft:#E3EAF2;--amber:#8A6412;--amber-soft:#FCF8EF;--red:#9C3A28;
+    --red-soft:#FCF3F0;--green:#1A6357;--green-soft:#E1EDE8;
+    --mono:"JetBrains Mono",Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+    --serif:"Songti SC","Noto Serif SC",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.8}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.88em;background:#EEF0EB;padding:1px 5px;border-radius:3px}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:#151B1A;color:#DCE5E1;padding:16px 18px;border-radius:4px;overflow-x:auto;margin:12px 0 18px}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px 110px}
+  .masthead{padding:64px 0 32px;border-bottom:2px solid var(--ink);margin-bottom:32px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);margin:0 0 15px}
+  h1{font-family:var(--serif);font-size:44px;line-height:1.16;margin:0 0 12px}
+  .subtitle{font-size:16.5px;color:var(--ink2);margin:0 0 26px;max-width:72ch}
+  .metagrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .metagrid div{background:var(--surface);padding:11px 14px}
+  .metagrid .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px}
+  .metagrid .v{font-size:13px;font-weight:600}
+  .toc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);padding:20px 24px;margin-bottom:46px}
+  .toc h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;font-weight:600}
+  .toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:40px}
+  .toc li{font-size:13px;padding:2.5px 0;break-inside:avoid}
+  .toc li b{font-family:var(--mono);color:var(--accent);margin-right:8px;font-size:11.5px}
+  h2.sec{font-family:var(--serif);font-size:26px;margin:50px 0 16px;padding-bottom:11px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:13px}
+  h2.sec .num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600}
+  h3{font-size:17.5px;margin:28px 0 8px}
+  h4{font-size:14.5px;margin:18px 0 6px;color:var(--ink2)}
+  p{margin:0 0 11px}
+  ul,ol{margin:0 0 13px;padding-left:22px}
+  li{margin:3px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:13px;background:var(--surface)}
+  th{background:#EEF0EB;text-align:left;padding:8px 10px;border:1px solid var(--line);white-space:nowrap}
+  td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#FBFCFA}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);padding:13px 17px;margin:15px 0;font-size:13.8px}
+  .callout .t{display:block;font-weight:700;color:var(--accent);margin-bottom:4px}
+  .callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}.callout.warn .t{color:var(--amber)}
+  .callout.danger{border-left-color:var(--red);background:var(--red-soft)}.callout.danger .t{color:var(--red)}
+  .callout.green{border-left-color:var(--green);background:var(--green-soft)}.callout.green .t{color:var(--green)}
+  .phase{background:var(--surface);border:1px solid var(--line);margin:20px 0 26px}
+  .phase-h{display:flex;align-items:baseline;gap:12px;padding:14px 18px;background:var(--accent-soft);border-bottom:1px solid var(--line)}
+  .phase-h .p{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700}
+  .phase-h h3{margin:0;font-size:18px}
+  .phase-h .w{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .phase-b{padding:16px 18px 6px}
+  .phase-b h4{color:var(--accent2)}
+  .gate{background:var(--green-soft);border-left:3px solid var(--green);padding:10px 14px;font-size:13px;margin:10px 0 16px}
+  .gate b{color:var(--green)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent2);margin-left:4px}
+  .badge.hard{background:var(--red-soft);color:var(--red)}
+  .flow{display:flex;flex-wrap:wrap;gap:0;margin:16px 0 24px}
+  .flow .s{flex:1 1 110px;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--accent);padding:9px 12px;font-size:12.5px;line-height:1.5}
+  .flow .s b{display:block;color:var(--ink);font-size:12.5px}
+  .flow .s span{color:var(--muted);font-size:11px}
+  .flow .a{display:flex;align-items:center;color:var(--accent);padding:0 4px}
+  .small{font-size:12.5px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  .card{background:var(--surface);border:1px solid var(--line);padding:14px 16px;font-size:13.2px}
+  .card h4{margin:0 0 5px;color:var(--accent2)}
+  .card p{margin:0;color:var(--ink2)}
+  @media(max-width:760px){.wrap{padding:0 18px 80px}h1{font-size:32px}.metagrid{grid-template-columns:1fr 1fr}.toc ol{columns:1}.flow{flex-direction:column}.flow .a{transform:rotate(90deg);padding-left:16px}.grid2{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.wrap{max-width:none;padding:0}.toc{display:none}.phase,table,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">PipeWise · Student Development Program · 18 Weeks</p>
+  <h1>学员分期开发计划</h1>
+  <p class="subtitle">以 PRD v1.1 与技术方案为教材，18 周分 9 个阶段，从工程骨架一路做到 S1/S2/S3 三个验收场景。每个阶段都有明确的教学目标、任务拆解、交付物和可演示的验收门槛。</p>
+  <div class="metagrid">
+    <div><span class="k">周期</span><span class="v">18 周（可压缩至 14–16 周）</span></div>
+    <div><span class="k">阶段</span><span class="v">P0–P8，共 9 期</span></div>
+    <div><span class="k">建议编组</span><span class="v">4–6 人 / 组</span></div>
+    <div><span class="k">技术栈</span><span class="v">Java 21 + React 18</span></div>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目录 / Contents</h2>
+  <ol>
+    <li><a href="#s0"><b>00</b>培养目标与总体思路</a></li>
+    <li><a href="#s1"><b>01</b>班级组织与角色</a></li>
+    <li><a href="#s2"><b>02</b>开发节奏与协作规范</a></li>
+    <li><a href="#s3"><b>03</b>分期总览</a></li>
+    <li><a href="#s4"><b>04</b>P0 环境与工程基线</a></li>
+    <li><a href="#s5"><b>05</b>P1 定义、版本与设计器</a></li>
+    <li><a href="#s6"><b>06</b>P2 执行内核最小闭环</a></li>
+    <li><a href="#s7"><b>07</b>P3 签核与退回</a></li>
+    <li><a href="#s8"><b>08</b>P4 网关、上下文与脚本</a></li>
+    <li><a href="#s9"><b>09</b>P5 表单引擎</a></li>
+    <li><a href="#s10"><b>10</b>P6 API、事件与通知</a></li>
+    <li><a href="#s11"><b>11</b>P7 运维、观测与压测</a></li>
+    <li><a href="#s12"><b>12</b>P8 结业演练</a></li>
+    <li><a href="#s13"><b>13</b>环境与数据隔离</a></li>
+    <li><a href="#s14"><b>14</b>质量与验收标准</a></li>
+    <li><a href="#s15"><b>15</b>考核与结业</a></li>
+    <li><a href="#s16"><b>16</b>风险与应对</a></li>
+    <li><a href="#s17"><b>17</b>开营前准备清单</a></li>
+  </ol>
+</nav>
+
+<section id="s0">
+  <h2 class="sec"><span class="num">00</span>培养目标与总体思路</h2>
+  <p class="lead">这不是「跟着视频敲一遍」的课程，而是让学员在真实约束下完成一个可运行、可演示、可运维的流程引擎。每期结束必须能跑起来、能演示、能讲清楚设计取舍。</p>
+  <div class="grid2">
+    <div class="card"><h4>能力目标</h4><p>掌握 Java 21 / Spring Boot / PG / Redis / MinIO / RocketMQ 的工程化用法；能独立设计表结构、状态机、幂等与事务边界；能写 React 设计器与动态表单。</p></div>
+    <div class="card"><h4>工程目标</h4><p>产出可部署的 <code>server/</code>、<code>web/</code>、<code>script-runner/</code>；CI 全绿；S1/S2/S3 三个场景可演示；有压测与故障恢复记录。</p></div>
+    <div class="card"><h4>教学方式</h4><p>每期「设计评审 → 分工开发 → 中期集成 → Demo 验收 → 复盘」。讲师只做架构守门与 Code Review，不替学员写核心逻辑。</p></div>
+    <div class="card"><h4>难度曲线</h4><p>P2（执行内核）与 P4（网关/脚本）是分水岭；P5（表单）工作量最大。优先保证这三期质量，其余期可压缩。</p></div>
+  </div>
+  <h3>建议的前置基础</h3>
+  <ul>
+    <li>Java：集合、泛型、异常、Maven、Spring Boot 基础（能写 REST 接口与 JDBC）。</li>
+    <li>数据库：SQL、索引、事务、简单 EXPLAIN。</li>
+    <li>前端：JavaScript/TypeScript、React 基础、CSS 布局。</li>
+    <li>工具：Git 分支与 PR、Linux 命令行、Docker 基础。</li>
+  </ul>
+  <p>基础不足的学员在开营前完成「Java Web 最小 CRUD + React 列表页」热身作业，避免 P0 就被环境卡住。</p>
+</section>
+
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>班级组织与角色</h2>
+  <h3>编组方式</h3>
+  <table>
+    <tr><th>规模</th><th>编组</th><th>适用</th></tr>
+    <tr><td>12–18 人</td><td>3–4 组，每组 4–5 人</td><td>每组负责一个纵切模块，讲师统一架构</td></tr>
+    <tr><td>18–30 人</td><td>5–6 组，每组 4–5 人</td><td>按「内核 / 表单 / 前端 / 平台」四条线拆分，每期轮换</td></tr>
+    <tr><td>&lt;12 人</td><td>2 组，每组 4–6 人</td><td>全栈小组，每组独立跑通全流程，结业对比</td></tr>
+  </table>
+
+  <h3>组内角色（每两期轮换一次）</h3>
+  <table>
+    <tr><th>角色</th><th>职责</th><th>产出</th></tr>
+    <tr><td>Tech Lead</td><td>拆任务、定接口、主持设计评审、守 CI</td><td>每期一页设计说明、任务看板</td></tr>
+    <tr><td>引擎/后端</td><td>状态机、令牌、作业、签核、上下文</td><td>核心代码 + 单测</td></tr>
+    <tr><td>表单/API</td><td>表单 Schema、权限矩阵、开放 API、事件</td><td>接口 + 契约测试</td></tr>
+    <tr><td>前端</td><td>设计器、表单渲染、任务中心、运维台</td><td>可演示页面 + 组件测试</td></tr>
+    <tr><td>测试/DevOps</td><td>用例、CI、压测、故障注入、部署</td><td>测试报告、CI 流水线</td></tr>
+  </table>
+
+  <div class="callout">
+    <span class="t">讲师的角色</span>
+    不替学员写业务代码。负责：① 每期开营讲 30–45 分钟设计要点；② 冻结接口/表结构契约；③ Review 关键 PR；④ 主持 Demo 与复盘；⑤ 在 P2/P4 做一次结对示范。
+  </div>
+</section>
+
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>开发节奏与协作规范</h2>
+  <h3>每周节奏</h3>
+  <table>
+    <tr><th>时间</th><th>活动</th><th>时长</th><th>产出</th></tr>
+    <tr><td>周一</td><td>本期 Kickoff + 设计评审</td><td>60–90 min</td><td>任务拆解、接口/表结构冻结</td></tr>
+    <tr><td>周二–周四</td><td>开发 + 每日站会</td><td>15 min / 天</td><td>阻塞项当天暴露</td></tr>
+    <tr><td>周三</td><td>中期集成检查</td><td>30 min</td><td>前后端联调、契约对齐</td></tr>
+    <tr><td>周五</td><td>Demo + Code Review + 复盘</td><td>90 min</td><td>可运行演示、Review 记录、Retro</td></tr>
+  </table>
+
+  <h3>分支与合并</h3>
+  <ul>
+    <li><strong><code>main</code> 是唯一长期分支</strong>，任何时刻必须可构建、可启动。</li>
+    <li>学员使用短期分支：<code>feat/p2-&lt;姓名&gt;-token-engine</code>，完成后发 PR，至少 1 人 Review，CI 通过后合并。</li>
+    <li>每期结束打 tag：<code>phase-0</code> … <code>phase-8</code>，方便回看与回滚。</li>
+    <li>禁止直接 push <code>main</code>；禁止 force push；禁止提交密码、<code>.env</code>、构建产物。</li>
+    <li>如果班级坚持直接在 <code>main</code> 提交，则要求小步提交、每次提交前本地跑测试，并由讲师每日抽查。</li>
+  </ul>
+
+  <h3>提交与 PR 规范</h3>
+  <pre><code>feat(engine): 令牌到达并行 join 时持久化 scope
+fix(task): 竞签并发提交只允许第一个生效
+docs(api): 补充实例创建接口的幂等说明
+test(sign): 补或签全否决的裁决用例</code></pre>
+  <p class="small">PR 描述必须写：改了什么、怎么验证、影响范围、截图/日志（如适用）。</p>
+</section>
+
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>分期总览</h2>
+  <div class="flow">
+    <div class="s"><b>P0 基线</b><span>W1 · 工程/CI</span></div><div class="a">→</div>
+    <div class="s"><b>P1 定义</b><span>W2–3 · 设计器</span></div><div class="a">→</div>
+    <div class="s"><b>P2 内核</b><span>W4–5 · 令牌</span></div><div class="a">→</div>
+    <div class="s"><b>P3 签核</b><span>W6–7 · 或并竞</span></div><div class="a">→</div>
+    <div class="s"><b>P4 网关</b><span>W8–9 · 并行/脚本</span></div><div class="a">→</div>
+    <div class="s"><b>P5 表单</b><span>W10–12 · 权限矩阵</span></div><div class="a">→</div>
+    <div class="s"><b>P6 API</b><span>W13–14 · 事件</span></div><div class="a">→</div>
+    <div class="s"><b>P7 运维</b><span>W15–16 · 压测</span></div><div class="a">→</div>
+    <div class="s"><b>P8 结业</b><span>W17–18 · 三场景</span></div>
+  </div>
+
+  <table>
+    <tr><th>阶段</th><th>周次</th><th>主题</th><th>核心交付</th><th>验收门槛</th></tr>
+    <tr><td>P0</td><td>1</td><td>环境与工程基线</td><td>可启动的 api/worker 骨架、CI、四个中间件连通</td><td>CI 绿 + 健康检查 + 连通截图</td></tr>
+    <tr><td>P1</td><td>2–3</td><td>定义、版本与设计器</td><td>画布、快照、发布 v1、校验</td><td>能画出并发布 start→approval→end</td></tr>
+    <tr><td>P2</td><td>4–5</td><td>执行内核最小闭环 <span class="badge hard">分水岭</span></td><td>实例、令牌、作业、任务、审计</td><td>创建→审批→完成；重启恢复；双击幂等</td></tr>
+    <tr><td>P3</td><td>6–7</td><td>签核与退回</td><td>或签/并签/竞签、加签、退回、撤回</td><td>S2 场景跑通；并发裁决正确</td></tr>
+    <tr><td>P4</td><td>8–9</td><td>网关、上下文与脚本 <span class="badge hard">分水岭</span></td><td>XOR/AND/OR、变量、表达式、脚本沙箱</td><td>S1 并行分支 + 汇聚 + 脚本跑通</td></tr>
+    <tr><td>P5</td><td>10–12</td><td>表单引擎</td><td>表单设计器、渲染器、权限矩阵、附件</td><td>S4 同一表单五节点不同权限</td></tr>
+    <tr><td>P6</td><td>13–14</td><td>API、事件与通知</td><td>开放 API、幂等、Outbox/MQ、Webhook、定时</td><td>外部创建/查询；事件可重放</td></tr>
+    <tr><td>P7</td><td>15–16</td><td>运维、观测与压测</td><td>干预、监控、分区归档、压测报告</td><td>故障恢复 + 压测达标</td></tr>
+    <tr><td>P8</td><td>17–18</td><td>结业演练</td><td>S1/S2/S3、部署、答辩</td><td>三场景 + 代码评审 + 演示</td></tr>
+  </table>
+  <div class="callout warn">
+    <span class="t">压缩建议</span>
+    如果只有 14–16 周：P5 压到 2 周（先做基础字段与权限矩阵，子表单/联动后置），P7 压到 1 周（只做核心监控与一次故障注入）。<b>不要压缩 P2 和 P4</b>，它们是整个引擎正确性的地基。
+  </div>
+</section>
+
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>P0 环境与工程基线</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 0</span><h3>环境与工程基线</h3><span class="w">第 1 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>把「能开发、能提交、能运行」这件事先跑通：Maven 多模块、Spring Boot、Flyway、CI、React 工程、四个中间件连接。避免后面把时间浪费在环境和协作上。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li>建 <code>server/</code> 多模块：<code>pw-common</code>、<code>pw-api</code>、<code>pw-worker</code>、<code>pw-engine</code>（空骨架）。</li>
+        <li>Spring Boot 3.5 + Java 21；<code>/api/v1/ping</code>、Actuator health；统一错误结构与 traceId。</li>
+        <li>Flyway 建库基线；配置文件分环境；日志输出到文件与 stdout。</li>
+        <li>写一个 <code>InfraSmokeTest</code>：连 PG 执行 <code>select 1</code>、Redis <code>ping</code>、MinIO health、RocketMQ 发送一条测试消息。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>Vite + React 18 + TypeScript + Tailwind + shadcn/ui；应用壳、路由、API client。</li>
+        <li>一个「环境自检」页面：显示 API、PG、Redis、MinIO、RocketMQ 的连通状态。</li>
+      </ul>
+      <h4>测试 / DevOps</h4>
+      <ul>
+        <li>GitHub Actions：<code>mvn test</code>、<code>npm run build</code>、前端单测；PR 必须绿。</li>
+        <li>分支保护、PR 模板、Issue 模板；<code>.gitignore</code> 覆盖 target、node_modules、.env。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>可启动的 api/worker 骨架、前端自检页、CI 流水线、环境说明 README。</p>
+      <div class="gate"><b>验收门槛：</b>新同学按 README 从零启动成功；CI 全绿；自检页四项全绿；提交一个 PR 并完成 Review。</div>
+      <p class="small">对应文档：技术方案 §2、§12.1；中间件手册第 1–3 节。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>P1 定义、版本与设计器</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 1</span><h3>定义、版本与设计器</h3><span class="w">第 2–3 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>理解「定义 / 版本 / 快照」三层关系，以及为什么发布后不可变。学会用 React Flow 做一个能保存、能校验的最小画布。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li><code>wf_definition</code>、<code>wf_definition_version</code> 表与 API；草稿乐观锁 <code>draft_rev</code>。</li>
+        <li>快照 JSON 结构（节点/边/变量/表单引用）；SHA-256 内容哈希。</li>
+        <li>发布前校验：唯一 start、至少一个 end、入边/出边、XOR 默认边、变量引用、脚本引用。</li>
+        <li>发布生成不可变版本；默认版本切换；版本列表。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>定义列表、新建/编辑草稿、发布按钮。</li>
+        <li>React Flow 画布：start/end/approval/exclusive 节点、连线、条件边、右侧配置面板。</li>
+        <li>保存草稿、发布、校验错误定位；JSON 导入导出。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>能把 S1 的图（start → 主管审批 → 条件分支 → end）画出来、保存、发布 v1，并看到版本列表与快照哈希。</p>
+      <div class="gate"><b>验收门槛：</b>非法图被阻断并给出原因；发布后再次修改只能生成 v2；刷新页面草稿不丢。</div>
+      <p class="small">对应文档：技术方案 §6、§12.3、附录 17.1。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>P2 执行内核最小闭环</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 2</span><h3>执行内核最小闭环</h3><span class="w">第 4–5 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>这是全课程最重要的一期。理解令牌、节点实例、作业队列、实例级串行、幂等与崩溃恢复。做完这一期，学员应该能解释「为什么任务完成不会重复推进」。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li>建 <code>wf_instance</code>、<code>wf_token</code>、<code>wf_node_instance</code>、<code>wf_execution_job</code>、<code>wf_task</code>、<code>wf_audit_log</code>、<code>wf_event_outbox</code>。</li>
+        <li>创建实例（businessKey 唯一）、启动、start/end/approval 执行器。</li>
+        <li>Worker：<code>SKIP LOCKED</code> 领取作业、租约、心跳、失败重试；实例级 advisory lock。</li>
+        <li>任务完成：CAS 校验、写审计、流转令牌；重复提交空操作。</li>
+        <li>崩溃恢复测试：处理中 kill worker，重启后实例继续。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>实例列表/详情、任务中心（待办/已办）、任务详情与同意/否决。</li>
+        <li>实例时间线：节点激活、任务创建/完成、状态变化。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>最小 S1：创建实例 → 主管待办 → 同意 → 实例完成；作业与令牌状态可查询。</p>
+      <div class="gate"><b>验收门槛：</b>同一任务 50 并发提交只成功一次；kill worker 后重启不重复流转；时间线与数据库状态一致。</div>
+      <p class="small">对应文档：技术方案 §3、§4、§11.1–11.3。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>P3 签核与退回</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 3</span><h3>签核与退回</h3><span class="w">第 6–7 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>把 PRD 第 8 章的语义翻译成代码：任务与会话分离，三种签核模式用同一个裁决函数；退回/撤回/重提的轮次要能解释清楚。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li><code>wf_sign_session</code>；ANY / ALL / RACE 裁决；并行/串行会签；通过比例与一票否决。</li>
+        <li>加签、转交、委托、改派；任务动作流水。</li>
+        <li>退回 to_start / to_prev / to_node / terminate；撤回；重提轮次 <code>round</code> 与保留已通过节点。</li>
+        <li>审批人解析器：user / role / managerOf / deptLeader / initiator / expr；空集与离职策略。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>设计器：签核模式、通过规则、退回策略、审批人解析器配置。</li>
+        <li>任务页：加签/转交/退回/撤回/催办；审批记录与意见。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>S2 采购合同场景：金额 &gt; 50 万走三方并签，≤ 50 万走竞签；退回后重提。</p>
+      <div class="gate"><b>验收门槛：</b>三种模式 × 同意/否决/加签/转交的决策表用例全过；竞签并发只产生一个结论；退回后时间线可解释。</div>
+      <p class="small">对应文档：技术方案 §5、§8.2。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>P4 网关、上下文与脚本</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 4</span><h3>网关、上下文与脚本</h3><span class="w">第 8–9 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>第二个分水岭。理解并行 fork/join 的令牌语义、join scope、死锁检测；理解变量作用域与并发写保护；跑通一个最小脚本沙箱。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li>XOR / AND / OR 网关；<code>wf_join_scope</code>；嵌套深度与步数保护；死锁告警。</li>
+        <li>变量作用域（FLOW/NODE/ENV）、声明与类型、版本号乐观锁、冲突策略、变量审计。</li>
+        <li>Aviator 白名单表达式；编译缓存；求值超时。</li>
+        <li>脚本 Runner：独立进程/容器、超时、内存限制、白名单 API、试算接口、重试与 onError 边。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>设计器：网关 fork/join 配对、条件边、变量声明面板。</li>
+        <li>试跑（Dry Run）：输入变量 → 高亮路径 → 展示每步变量变化。</li>
+        <li>实例时间线展示并行分叉/汇聚与脚本输出。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>S1 完整版：主管审批 → 并行「HR 备案 + 总监审批」→ 汇聚 → 脚本算年假 → 结束。</p>
+      <div class="gate"><b>验收门槛：</b>并行分支全部到达才汇聚；分支被跳过时能告警；脚本超时/报错按策略处理；kill worker 后汇聚状态可恢复。</div>
+      <p class="small">对应文档：技术方案 §3.6、§8。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s9">
+  <h2 class="sec"><span class="num">09</span>P5 表单引擎</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 5</span><h3>表单引擎</h3><span class="w">第 10–12 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>工作量最大的一期。重点不是画表单，而是「同一张表单在不同节点对不同人呈现不同权限」，且服务端不可被前端绕过。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li><code>wf_form</code> / <code>wf_form_version</code> / <code>wf_form_binding</code> / <code>wf_form_data</code>；表单版本钉住。</li>
+        <li>字段权限矩阵解析：HIDDEN / READONLY / EDIT / EDIT_REQUIRED；默认只读/继承。</li>
+        <li>三层校验；服务端权限过滤与越权字段丢弃；计算字段服务端复算。</li>
+        <li>子表单、行数上限、附件 MinIO 预签名、草稿。</li>
+        <li>表单提交与任务完成同一事务。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>表单设计器：字段面板、布局、属性、预览、移动端预览。</li>
+        <li>Schema 渲染器：字段注册表、权限过滤、子表单、联动、计算、附件上传。</li>
+        <li>节点 × 字段权限矩阵编辑器（表格视图、批量填充、继承）。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>S4：一张费用报销单绑定 5 个节点，字段权限随节点变化；PC 与移动端均可填写。</p>
+      <div class="gate"><b>验收门槛：</b>审批人构造越权字段提交，服务端丢弃并审计；子表单超 200 行被拒；表单提交与任务完成同事务；旧实例按旧表单版本渲染。</div>
+      <p class="small">对应文档：技术方案 §7、§12.4。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s10">
+  <h2 class="sec"><span class="num">10</span>P6 API、事件与通知</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 6</span><h3>API、事件与通知</h3><span class="w">第 13–14 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>让流程引擎成为「可被业务系统调用的平台」：开放 API、幂等、Outbox、RocketMQ、Webhook、通知与定时器。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li>开放 REST API：创建/查询/挂起/恢复/终止、任务查询/完成、版本列表/发布。</li>
+        <li><code>Idempotency-Key</code>、错误码、游标分页、OpenAPI 文档。</li>
+        <li>Outbox Relay → RocketMQ；事件清单；消费去重；Webhook 签名、重试、死信。</li>
+        <li>站内信/飞书通知、模板、去重；定时器与超时策略、工作日历。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>API 文档页、Webhook 订阅管理、投递记录。</li>
+        <li>通知中心与角标；定时/超时策略配置。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>外部系统可通过 API 创建实例并订阅事件；Webhook 失败可重试；定时提醒可触发。</p>
+      <div class="gate"><b>验收门槛：</b>同幂等键重复请求只产生一个实例；事件重复投递不重复通知；Webhook 失败进入死信并可重放；定时器重启后不丢。</div>
+      <p class="small">对应文档：技术方案 §9、§10。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s11">
+  <h2 class="sec"><span class="num">11</span>P7 运维、观测与压测</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 7</span><h3>运维、观测与压测</h3><span class="w">第 15–16 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>从「能跑」到「敢让人用」：能定位卡点、能人工干预、能扛住峰值、能在故障后恢复。</p>
+      <h4>后端任务</h4>
+      <ul>
+        <li>运维干预：强制通过/否决、跳过、跳转、重跑、终止、改变量；二次确认与审计。</li>
+        <li>指标：作业积压、单步耗时、脚本失败率、Outbox 积压、卡住实例；OpenTelemetry traceId。</li>
+        <li>分区、归档、慢查询治理；压测脚本与容量报告。</li>
+      </ul>
+      <h4>前端任务</h4>
+      <ul>
+        <li>运维控制台：卡点实例、作业积压、失败节点、干预操作。</li>
+        <li>监控大盘：实例状态分布、任务积压、节点耗时、回调失败。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>一份压测报告、一份故障演练记录、一个可用的运维控制台。</p>
+      <div class="gate"><b>验收门槛：</b>kill worker / 停 MQ / 停 Redis 三种故障下核心流程不丢状态；卡住实例能被发现；干预操作全部留审计。</div>
+      <p class="small">对应文档：技术方案 §13、§14。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s12">
+  <h2 class="sec"><span class="num">12</span>P8 结业演练</h2>
+  <div class="phase">
+    <div class="phase-h"><span class="p">PHASE 8</span><h3>结业演练</h3><span class="w">第 17–18 周</span></div>
+    <div class="phase-b">
+      <h4>教学目标</h4>
+      <p>把前 8 期拼成完整产品，按真实评审标准做一次交付：三个场景、一次部署、一次答辩。</p>
+      <h4>任务</h4>
+      <ul>
+        <li>回归 S1（请假）、S2（采购合同）、S3（长跑 + 版本升级）。</li>
+        <li>安全评审：越权、脚本沙箱、敏感字段、附件、Webhook 签名。</li>
+        <li>部署到测试环境；写运维手册与故障处理手册。</li>
+        <li>每组 20 分钟演示 + 10 分钟答辩：为什么这样设计、哪里还会出问题。</li>
+      </ul>
+      <h4>交付物</h4>
+      <p>release tag、部署地址、演示视频/录屏、个人总结、组内互评。</p>
+      <div class="gate"><b>验收门槛：</b>三场景全部跑通；代码评审无阻塞项；部署可复现；答辩能解释令牌、幂等、签核、表单权限四个核心问题。</div>
+    </div>
+  </div>
+</section>
+
+<section id="s13">
+  <h2 class="sec"><span class="num">13</span>环境与数据隔离</h2>
+  <p>班级共用一套中间件时，必须做命名空间隔离，否则会互相覆盖数据、抢 Topic、误删桶。</p>
+  <table>
+    <tr><th>组件</th><th>隔离方式</th><th>示例</th></tr>
+    <tr><td>PostgreSQL</td><td>每组一个 schema</td><td><code>CREATE SCHEMA student_team1;</code> 所有表放该 schema</td></tr>
+    <tr><td>Redis</td><td>key 前缀或不同 db</td><td><code>team1:</code> 前缀；或用 db 1–15</td></tr>
+    <tr><td>MinIO</td><td>每组一个桶或目录</td><td><code>student-team1</code> 桶，或 <code>student/team1/</code> 前缀</td></tr>
+    <tr><td>RocketMQ</td><td>Topic / Group 前缀</td><td><code>team1_order_topic</code>、<code>team1_order_group</code></td></tr>
+  </table>
+  <div class="callout danger">
+    <span class="t">凭据使用红线</span>
+    中间件账号密码只通过环境变量/<code>.env</code> 注入，<code>.env</code> 必须被 gitignore；禁止把密码写进代码、配置文件、截图、PR 描述。课程结束后统一轮换密码。
+  </div>
+  <h3>推荐的环境分层</h3>
+  <ul>
+    <li><strong>本地</strong>：Docker Compose 起 PG/Redis/MinIO/RocketMQ，便于随意重置。</li>
+    <li><strong>共享集成环境</strong>：统一中间件 + 每组命名空间，每周五 Demo 用。</li>
+    <li><strong>结业环境</strong>：独立部署，使用 release tag，保留演示数据。</li>
+  </ul>
+</section>
+
+<section id="s14">
+  <h2 class="sec"><span class="num">14</span>质量与验收标准</h2>
+  <h3>完成的定义（DoD）</h3>
+  <ul>
+    <li>功能可演示，主路径与至少一个异常路径都验证过。</li>
+    <li>核心逻辑有单元测试；数据库相关有集成测试；关键并发有压测/并发用例。</li>
+    <li>接口/表结构变更同步更新文档；PR 描述写清验证方式。</li>
+    <li>没有提交密钥、构建产物、本地配置；CI 绿。</li>
+    <li>至少 1 人 Review 通过；讲师抽查关键模块。</li>
+  </ul>
+
+  <h3>Code Review 检查清单</h3>
+  <table>
+    <tr><th>维度</th><th>检查点</th></tr>
+    <tr><td>正确性</td><td>状态机是否单调？令牌是否只消费一次？事务边界是否包含状态+事件？</td></tr>
+    <tr><td>幂等</td><td>重复请求/重复消息/双击提交是否安全？</td></tr>
+    <tr><td>并发</td><td>实例锁、任务 CAS、变量版本冲突是否处理？</td></tr>
+    <tr><td>安全</td><td>越权字段、脚本白名单、SSRF、敏感数据脱敏是否覆盖？</td></tr>
+    <tr><td>可测</td><td>核心逻辑是否可脱离数据库测试？异常路径是否有用例？</td></tr>
+    <tr><td>可读</td><td>命名、分层、注释是否解释了「为什么」而不是「做了什么」？</td></tr>
+  </table>
+</section>
+
+<section id="s15">
+  <h2 class="sec"><span class="num">15</span>考核与结业</h2>
+  <h3>每期评分（100 分）</h3>
+  <table>
+    <tr><th>项</th><th>权重</th><th>标准</th></tr>
+    <tr><td>功能完成度</td><td>50</td><td>验收门槛全部通过，异常路径可用</td></tr>
+    <tr><td>测试</td><td>20</td><td>核心单测 + 集成/并发用例，CI 稳定</td></tr>
+    <tr><td>代码质量</td><td>15</td><td>分层清晰、命名合理、无重复实现、Review 通过</td></tr>
+    <tr><td>演示与文档</td><td>15</td><td>能讲清楚设计取舍；PR/文档完整</td></tr>
+  </table>
+  <h3>结业成绩</h3>
+  <ul>
+    <li>阶段平均分 60% + 结业项目 30% + 参与度（Review/分享/互助）10%。</li>
+    <li>红线：无测试、提交密钥、直接 push main、抄袭他人代码——该期记 0 分并复盘。</li>
+    <li>优秀作品：代码合并进主仓库、部署演示、写成技术分享。</li>
+  </ul>
+</section>
+
+<section id="s16">
+  <h2 class="sec"><span class="num">16</span>风险与应对</h2>
+  <table>
+    <tr><th>风险</th><th>信号</th><th>应对</th></tr>
+    <tr><td>P2/P4 难度超预期</td><td>令牌/汇聚用例反复失败</td><td>讲师做一次结对示范；增加一周缓冲；优先保正确性而不是功能数量</td></tr>
+    <tr><td>环境问题拖慢进度</td><td>P0 结束仍有人跑不起来</td><td>P0 设为硬门槛；提供一键脚本与配对帮扶</td></tr>
+    <tr><td>前后端契约漂移</td><td>联调时字段对不上</td><td>每期第二天冻结 OpenAPI/表结构；生成类型或 mock</td></tr>
+    <tr><td>表单范围失控</td><td>不断加字段类型/自由布局</td><td>严守 PRD 边界；新类型走评审，不临时加需求</td></tr>
+    <tr><td>数据互相覆盖</td><td>桶/Topic/schema 冲突</td><td>命名空间规范 + 开营时统一分配</td></tr>
+    <tr><td>学员掉队</td><td>连续两期无 PR</td><td>组长一对一；降级到测试/文档任务，保证参与</td></tr>
+  </table>
+</section>
+
+<section id="s17">
+  <h2 class="sec"><span class="num">17</span>开营前准备清单</h2>
+  <h3>你需要先拍板的事</h3>
+  <table>
+    <tr><th>#</th><th>决策</th><th>建议</th></tr>
+    <tr><td>1</td><td>周期</td><td>标准 18 周；有基础可压到 14–16 周，但不压 P2/P4</td></tr>
+    <tr><td>2</td><td>编组</td><td>4–6 人/组，按模块 ownership + 两期轮换</td></tr>
+    <tr><td>3</td><td>仓库</td><td>一个主仓库 + 短期 feature 分支 + PR；main 始终可运行</td></tr>
+    <tr><td>4</td><td>考核</td><td>阶段 60% + 结业 30% + 参与 10%</td></tr>
+    <tr><td>5</td><td>进阶内容</td><td>多租户/长跑迁移/AI 扩展放选修，不占主线</td></tr>
+  </table>
+
+  <h3>开营前 10 件事</h3>
+  <ol>
+    <li>建 GitHub 仓库/组织，配置分支保护、Actions、PR/Issue 模板。</li>
+    <li>按组分配 PG schema、Redis 前缀、MinIO 桶、RocketMQ Topic 前缀。</li>
+    <li>把 PRD、技术方案、中间件手册、本计划发给学员。</li>
+    <li>布置热身作业：Java CRUD + React 列表页 + Git PR。</li>
+    <li>确认每人能连上共享中间件（或本地 Compose）。</li>
+    <li>建班级群/看板；确定每周 Demo 时间。</li>
+    <li>准备 P0 的一键启动脚本与故障排查清单。</li>
+    <li>确定讲师/助教分工：谁 Review 引擎、谁 Review 前端。</li>
+    <li>约定提交规范与红线；第一周就执行。</li>
+    <li>准备 S1/S2/S3 的验收脚本与演示数据。</li>
+  </ol>
+
+  <div class="callout green">
+    <span class="t">第一周就能开始的作业</span>
+    让每组在 P0 结束前提交一个 PR：新增一个 <code>/api/v1/team/{name}/health</code> 接口，并在前端自检页展示。这个 PR 会同时练到后端、前端、Git、CI、Review 五件事。
+  </div>
+
+  <h3>配套文档</h3>
+  <ul>
+    <li>PRD v1.1：https://davisu-china.github.io/pipewise/</li>
+    <li>技术方案：https://davisu-china.github.io/pipewise/tech-design/</li>
+    <li>中间件手册与账号：https://davisu-china.github.io/pipewise/middleware/</li>
+  </ul>
+</section>
+
+<p class="small" style="text-align:center;margin-top:44px">PipeWise 学员分期开发计划 · 2026-10-18 · 18 周 / 9 阶段</p>
+</div>
+</body>
+</html>
