@@ -95,8 +95,63 @@ export type VersionSummary = {
   publishedAt: string;
 };
 
+export type InstanceSummary = {
+  id: string;
+  definitionKey: string;
+  businessKey: string;
+  title: string | null;
+  initiator: string;
+  status: string;
+  outcome: string | null;
+  version: number;
+  currentNodeIds: string[];
+  createdAt: string;
+  endedAt: string | null;
+};
+
+export type NodeState = {
+  id: number;
+  nodeId: string;
+  nodeType: string;
+  status: string;
+  tokenId: number | null;
+  startedAt: string;
+  endedAt: string | null;
+};
+
+export type TaskView = {
+  id: number;
+  instanceId: string;
+  nodeId: string;
+  assignee: string;
+  status: string;
+  verdict: string | null;
+  comment: string | null;
+  title: string | null;
+  createdAt: string;
+  completedAt: string | null;
+};
+
+export type TimelineItem = {
+  action: string;
+  actor: string;
+  detail: unknown;
+  createdAt: string;
+};
+
+export type InstanceDetail = {
+  summary: InstanceSummary;
+  nodes: NodeState[];
+  tasks: TaskView[];
+  variables: Record<string, unknown>;
+  timeline: TimelineItem[];
+};
+
 export async function requestJson<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { Accept: "application/json" };
+  if (typeof localStorage !== "undefined") {
+    headers["X-User-Id"] = localStorage.getItem("pipewise.user") || "anonymous";
+  }
   if (init?.body) {
     headers["Content-Type"] = "application/json";
   }
@@ -148,5 +203,30 @@ export const api = {
     requestJson<{ defaultVersion: number }>(
       `/api/v1/definitions/${encodeURIComponent(key)}/versions/${version}/default`,
       { method: "POST" }
-    )
+    ),
+
+  listInstances: (status?: string) =>
+    requestJson<InstanceSummary[]>(
+      `/api/v1/instances${status ? `?status=${encodeURIComponent(status)}` : ""}`
+    ),
+  getInstance: (id: string) =>
+    requestJson<InstanceDetail>(`/api/v1/instances/${encodeURIComponent(id)}`),
+  createInstance: (body: {
+    key: string;
+    businessKey: string;
+    title?: string;
+    initiator?: string;
+    variables?: Record<string, unknown>;
+  }) =>
+    requestJson<InstanceDetail>("/api/v1/instances", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  listTasks: (status = "CREATED") =>
+    requestJson<TaskView[]>(`/api/v1/tasks?status=${encodeURIComponent(status)}`),
+  completeTask: (id: number, verdict: "approve" | "reject", comment: string) =>
+    requestJson<TaskView>(`/api/v1/tasks/${id}/complete`, {
+      method: "POST",
+      body: JSON.stringify({ verdict, comment })
+    })
 };

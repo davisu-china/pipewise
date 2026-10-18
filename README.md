@@ -65,7 +65,7 @@ deploy/            # 部署脚本与配置
 docs/              # PRD 与技术方案
 ```
 
-当前状态：P0 骨架 + P1 定义/版本/设计器已落地。
+当前状态：P0 骨架 + P1 定义/版本/设计器 + P2 执行内核已落地。
 
 ## P1 已实现
 
@@ -74,3 +74,12 @@ docs/              # PRD 与技术方案
 - 发布前校验：start/end 数量、入边/出边、不可达节点、XOR 默认边、变量引用、脚本/表单引用
 - 不可变版本：发布 v1/v2、版本列表、切换默认版本
 - React Flow 设计器：开始 / 审批 / 排他网关 / 结束、条件连线、节点配置、变量编辑、JSON 导入导出、校验与发布
+
+## P2 已实现
+
+- 运行时表：`wf_instance` / `wf_token` / `wf_node_instance` / `wf_execution_job` / `wf_task` / `wf_variable` / `wf_event_outbox`
+- 创建实例（`businessKey` 唯一）、令牌激活、start / approval / end 执行器
+- PG `SKIP LOCKED` 作业队列、租约与重试、实例级 advisory lock
+- 任务列表 / 详情 / 完成（approve / reject），重复提交幂等
+- 实例列表 / 详情 / 当前节点 / 时间线 / 变量；前端实例与待办页面
+- Worker 需单独启动，使用与 API 相同的 `PW_PG_*` 环境变量；停机后重启会从 pending 作业继续

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pipewise.api.definition.DefinitionDtos.DefinitionDetail;
 import com.pipewise.api.definition.DefinitionDtos.DefinitionSummary;
-import com.pipewise.api.definition.DefinitionDtos.FlowDefinition;
+import com.pipewise.engine.model.FlowModel.FlowDefinition;
 import com.pipewise.api.definition.DefinitionDtos.PublishRequest;
 import com.pipewise.api.definition.DefinitionDtos.SaveDraftRequest;
 import com.pipewise.api.definition.DefinitionDtos.ValidationIssue;

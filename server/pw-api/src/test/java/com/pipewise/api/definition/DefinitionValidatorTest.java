@@ -1,13 +1,13 @@
 package com.pipewise.api.definition;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.pipewise.api.definition.DefinitionDtos.EdgeDef;
-import com.pipewise.api.definition.DefinitionDtos.FlowDefinition;
-import com.pipewise.api.definition.DefinitionDtos.NodeDef;
-import com.pipewise.api.definition.DefinitionDtos.Position;
+import com.pipewise.engine.model.FlowModel.EdgeDef;
+import com.pipewise.engine.model.FlowModel.FlowDefinition;
+import com.pipewise.engine.model.FlowModel.NodeDef;
+import com.pipewise.engine.model.FlowModel.Position;
 import com.pipewise.api.definition.DefinitionDtos.ValidationIssue;
 import com.pipewise.api.definition.DefinitionDtos.ValidationResult;
-import com.pipewise.api.definition.DefinitionDtos.VariableDef;
+import com.pipewise.engine.model.FlowModel.VariableDef;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

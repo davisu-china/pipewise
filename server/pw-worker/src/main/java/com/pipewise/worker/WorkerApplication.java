@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 /**
  * P0 只保留进程与心跳。P2 开始在这里接入作业队列与令牌调度。
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.pipewise")
 @EnableScheduling
 public class WorkerApplication {
 

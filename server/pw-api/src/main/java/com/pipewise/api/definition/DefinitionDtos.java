@@ -75,42 +75,6 @@ public final class DefinitionDtos {
             Instant publishedAt) {
     }
 
-    public record Position(Double x, Double y) {
-    }
-
-    public record VariableDef(String name, String type, Boolean required, JsonNode defaultValue) {
-    }
-
-    public record NodeDef(String id, String type, String name, Position position, JsonNode config) {
-    }
-
-    public record EdgeDef(
-            String id,
-            String from,
-            String to,
-            String condition,
-            Boolean defaultEdge,
-            Integer order) {
-    }
-
-    public record Settings(Integer maxSteps, Integer maxNodeActivations, String timezone) {
-    }
-
-    public record FlowDefinition(
-            String key,
-            String name,
-            String tenant,
-            Integer version,
-            Settings settings,
-            List<VariableDef> variables,
-            List<NodeDef> nodes,
-            List<EdgeDef> edges) {
-
-        public FlowDefinition withVersion(int newVersion) {
-            return new FlowDefinition(key, name, tenant, newVersion, settings, variables, nodes, edges);
-        }
-    }
-
     public record ValidationIssue(String code, String message, String nodeId, String edgeId) {
     }
 

@@ -3,6 +3,15 @@ spring:
     name: pipewise-worker
   main:
     web-application-type: none
+  datasource:
+    url: ${PW_PG_URL:jdbc:postgresql://111.228.14.136:5434/pipewise}
+    username: ${PW_PG_USER:pipewise}
+    password: ${PW_PG_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+  flyway:
+    enabled: false
 
 logging:
   pattern:

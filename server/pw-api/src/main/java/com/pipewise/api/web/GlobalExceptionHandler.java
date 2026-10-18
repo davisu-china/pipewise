@@ -1,6 +1,7 @@
 package com.pipewise.api.web;
 
 import com.pipewise.common.api.ApiResponse;
+import com.pipewise.engine.EngineException;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleApi(ApiException ex) {
         return ResponseEntity.status(ex.getStatus())
                 .body(ApiResponse.fail(ex.getCode(), ex.getMessage(), currentTraceId()));
+    }
+
+    @ExceptionHandler(EngineException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEngine(EngineException ex) {
+        return ResponseEntity.status(ex.status())
+                .body(ApiResponse.fail(ex.code(), ex.getMessage(), currentTraceId()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
