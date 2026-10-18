@@ -20,6 +20,7 @@ export default function App() {
     typeof localStorage !== "undefined" ? localStorage.getItem("pipewise.user") || "anonymous" : "anonymous"
   );
   const [userInput, setUserInput] = useState(user);
+  const basename = import.meta.env.BASE_URL === "/" ? "/" : import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const commitUser = () => {
     const next = userInput.trim() || "anonymous";
@@ -29,7 +30,7 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <div className="min-h-screen">
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-6xl items-center gap-5 px-6 py-3">

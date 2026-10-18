@@ -147,6 +147,12 @@ export type InstanceDetail = {
   timeline: TimelineItem[];
 };
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function withBase(path: string): string {
+  return path.startsWith("/api") ? `${basePath}${path}` : path;
+}
+
 export async function requestJson<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (typeof localStorage !== "undefined") {
@@ -155,7 +161,7 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
   if (init?.body) {
     headers["Content-Type"] = "application/json";
   }
-  const response = await fetch(path, { ...init, headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) } });
+  const response = await fetch(withBase(path), { ...init, headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) } });
   const body = (await response.json()) as ApiResponse<T>;
   if (!response.ok && body.error) {
     return body;

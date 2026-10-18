@@ -13,8 +13,24 @@ if [ "${1:-}" = "show" ]; then
   exit 0
 fi
 
+if [ "${1:-}" = "appauth" ]; then
+  cat /opt/pipewise/access.txt
+  exit 0
+fi
+
 if [ "${1:-}" = "brokerlog" ]; then
   docker logs pipewise-rocketmq-broker 2>&1 | tail -"${2:-200}"
+  exit 0
+fi
+
+if [ "${1:-}" = "webstatus" ]; then
+  echo "=== nginx processes ==="; ps aux | grep -E '[n]ginx' | head -10
+  echo "=== docker nginx ==="; docker ps --format '{{.Names}} {{.Image}} {{.Ports}}' 2>&1 | grep -i nginx | head -10
+  echo "=== systemd pipewise ==="; systemctl list-units --type=service --no-pager 2>/dev/null | grep -Ei 'pipewise|nginx' | head -10
+  systemctl status pipewise-api --no-pager 2>&1 | head -12
+  echo "=== dirs ==="; ls -la /opt/pipewise /opt/jianjian/deploy/nginx 2>&1 | head -40
+  echo "=== nginx config pipewise ==="; nginx -T 2>&1 | grep -nE 'pipewise|server_name|listen 443|location' | head -100
+  echo "=== listening ==="; netstat -lntp 2>/dev/null | grep -E ':(80|443|8121|18081) ' | head -10
   exit 0
 fi
 
@@ -91,6 +107,121 @@ EOF
 fi
 # shellcheck disable=SC1090
 source "$ENV_FILE"
+
+if [ "${1:-}" = "app" ]; then
+  APP_DIR=/opt/pipewise
+  WEB_ROOT=/opt/jianjian/deploy/nginx/html/pipewise
+  NGINX_CONF=/opt/jianjian/deploy/nginx/nginx.conf
+  API_JAR=/home/metabot/metabot-workspace/pipewise/server/pw-api/target/pw-api-0.1.0-SNAPSHOT.jar
+  WORKER_JAR=/home/metabot/metabot-workspace/pipewise/server/pw-worker/target/pw-worker-0.1.0-SNAPSHOT.jar
+  DIST=/home/metabot/metabot-workspace/pipewise/web/dist
+
+  [ -f "$API_JAR" ] || { echo "missing $API_JAR"; exit 1; }
+  [ -f "$WORKER_JAR" ] || { echo "missing $WORKER_JAR"; exit 1; }
+  [ -f "$DIST/index.html" ] || { echo "missing $DIST/index.html"; exit 1; }
+
+  mkdir -p "$APP_DIR"
+  cat > "$APP_DIR/api.env" <<EOF
+PW_API_PORT=18081
+PW_PG_URL=jdbc:postgresql://111.228.14.136:5434/pipewise
+PW_PG_USER=pipewise
+PW_PG_PASSWORD=$PG_PASSWORD
+PW_REDIS_HOST=111.228.14.136
+PW_REDIS_PORT=6380
+PW_REDIS_PASSWORD=$REDIS_PASSWORD
+PW_MINIO_ENDPOINT=http://111.228.14.136:9010
+PW_MINIO_ACCESS_KEY=$MINIO_USER
+PW_MINIO_SECRET_KEY=$MINIO_PASSWORD
+PW_MINIO_BUCKET=pipewise
+PW_ROCKETMQ_NAMESRV=111.228.14.136:9876
+PW_ROCKETMQ_ACCESS_KEY=$ROCKETMQ_ACCESS_KEY
+PW_ROCKETMQ_SECRET_KEY=$ROCKETMQ_SECRET_KEY
+PW_ROCKETMQ_TOPIC=pipewise_health_check
+EOF
+  chmod 600 "$APP_DIR/api.env"
+
+  echo "[web] publishing dist -> $WEB_ROOT"
+  rm -rf "$WEB_ROOT"
+  mkdir -p "$WEB_ROOT"
+  cp -a "$DIST"/. "$WEB_ROOT"/
+  chmod -R a+rX "$WEB_ROOT"
+
+  echo "[systemd] writing units"
+  cat > /etc/systemd/system/pipewise-api.service <<EOF
+[Unit]
+Description=PipeWise API (Java P2)
+After=network.target
+
+[Service]
+Type=simple
+User=metabot
+WorkingDirectory=/home/metabot/metabot-workspace/pipewise
+EnvironmentFile=$APP_DIR/api.env
+ExecStart=/home/metabot/.local/jdk21/bin/java -jar $API_JAR
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  cat > /etc/systemd/system/pipewise-worker.service <<EOF
+[Unit]
+Description=PipeWise Worker (Java P2)
+After=network.target pipewise-api.service
+
+[Service]
+Type=simple
+User=metabot
+WorkingDirectory=/home/metabot/metabot-workspace/pipewise
+EnvironmentFile=$APP_DIR/api.env
+ExecStart=/home/metabot/.local/jdk21/bin/java -jar $WORKER_JAR
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable pipewise-api pipewise-worker >/dev/null 2>&1 || true
+  systemctl restart pipewise-api pipewise-worker
+
+  echo "[nginx] switching pipewise API 8121 -> 18081"
+  BACKUP="$NGINX_CONF.bak.app.$(date +%Y%m%d-%H%M%S)"
+  cp "$NGINX_CONF" "$BACKUP"
+  python3 - "$NGINX_CONF" <<'PY'
+import sys
+path = sys.argv[1]
+text = open(path, encoding='utf-8').read()
+old = 'proxy_pass           http://172.17.0.1:8121/api/;'
+new = 'proxy_pass           http://172.17.0.1:18081/api/;'
+if old in text:
+    text = text.replace(old, new)
+elif new not in text:
+    raise SystemExit('pipewise proxy_pass not found')
+open(path, 'w', encoding='utf-8').write(text)
+print('nginx config updated')
+PY
+  if ! docker exec jianjian-nginx nginx -t; then
+    echo "[nginx] test failed, restoring backup"
+    cp "$BACKUP" "$NGINX_CONF"
+    docker exec jianjian-nginx nginx -t
+    exit 1
+  fi
+  docker exec jianjian-nginx nginx -s reload
+
+  sleep 4
+  echo "=== services ==="
+  systemctl --no-pager --lines=0 status pipewise-api pipewise-worker 2>&1 | grep -E 'pipewise|Active' | head -10
+  echo "=== local API ==="
+  curl -s -o /dev/null -w 'ping=%{http_code}\n' --max-time 5 http://127.0.0.1:18081/api/v1/ping || true
+  echo "=== basic auth ==="
+  cat "$APP_DIR/access.txt" 2>/dev/null || true
+  echo "=== url ==="
+  echo "https://jianjiange.site/pipewise/"
+  exit 0
+fi
 
 if [ "${1:-}" = "status" ]; then
   cd "$BASE"

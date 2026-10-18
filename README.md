@@ -21,6 +21,12 @@ Docker Compose 管理，端口分别为 `5434 / 6380 / 9010·9011 / 9876·10911�
 密码不在仓库内：部署机 `/opt/pipewise-infra/credentials.txt`（root 600），或执行
 `sudo deploy/deploy.sh show` 查看；含密码的完整版部署手册由项目负责人私发。
 
+## 线上演示
+
+- 地址：https://jianjiange.site/pipewise/
+- 访问方式：nginx Basic Auth（账号 `pipewise`，密码见部署机 `/opt/pipewise/access.txt`）
+- 部署命令：`sudo deploy/deploy.sh app`（安装 systemd API/Worker、发布前端、切换 nginx 反代）
+
 ## 本地开发（P0 骨架）
 
 前置：Java 21、Maven 3.9+、Node 22+。
