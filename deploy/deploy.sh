@@ -22,14 +22,16 @@ API_DIR="${API_DIR:-/opt/pipewise}"
 SEED="${SEED:-1}"
 BASIC_USER="${BASIC_USER:-pipewise}"
 BASIC_PASS="${BASIC_PASS:-}"
+
+# REPO 必须先有值：下面所有路径（含 env.local）都基于它
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RUN_USER="$(stat -c '%U' "$REPO")"
+[ "$RUN_USER" = "root" ] && RUN_USER="metabot"
+
 # sudo 会清掉环境变量；密码可放在 deploy/env.local（不进仓库）里
 if [ -z "$BASIC_PASS" ] && [ -f "$REPO/deploy/env.local" ]; then
   BASIC_PASS="$(grep -E '^BASIC_PASS=' "$REPO/deploy/env.local" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
 fi
-
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUN_USER="$(stat -c '%U' "$REPO")"
-[ "$RUN_USER" = "root" ] && RUN_USER="metabot"
 
 PG_PORT="${PG_PORT:-5433}"
 PG_USER="${PG_USER:-mutual}"
