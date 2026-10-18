@@ -60,7 +60,8 @@ export function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="container py-6">
+      {/* 切换演示用户后整页重挂载，避免沿用上一个账号已加载的数据 */}
+      <main className="container py-6" key={token}>
         <Outlet />
       </main>
       <Toaster richColors position="top-center" />

@@ -31,7 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setUsers(list);
         const current = token && list.some((u) => u.token === token) ? token : list[0]?.token || "";
-        if (current !== token) setTokenState(current);
+        if (current !== token) {
+          // 必须同步落到 localStorage：api 客户端在每次请求时读 getToken()，
+          // 只改 state 会导致首屏所有请求带空令牌（线上表现为"登录后全 401"）。
+          persistToken(current);
+          setTokenState(current);
+        }
         setReady(true);
       } catch (e) {
         if (cancelled) return;

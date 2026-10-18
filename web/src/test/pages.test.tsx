@@ -175,8 +175,13 @@ const outbox = {
 function installFetchMock() {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url);
+      const headers = (init?.headers || {}) as Record<string, string>;
+      // 演示账号接口是公开的；其余接口必须带令牌，和线上行为一致。
+      if (!url.endsWith("/dev/demo-users") && !headers["X-PipeWise-Token"]) {
+        return reply({ error: { code: "UNAUTHORIZED", message: "请先登录（缺少访问令牌）" } }, 401);
+      }
       if (url.endsWith("/dev/demo-users")) return reply({ items: [{ ...me, token: "tok_admin" }] });
       if (url.endsWith("/me")) return reply(me);
       if (url.endsWith("/users")) return reply({ items: [me] });
@@ -218,6 +223,12 @@ afterEach(() => {
 });
 
 describe("页面渲染冒烟", () => {
+  it("初始化时把默认演示账号写入本地令牌（防首屏 401）", async () => {
+    renderAt("/definitions");
+    expect(await screen.findByRole("heading", { name: "流程定义" })).toBeInTheDocument();
+    expect(localStorage.getItem("pipewise.token")).toBe("tok_admin");
+  });
+
   it("流程定义列表", async () => {
     renderAt("/definitions");
     expect(await screen.findByRole("heading", { name: "流程定义" })).toBeInTheDocument();

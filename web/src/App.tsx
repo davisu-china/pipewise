@@ -12,6 +12,13 @@ import { InstanceDetail } from "@/pages/InstanceDetail";
 import { StartFlow } from "@/pages/StartFlow";
 import { Admin } from "@/pages/Admin";
 
+function AdminRoute() {
+  const { isAdmin, me } = useAuth();
+  // 等 /me 返回后再判断角色，否则直接访问 /admin 会在身份回来前被误判成非管理员
+  if (!me) return <div className="py-16 text-center text-sm text-muted-foreground">加载中…</div>;
+  return isAdmin ? <Admin /> : <Navigate to="/definitions" replace />;
+}
+
 export default function App() {
   const { ready, error } = useAuth();
 
@@ -52,7 +59,7 @@ export default function App() {
         <Route path="instances" element={<Instances />} />
         <Route path="instances/:id" element={<InstanceDetail />} />
         <Route path="start/:key" element={<StartFlow />} />
-        <Route path="admin" element={<Admin />} />
+        <Route path="admin" element={<AdminRoute />} />
         <Route path="*" element={<Navigate to="/definitions" replace />} />
       </Route>
     </Routes>
