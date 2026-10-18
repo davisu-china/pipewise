@@ -126,32 +126,14 @@ nc -vz 111.228.14.136 10911</code></pre>
 <p>然后在本地把下面所有地址中的 <code>111.228.14.136</code> 换成 <code>127.0.0.1</code> 即可。</p>
 
 <h2><span class="num">03</span>账号密码速查</h2>
-<div class="cred">
-<b>PostgreSQL</b>
-  host      111.228.14.136
-  port      5434
-  database  pipewise
-  user      pipewise
-  password  283b0eb9c25c77783b90a2ca
-
-<b>Redis</b>
-  host      111.228.14.136
-  port      6380
-  password  9a99e01f60478c408c2cf058
-
-<b>MinIO</b>
-  API       http://111.228.14.136:9010
-  Console   http://111.228.14.136:9011
-  access    pipewise
-  secret    23cc3c5cdaceb3cf3ea1c26f
-  buckets   pipewise, student
-
-<b>RocketMQ</b>
-  namesrv   111.228.14.136:9876
-  broker    111.228.14.136:10911
-  access    pipewise
-  secret    7fb103fc8347063b6250f335
-</div>
+<table>
+  <tr><th>服务</th><th>地址</th><th>账号 / Access Key</th><th>密码 / Secret Key</th><th>数据库 / 桶</th></tr>
+  <tr><td>PostgreSQL 16</td><td><code>111.228.14.136:5434</code></td><td><code>pipewise</code></td><td><code>283b0eb9c25c77783b90a2ca</code></td><td><code>pipewise</code></td></tr>
+  <tr><td>Redis 7</td><td><code>111.228.14.136:6380</code></td><td>默认用户</td><td><code>9a99e01f60478c408c2cf058</code></td><td>db 0–15（AOF）</td></tr>
+  <tr><td>MinIO</td><td><code>http://111.228.14.136:9010</code><br>Console <code>:9011</code></td><td><code>pipewise</code></td><td><code>23cc3c5cdaceb3cf3ea1c26f</code></td><td><code>pipewise</code> / <code>student</code></td></tr>
+  <tr><td>RocketMQ 5.3.1</td><td><code>111.228.14.136:9876</code><br>Broker <code>:10911</code></td><td><code>pipewise</code></td><td><code>7fb103fc8347063b6250f335</code></td><td>ACL；Topic/Group 自动创建</td></tr>
+</table>
+<p class="small">账号密码均为字母数字组合，可直接复制；课程结束后请及时轮换。</p>
 <div class="callout danger">
   <span class="t">本页含真实凭据，任何人可访问</span>
   本页已按项目负责人要求公开发布在 GitHub Pages。密码已进入 git 历史，删除页面也无法完全撤回；课程结束后请立即修改

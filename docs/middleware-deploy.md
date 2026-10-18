@@ -72,10 +72,12 @@ sudo /home/metabot/metabot-workspace/pipewise/deploy/deploy.sh show
 
 或读取 `/opt/pipewise-infra/credentials.txt`（root 600）。凭据包含：
 
-- PostgreSQL：`pipewise` / 数据库 `pipewise`
-- Redis：默认用户 + 密码
-- MinIO：access key / secret key
-- RocketMQ：ACL access key / secret key
+| 服务 | 地址 | 账号 / Access Key | 密码 / Secret Key | 数据库 / 桶 |
+|---|---|---|---|---|
+| PostgreSQL 16 | `111.228.14.136:5434` | `pipewise` | `<PG_PASSWORD>` | 数据库 `pipewise` |
+| Redis 7 | `111.228.14.136:6380` | 默认用户 | `<REDIS_PASSWORD>` | db 0–15（AOF） |
+| MinIO | `http://111.228.14.136:9010`（Console `:9011`） | `pipewise` | `<MINIO_SECRET_KEY>` | 桶 `pipewise`、`student` |
+| RocketMQ 5.3.1 | `111.228.14.136:9876`（Broker `:10911`） | `pipewise` | `<ROCKETMQ_SECRET_KEY>` | ACL；Topic/Group 自动创建 |
 
 ### Java 依赖清单（Maven）
 
