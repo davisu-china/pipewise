@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeWise AI 能力建设 PRD v0.9</title>
+<style>
+  :root{
+    --paper:#F5F6F3;--surface:#fff;--ink:#141A19;--ink2:#34403D;--muted:#5F6B68;
+    --line:#D9DDD6;--line2:#E7EAE4;--accent:#1A6357;--accent2:#12544A;
+    --accent-soft:#E1EDE8;--blue:#28527A;--blue-soft:#E3EAF2;
+    --violet:#5B3E7A;--violet-soft:#ECE5F3;--amber:#8A6412;--amber-soft:#FCF8EF;
+    --red:#9C3A28;--red-soft:#FCF3F0;--green:#1A6357;--green-soft:#E1EDE8;
+    --mono:"JetBrains Mono",Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+    --serif:"Songti SC","Source Han Serif SC","Noto Serif SC",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.8}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.88em;background:#EEF0EB;padding:1px 5px;border-radius:3px}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:#151B1A;color:#DCE5E1;padding:16px 18px;border-radius:4px;overflow-x:auto;margin:12px 0 18px}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px 110px}
+  .masthead{padding:64px 0 32px;border-bottom:2px solid var(--ink);margin-bottom:32px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);margin:0 0 15px}
+  h1{font-family:var(--serif);font-size:44px;line-height:1.16;margin:0 0 12px}
+  .subtitle{font-size:16.5px;color:var(--ink2);margin:0 0 26px;max-width:74ch}
+  .metagrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .metagrid div{background:var(--surface);padding:11px 14px}
+  .metagrid .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px}
+  .metagrid .v{font-size:13px;font-weight:600}
+  .toc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);padding:20px 24px;margin-bottom:46px}
+  .toc h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;font-weight:600}
+  .toc ol{margin:0;padding:0;list-style:none;columns:2;column-gap:40px}
+  .toc li{font-size:13px;padding:2.5px 0;break-inside:avoid}
+  .toc li b{font-family:var(--mono);color:var(--accent);margin-right:8px;font-size:11.5px}
+  h2.sec{font-family:var(--serif);font-size:26px;margin:50px 0 16px;padding-bottom:11px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:13px}
+  h2.sec .num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600}
+  h3{font-size:17.5px;margin:28px 0 8px}
+  h4{font-size:14.5px;margin:18px 0 6px;color:var(--ink2)}
+  p{margin:0 0 11px}
+  ul,ol{margin:0 0 13px;padding-left:22px}
+  li{margin:3px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:13px;background:var(--surface)}
+  th{background:#EEF0EB;text-align:left;padding:8px 10px;border:1px solid var(--line);white-space:nowrap}
+  td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#FBFCFA}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);padding:13px 17px;margin:15px 0;font-size:13.8px}
+  .callout .t{display:block;font-weight:700;color:var(--accent);margin-bottom:4px}
+  .callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}.callout.warn .t{color:var(--amber)}
+  .callout.danger{border-left-color:var(--red);background:var(--red-soft)}.callout.danger .t{color:var(--red)}
+  .callout.blue{border-left-color:var(--blue);background:var(--blue-soft)}.callout.blue .t{color:var(--blue)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent2);margin-left:4px}
+  .badge.p1{background:var(--blue-soft);color:var(--blue)}
+  .badge.p2{background:var(--violet-soft);color:var(--violet)}
+  .flow{display:flex;flex-wrap:wrap;gap:0;margin:16px 0 24px}
+  .flow .s{flex:1 1 120px;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--accent);padding:10px 13px;font-size:12.5px;line-height:1.5}
+  .flow .s b{display:block;color:var(--ink);font-size:12.5px}
+  .flow .s span{color:var(--muted);font-size:11px}
+  .flow .a{display:flex;align-items:center;color:var(--accent);padding:0 4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .card{background:var(--surface);border:1px solid var(--line);padding:14px 16px;font-size:13.2px}
+  .card h4{margin:0 0 5px;color:var(--accent2)}
+  .card p{margin:0;color:var(--ink2)}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:16px 0}
+  .kpi div{background:var(--surface);padding:13px 15px}
+  .kpi .n{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);display:block;line-height:1.2}
+  .kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px;display:block}
+  .figbox{background:var(--surface);border:1px solid var(--line);padding:18px 12px;margin:18px 0 6px;overflow-x:auto;text-align:center}
+  .figcap{font-size:12px;color:var(--muted);text-align:center;margin:-14px 0 24px;font-family:var(--mono)}
+  .small{font-size:12.5px;color:var(--muted)}
+  @media(max-width:760px){.wrap{padding:0 18px 80px}h1{font-size:32px}.metagrid,.kpi{grid-template-columns:1fr 1fr}.toc ol{columns:1}.grid2,.grid3{grid-template-columns:1fr}.flow{flex-direction:column}.flow .a{transform:rotate(90deg);padding-left:16px}}
+  @media print{body{background:#fff}.wrap{max-width:none;padding:0}.toc{display:none}.callout,table,pre,.figbox{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Product Requirements · AI-native Workflow · v0.9</p>
+  <h1>PipeWise AI 能力建设 PRD</h1>
+  <p class="subtitle">把 AI 能力做成流程引擎的一等公民：企业知识可检索、业务人员可搭 Agent、Agent 可作为节点嵌入传统流程、每次变更都可评测与回归。目标不是再做一个聊天机器人，而是让「流程 + 知识 + Agent + 评测」形成可运营的闭环。</p>
+  <div class="metagrid">
+    <div><span class="k">文档版本</span><span class="v">v0.9 · 草案</span></div>
+    <div><span class="k">日期</span><span class="v">2026-10-18</span></div>
+    <div><span class="k">目标读者</span><span class="v">产品 / 设计 / 研发 / 算法 / 测试</span></div>
+    <div><span class="k">依赖</span><span class="v">PipeWise 流程引擎 P1–P3</span></div>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目录 / Contents</h2>
+  <ol>
+    <li><a href="#s1"><b>01</b>背景与目标</a></li>
+    <li><a href="#s2"><b>02</b>产品定位与边界</a></li>
+    <li><a href="#s3"><b>03</b>用户角色与核心场景</a></li>
+    <li><a href="#s4"><b>04</b>功能范围与优先级</a></li>
+    <li><a href="#s5"><b>05</b>知识库</a></li>
+    <li><a href="#s6"><b>06</b>Agent 搭建</a></li>
+    <li><a href="#s7"><b>07</b>Agent 与流程集成</a></li>
+    <li><a href="#s8"><b>08</b>Agent 评测</a></li>
+    <li><a href="#s9"><b>09</b>模型、工具与运行时</a></li>
+    <li><a href="#s10"><b>10</b>可观测、成本与治理</a></li>
+    <li><a href="#s11"><b>11</b>权限矩阵</a></li>
+    <li><a href="#s12"><b>12</b>数据模型</a></li>
+    <li><a href="#s13"><b>13</b>API 与 SDK</a></li>
+    <li><a href="#s14"><b>14</b>非功能需求</a></li>
+    <li><a href="#s15"><b>15</b>边界与异常清单</a></li>
+    <li><a href="#s16"><b>16</b>成功指标</a></li>
+    <li><a href="#s17"><b>17</b>里程碑与排期</a></li>
+    <li><a href="#s18"><b>18</b>风险与开放问题</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <h2 class="sec"><span class="num">01</span>背景与目标</h2>
+  <p class="lead">流程引擎解决了「事情按规则流转」，但没有解决「人要在节点上读懂材料、查制度、做判断」。AI 能力如果只是外挂一个聊天窗口，就无法进入流程上下文，也无法被评测和治理。本 PRD 要把 AI 做成流程的一部分。</p>
+  <h3>1.1 三类现状问题</h3>
+  <div class="grid3">
+    <div class="card"><h4>知识在文档里，不在流程里</h4><p>合同条款、报销制度、HR 政策散落在网盘和知识库，审批人靠搜索和记忆，新人上手慢，口径不一致。</p></div>
+    <div class="card"><h4>AI 能力是孤岛</h4><p>业务方各自接模型、写提示词、做 RAG，重复建设；没有版本、没有引用、没有评测，效果好坏说不清。</p></div>
+    <div class="card"><h4>Agent 无法进入流程</h4><p>Agent 的输出无法写回流程上下文，不能参与分支、审批、超时和审计；流程也无法约束 Agent 的权限与成本。</p></div>
+  </div>
+  <h3>1.2 产品目标</h3>
+  <table>
+    <tr><th>目标</th><th>描述</th><th>验收信号</th></tr>
+    <tr><td>G1 知识可用的流程</td><td>知识库接入流程节点，回答必须带引用；无命中时明确说「不知道」</td><td>审批节点可展示引用来源；引用可点开原文</td></tr>
+    <tr><td>G2 人人可搭 Agent</td><td>业务人员用表单化配置完成 Agent：提示词、知识、工具、输出结构、护栏</td><td>非研发在 30 分钟内搭出一个可测试的 Agent</td></tr>
+    <tr><td>G3 Agent 可嵌入流程</td><td>Agent / 知识检索 / 分类 / 抽取作为流程节点，输入输出映射到上下文</td><td>流程设计器可拖入 AI 节点并发布</td></tr>
+    <tr><td>G4 可评测可回归</td><td>数据集、评测器、发布门禁、版本对比；Agent 变更先评测再上线</td><td>发布 Agent 必须通过评测阈值或显式豁免</td></tr>
+    <tr><td>G5 可治理</td><td>成本、延迟、权限、审计、安全护栏、模型路由</td><td>可按实例追溯每次 Agent 调用的输入、引用、工具、成本</td></tr>
+  </table>
+  <h3>1.3 非目标（本期不做）</h3>
+  <ul>
+    <li>不做通用聊天机器人 / 通用 AI 助手产品；所有 AI 能力服务流程节点与流程上下文。</li>
+    <li>不做模型训练、微调、蒸馏平台；只做模型接入、路由与调用治理。</li>
+    <li>不做 RPA、浏览器自动化、任意代码执行。</li>
+    <li>不做「AI 自动审批高风险事项」；高风险节点必须保留人工确认。</li>
+    <li>不做通用低代码页面搭建或 BI 报表。</li>
+  </ul>
+</section>
+
+<section id="s2">
+  <h2 class="sec"><span class="num">02</span>产品定位与边界</h2>
+  <div class="callout">
+    <span class="t">一句话定位</span>
+    AI 能力层是流程引擎之上的「知识与智能编排层」：知识库提供可信事实，Agent 提供可复用的智能单元，评测提供上线前的质量证明，流程负责把三者放进正确的业务上下文。
+  </div>
+  <h3>2.1 三层能力 + 一层编排</h3>
+  <div class="figbox">
+    <svg viewBox="0 0 880 250" width="880" height="250" role="img" aria-label="AI 能力分层">
+      <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5F6B68"/></marker>
+      <style>.bx{fill:#fff;stroke:#1A6357;stroke-width:1.1}.bx2{fill:#E1EDE8;stroke:#1A6357;stroke-width:1.1}.tx{font:12px -apple-system,PingFang SC,sans-serif;fill:#141A19}.sm{font:10.5px -apple-system,PingFang SC,sans-serif;fill:#5F6B68}.ln{stroke:#5F6B68;stroke-width:1;fill:none}</style></defs>
+      <rect x="20" y="20" width="840" height="58" class="bx2" rx="4"/><text x="440" y="43" text-anchor="middle" class="tx">流程编排层（已有）</text><text x="440" y="60" text-anchor="middle" class="sm">定义 / 版本 / 令牌 / 审批 / 表单 / 上下文 / 审计</text>
+      <rect x="20" y="100" width="260" height="60" class="bx" rx="4"/><text x="150" y="124" text-anchor="middle" class="tx">知识库</text><text x="150" y="141" text-anchor="middle" class="sm">解析 / 切分 / 检索 / 引用</text>
+      <rect x="310" y="100" width="260" height="60" class="bx" rx="4"/><text x="440" y="124" text-anchor="middle" class="tx">Agent 平台</text><text x="440" y="141" text-anchor="middle" class="sm">提示词 / 知识 / 工具 / 版本</text>
+      <rect x="600" y="100" width="260" height="60" class="bx" rx="4"/><text x="730" y="124" text-anchor="middle" class="tx">评测平台</text><text x="730" y="141" text-anchor="middle" class="sm">数据集 / 评测器 / 门禁 / 对比</text>
+      <rect x="20" y="190" width="840" height="44" class="bx" rx="4"/><text x="440" y="217" text-anchor="middle" class="tx">模型网关 · 工具注册 · 运行时可观测 · 权限与成本治理</text>
+      <line x1="440" y1="78" x2="440" y2="96" class="ln" marker-end="url(#a1)"/>
+      <line x1="440" y1="160" x2="440" y2="186" class="ln" marker-end="url(#a1)"/>
+    </svg>
+  </div>
+  <p class="figcap">图 2-1 AI 能力不另起一套业务系统，而是嵌入既有流程引擎的分层。</p>
+
+  <h3>2.2 做与不做</h3>
+  <table>
+    <tr><th>做</th><th>不做</th></tr>
+    <tr><td>流程节点上的知识检索、抽取、分类、建议、摘要</td><td>脱离流程的通用 AI 聊天产品</td></tr>
+    <tr><td>业务人员可配置、可测试、可发布的 Agent</td><td>任意代码执行、RPA、浏览器自动化</td></tr>
+    <tr><td>Agent 版本与流程版本绑定，运行期可追溯</td><td>Agent 修改后静默影响运行中实例</td></tr>
+    <tr><td>上线前离线评测、上线后采样评测与人工反馈</td><td>只靠感觉判断「效果好」</td></tr>
+    <tr><td>引用、置信度、人工确认、失败回退</td><td>无依据自动决策、无人工兜底</td></tr>
+  </table>
+
+  <h3>2.3 设计原则</h3>
+  <ul>
+    <li><strong>流程优先</strong>：AI 节点必须能读写流程上下文、参与分支与审批，而不是弹窗。</li>
+    <li><strong>引用可核验</strong>：知识回答必须带来源；无引用时降级为「不确定」。</li>
+    <li><strong>版本钉住</strong>：流程实例钉住 Agent 版本与知识库版本，发布不改变在跑实例。</li>
+    <li><strong>评测先行</strong>：Agent 发布、流程发布涉及 AI 节点时，默认要求评测门禁。</li>
+    <li><strong>人机协同</strong>：高风险场景 Agent 只给建议，人工做最终决定。</li>
+    <li><strong>成本可预算</strong>：每个 Agent / 节点 / 租户都有 token 与金额预算。</li>
+  </ul>
+</section>
+
+<section id="s3">
+  <h2 class="sec"><span class="num">03</span>用户角色与核心场景</h2>
+  <h3>3.1 角色</h3>
+  <table>
+    <tr><th>角色</th><th>关心什么</th><th>典型动作</th></tr>
+    <tr><td>知识管理员</td><td>知识是否全、准、新；谁能看</td><td>建知识库、上传/同步文档、配置权限、处理解析失败、看命中率</td></tr>
+    <tr><td>Agent 搭建者（业务/流程 BP）</td><td>Agent 能不能解决业务问题、输出稳不稳定</td><td>配置提示词、绑定知识、测试、发布版本、看评测报告</td></tr>
+    <tr><td>流程设计者</td><td>Agent 如何嵌入流程、失败怎么办</td><td>拖入 AI 节点、配置输入输出映射、阈值、超时与回退边</td></tr>
+    <tr><td>审批人 / 业务用户</td><td>AI 建议是否可信、依据在哪</td><td>查看摘要与引用、采纳/修改/驳回建议、反馈好坏</td></tr>
+    <tr><td>评测 / 标注人员</td><td>数据集是否有代表性、评分是否一致</td><td>建评测集、标注、跑评测、看失败聚类</td></tr>
+    <tr><td>平台管理员</td><td>模型、工具、配额、成本、安全</td><td>接入模型、配置路由、设配额、看大盘、处理告警</td></tr>
+    <tr><td>安全 / 合规</td><td>数据不出域、PII 不泄露、操作可审计</td><td>审权限、审模型与工具、查调用留痕</td></tr>
+  </table>
+
+  <h3>3.2 核心场景</h3>
+  <h4>S1 合同审批：Agent 做预审，人做决定</h4>
+  <div class="flow">
+    <div class="s"><b>发起</b><span>上传合同 PDF</span></div><div class="a">→</div>
+    <div class="s"><b>AI 抽取</b><span>金额/主体/期限/违约条款</span></div><div class="a">→</div>
+    <div class="s"><b>知识检索</b><span>合同制度 + 历史条款</span></div><div class="a">→</div>
+    <div class="s"><b>风险 Agent</b><span>给出风险点与引用</span></div><div class="a">→</div>
+    <div class="s"><b>人工审批</b><span>采纳/修改/驳回</span></div><div class="a">→</div>
+    <div class="s"><b>结束</b><span>记录采纳率</span></div>
+  </div>
+  <p>流程节点返回结构化风险等级与引用；高风险自动加签法务。Agent 不直接决定通过。</p>
+
+  <h4>S2 报销预审：规则 + 知识 + 抽取</h4>
+  <p>OCR/抽取 Agent 读取发票与明细，规则节点校验金额和标准，知识 Agent 解释不合规原因；低置信度转人工。审批人看到「为什么不合规」和制度原文。</p>
+
+  <h4>S3 HR 政策问答：表单里的知识助手</h4>
+  <p>员工在请假/报销表单中提问，知识 Agent 基于制度库回答并给出引用；回答只做解释，不修改表单字段，除非用户确认。</p>
+
+  <h4>S4 工单分流：分类 Agent + 排他网关</h4>
+  <p>分类 Agent 输出 <code>category / priority / confidence</code>，排他网关按类别路由到不同处理流程；置信度低于阈值时走人工分诊。</p>
+
+  <h4>S5 Agent 评测：发布前的质量证明</h4>
+  <p>Agent 搭建者用 100 条历史工单作为评测集，运行准确性、引用忠实度、工具调用正确率三项评测；未达阈值不能发布，除非管理员填原因豁免。</p>
+</section>
+
+<section id="s4">
+  <h2 class="sec"><span class="num">04</span>功能范围与优先级</h2>
+  <table>
+    <tr><th>编号</th><th>模块</th><th>能力要点</th><th>优先级</th></tr>
+    <tr><td>AI-01</td><td>知识库管理</td><td>创建/编辑/删除、权限、统计、测试检索</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-02</td><td>文档接入与解析</td><td>上传 PDF/Word/MD/HTML/TXT、解析状态、失败重试</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-03</td><td>切分与索引</td><td>自动切分、重叠、元数据、重新索引</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-04</td><td>检索与引用</td><td>混合检索、重排、TopK、过滤、引用、无命中策略</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-05</td><td>Agent Builder</td><td>模型、提示词、知识、工具、输出 Schema、护栏</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-06</td><td>Agent 测试台</td><td>变量输入、运行、引用/工具/耗时/成本展示、版本对比</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-07</td><td>Agent 版本与发布</td><td>草稿/发布/下线、不可变版本、评测门禁</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-08</td><td>流程 AI 节点</td><td>Agent、知识检索、分类、抽取节点；输入输出映射</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-09</td><td>人机协同</td><td>建议 + 人工确认、置信度阈值、低置信度转人工</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-10</td><td>评测基础</td><td>数据集、评测器、运行、报告、发布门禁</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-11</td><td>模型网关</td><td>多模型接入、路由、降级、配额、成本统计</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-12</td><td>可观测与审计</td><td>调用追踪、引用、工具、成本、版本留痕</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI-13</td><td>工具调用</td><td>HTTP/OpenAPI、MCP、只读流程查询、计算器</td><td><span class="badge p1">P1</span></td></tr>
+    <tr><td>AI-14</td><td>知识连接器</td><td>飞书/Confluence/网盘/URL 定时同步、增量更新</td><td><span class="badge p1">P1</span></td></tr>
+    <tr><td>AI-15</td><td>高级评测</td><td>LLM-as-judge、忠实度、工具正确率、人工标注</td><td><span class="badge p1">P1</span></td></tr>
+    <tr><td>AI-16</td><td>线上评测</td><td>采样、用户反馈、A/B、线上指标看板</td><td><span class="badge p1">P1</span></td></tr>
+    <tr><td>AI-17</td><td>多 Agent</td><td>Supervisor/Worker、Handoff、共享上下文</td><td><span class="badge p2">P2</span></td></tr>
+    <tr><td>AI-18</td><td>模板与市场</td><td>Agent/流程模板、复制、收藏、内部分发</td><td><span class="badge p2">P2</span></td></tr>
+    <tr><td>AI-19</td><td>长期记忆</td><td>跨实例用户偏好、组织记忆、召回与删除</td><td><span class="badge p2">P2</span></td></tr>
+    <tr><td>AI-20</td><td>流程 Copilot</td><td>设计器里自然语言生成流程/表单草案</td><td><span class="badge p2">P2</span></td></tr>
+  </table>
+</section>
+
+<section id="s5">
+  <h2 class="sec"><span class="num">05</span>知识库</h2>
+  <h3>5.1 定位</h3>
+  <p>知识库是「流程可引用的可信事实源」。它不是网盘，也不是通用问答库：每个知识库有明确负责人、可见范围、更新方式与质量指标；Agent 引用时必须返回来源片段。</p>
+  <h3>5.2 知识库配置</h3>
+  <table>
+    <tr><th>配置项</th><th>说明</th><th>默认</th></tr>
+    <tr><td>名称 / 描述 / 分类</td><td>面向业务人员的可读信息</td><td>必填名称</td></tr>
+    <tr><td>负责人 / 管理员</td><td>对内容质量与权限负责</td><td>创建者</td></tr>
+    <tr><td>可见范围</td><td>租户 / 部门 / 角色 / 指定用户</td><td>租户内</td></tr>
+    <tr><td>切分策略</td><td>按标题 / 段落 / 固定 token / 自定义分隔符</td><td>按标题+段落，500 token，重叠 50</td></tr>
+    <tr><td>检索配置</td><td>向量 / 关键词 / 混合；TopK；重排开关</td><td>混合检索，TopK=6，重排开</td></tr>
+    <tr><td>无命中策略</td><td>返回空 / 返回「不确定」/ 触发人工</td><td>返回不确定，不编造</td></tr>
+    <tr><td>敏感级别</td><td>普通 / 内部 / 机密；影响模型与导出</td><td>内部</td></tr>
+  </table>
+
+  <h3>5.3 文档接入</h3>
+  <table>
+    <tr><th>方式</th><th>说明</th><th>优先级</th></tr>
+    <tr><td>本地上传</td><td>PDF / DOCX / MD / HTML / TXT；批量上传；大小上限</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>URL 抓取</td><td>定时抓取网页正文，去导航与广告</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>开放 API</td><td>业务系统推送文档与元数据</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>连接器</td><td>飞书文档、Confluence、共享网盘、数据库表</td><td><span class="badge p1">P1</span></td></tr>
+  </table>
+  <h4>文档状态机</h4>
+  <pre><code>UPLOADED → PARSING → CHUNKING → INDEXING → READY
+                ↘ FAILED（可重试 / 查看原因）
+READY → STALE（源文档更新）→ REINDEXING → READY
+READY → DISABLED（负责人手动下线）</code></pre>
+  <p>解析失败必须给出可操作原因（加密 PDF、扫描件无 OCR、格式不支持、文件过大），并支持单篇重试与批量重试。</p>
+
+  <h3>5.4 解析、切分与元数据</h3>
+  <ul>
+    <li><strong>解析</strong>：文本、标题层级、表格、图片说明；扫描 PDF 走 OCR（P1），无 OCR 时明确标记「仅图片」。</li>
+    <li><strong>切分</strong>：按语义边界优先；表格不跨块；每块保留文档标题、章节路径、页码/URL、更新时间。</li>
+    <li><strong>元数据</strong>：部门、制度编号、生效日期、失效日期、适用人群；检索可按元数据过滤。</li>
+    <li><strong>去重</strong>：同文档多版本只保留最新有效版本；重复上传提示覆盖或并存。</li>
+  </ul>
+
+  <h3>5.5 检索与引用</h3>
+  <div class="flow">
+    <div class="s"><b>Query</b><span>用户问题 + 上下文</span></div><div class="a">→</div>
+    <div class="s"><b>混合召回</b><span>向量 + 关键词</span></div><div class="a">→</div>
+    <div class="s"><b>重排</b><span>相关性 + 时效 + 权限</span></div><div class="a">→</div>
+    <div class="s"><b>组装</b><span>TopK 片段 + 引用</span></div><div class="a">→</div>
+    <div class="s"><b>回答</b><span>带来源，无命中说不确定</span></div>
+  </div>
+  <ul>
+    <li>每条引用包含：文档名、片段、页码/URL、更新时间、知识库、片段 ID；前端可点开原文定位。</li>
+    <li>检索必须遵守调用者权限：用户看不到的文档不能被 Agent「代为检索」出来。</li>
+    <li>无命中或相关性低于阈值时，Agent 输出「未找到依据」，不得编造。</li>
+    <li>知识库提供「检索测试」：输入问题，查看召回片段、分数、引用，不调用大模型。</li>
+  </ul>
+
+  <h3>5.6 权限与版本</h3>
+  <table>
+    <tr><th>层级</th><th>权限</th></tr>
+    <tr><td>知识库</td><td>查看 / 编辑 / 管理 / 删除；负责人可转移</td></tr>
+    <tr><td>文档</td><td>继承知识库；可对单篇设置更严格可见范围</td></tr>
+    <tr><td>Agent 调用</td><td>以 Agent 的服务身份检索，但仍受「调用者数据范围」约束</td></tr>
+    <tr><td>版本</td><td>文档版本可追溯；重新索引生成新索引版本，旧版本保留一段时间</td></tr>
+  </table>
+
+  <h3>5.7 质量指标</h3>
+  <ul>
+    <li>文档解析成功率、索引成功率、平均索引延迟。</li>
+    <li>检索命中率、引用点击率、无命中率、人工反馈「没找到/找到了」。</li>
+    <li>陈旧文档占比（超过 N 天未更新）、失效文档占比。</li>
+  </ul>
+
+  <h3>5.8 边界</h3>
+  <ul>
+    <li>加密/扫描 PDF：明确提示需要 OCR 或人工上传可复制版本。</li>
+    <li>超大文档：拆分为多文档或分段上传，单文档有大小上限。</li>
+    <li>表格与图片：MVP 只保留表格文本；图片 OCR/多模态 P1。</li>
+    <li>删除知识库：被 Agent 引用时禁止直接删除，需先解绑或迁移。</li>
+  </ul>
+</section>
+
+<section id="s6">
+  <h2 class="sec"><span class="num">06</span>Agent 搭建</h2>
+  <p class="lead">Agent 是可复用的智能单元：有明确的输入契约、输出契约、知识范围、工具权限与版本。业务人员用表单配置，研发只在必要时写工具或脚本。</p>
+
+  <h3>6.1 Agent 定义</h3>
+  <table>
+    <tr><th>配置</th><th>说明</th><th>必填</th></tr>
+    <tr><td>名称 / 描述 / 图标 / 分类</td><td>业务可读标识；支持模板复制</td><td>名称</td></tr>
+    <tr><td>Agent 类型</td><td>对话 / 任务 / 抽取 / 分类；决定默认输出形态</td><td>是</td></tr>
+    <tr><td>模型</td><td>模型或模型路由策略；温度、最大输出 token</td><td>是</td></tr>
+    <tr><td>系统提示词</td><td>角色、边界、拒答策略、输出要求</td><td>是</td></tr>
+    <tr><td>用户提示词模板</td><td>引用流程变量，如 <code>{{contract_text}}</code></td><td>是</td></tr>
+    <tr><td>知识库</td><td>选择一个或多个；TopK、过滤条件、是否必须引用</td><td>否</td></tr>
+    <tr><td>工具</td><td>HTTP/OpenAPI、MCP、只读流程查询、计算器；逐个授权</td><td>否</td></tr>
+    <tr><td>输出 Schema</td><td>JSON Schema；字段类型、必填、枚举</td><td>任务/抽取/分类必填</td></tr>
+    <tr><td>护栏</td><td>PII 脱敏、提示词注入防护、内容安全、禁止自动决策</td><td>默认开</td></tr>
+    <tr><td>超时 / 重试 / 预算</td><td>单次超时、重试次数、token/金额上限</td><td>默认值</td></tr>
+  </table>
+
+  <h3>6.2 提示词与变量</h3>
+  <ul>
+    <li>系统提示词与用户模板分离；模板支持流程上下文变量、知识片段占位、工具结果占位。</li>
+    <li>变量必须声明来源与类型；缺失时按配置「报错 / 空值 / 走兜底」。</li>
+    <li>提示词修改必须生成新版本；发布前跑评测。</li>
+  </ul>
+
+  <h3>6.3 知识绑定</h3>
+  <ul>
+    <li>可选多个知识库；按优先级召回；可配置元数据过滤（部门、生效日期）。</li>
+    <li>默认要求引用；无引用时 Agent 必须输出低置信度或走人工。</li>
+    <li>知识库版本随 Agent 版本钉住；知识更新后需重新发布 Agent 版本才能生效（或显式允许跟随最新）。</li>
+  </ul>
+
+  <h3>6.4 工具调用</h3>
+  <table>
+    <tr><th>工具类型</th><th>示例</th><th>约束</th></tr>
+    <tr><td>HTTP / OpenAPI</td><td>查客户、查发票、查库存</td><td>域名白名单、超时、幂等键、只读优先</td></tr>
+    <tr><td>MCP</td><td>内部数据服务、搜索服务</td><td>工具级授权、参数校验、调用审计</td></tr>
+    <tr><td>流程只读查询</td><td>查当前实例、查历史审批</td><td>只读、按实例数据范围</td></tr>
+    <tr><td>计算器</td><td>金额、税额、日期差</td><td>确定性计算，不让模型心算</td></tr>
+  </table>
+  <p>工具返回必须结构化；工具失败时 Agent 可选择重试一次、降级回答或返回失败，不允许编造工具结果。</p>
+
+  <h3>6.5 输出契约</h3>
+  <pre><code>{
+  "answer": "string",
+  "confidence": 0.0,
+  "citations": [{"docId":"...","chunkId":"...","title":"...","page":3}],
+  "structured": { "riskLevel": "high", "clauses": [...] },
+  "needHuman": true,
+  "reason": "string"
+}</code></pre>
+  <p>流程节点只依赖 <code>structured</code> 与 <code>confidence</code>、<code>citations</code>、<code>needHuman</code>；自然语言答案用于展示，不参与路由判断。</p>
+
+  <h3>6.6 测试台</h3>
+  <ul>
+    <li>输入变量，运行 Agent，查看输出、引用、工具调用、耗时、token 与成本。</li>
+    <li>保存测试用例；支持从测试用例一键加入评测集。</li>
+    <li>版本对比：同一输入在两个版本下的输出、引用、成本和延迟并排展示。</li>
+  </ul>
+
+  <h3>6.7 版本与发布</h3>
+  <pre><code>DRAFT → TESTING → PENDING_REVIEW → PUBLISHED → DEPRECATED
+                    ↘ REJECTED</code></pre>
+  <ul>
+    <li>发布后不可变；任何修改生成新版本。</li>
+    <li>发布门禁：评测通过率、引用忠实度、工具正确率、成本上限；未通过需管理员豁免并记录原因。</li>
+    <li>流程版本引用 Agent 版本；已发布流程不会被 Agent 新版本静默影响。</li>
+  </ul>
+
+  <h3>6.8 模板与复制</h3>
+  <ul>
+    <li>内置模板：合同风险审阅、发票抽取、工单分类、政策问答、摘要助手。</li>
+    <li>复制 Agent 生成新草稿，保留配置但不继承发布状态。</li>
+    <li>模板库按部门/场景分类；P2 支持内部分发与收藏。</li>
+  </ul>
+</section>
+
+<section id="s7">
+  <h2 class="sec"><span class="num">07</span>Agent 与流程集成</h2>
+  <p class="lead">这是本 PRD 的核心增量：Agent 不是外挂，而是流程里的节点。节点有输入映射、输出映射、超时、回退边和预算；运行期可追溯，版本可钉住。</p>
+
+  <h3>7.1 AI 节点类型</h3>
+  <table>
+    <tr><th>节点</th><th>KEY</th><th>行为</th><th>典型场景</th><th>优先级</th></tr>
+    <tr><td>知识检索</td><td><code>ai_knowledge</code></td><td>检索知识库，返回片段与引用；不调用或可选调用模型总结</td><td>制度查询、条款定位</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>Agent 节点</td><td><code>ai_agent</code></td><td>调用已发布 Agent，按输出 Schema 写回上下文</td><td>合同风险、报销预审、摘要</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>分类节点</td><td><code>ai_classify</code></td><td>输出枚举 + 置信度，配合排他网关路由</td><td>工单分流、意图识别</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>抽取节点</td><td><code>ai_extract</code></td><td>从文档/文本抽取结构化字段</td><td>发票、合同、简历</td><td><span class="badge">MVP</span></td></tr>
+    <tr><td>AI 辅助审批</td><td><code>ai_review</code></td><td>生成建议与引用，人工审批任务同时展示</td><td>审批 Copilot</td><td><span class="badge p1">P1</span></td></tr>
+    <tr><td>安全护栏</td><td><code>ai_guard</code></td><td>敏感信息、注入、内容安全检查；失败走异常边</td><td>对外文本、附件</td><td><span class="badge p1">P1</span></td></tr>
+  </table>
+
+  <h3>7.2 节点配置</h3>
+  <table>
+    <tr><th>配置</th><th>说明</th></tr>
+    <tr><td>Agent / 知识库 / 模型版本</td><td>必须选择已发布版本；流程发布时钉住</td></tr>
+    <tr><td>输入映射</td><td>从流程上下文、表单字段、附件、上一步输出映射到 Agent 变量</td></tr>
+    <tr><td>输出映射</td><td>把 Agent 结构化输出写入流程变量；字段缺失按默认值/报错</td></tr>
+    <tr><td>超时 / 重试</td><td>默认 30s，超时 1 次重试；长任务用异步节点（P1）</td></tr>
+    <tr><td>置信度阈值</td><td>低于阈值走人工回退边</td></tr>
+    <tr><td>回退边</td><td>模型失败、无引用、低置信度、预算超限时走指定出边</td></tr>
+    <tr><td>预算</td><td>单次 token/金额上限；超限停止并走回退</td></tr>
+    <tr><td>引用要求</td><td>必须引用 / 可选引用 / 不要求；必须引用但无引用时视为失败</td></tr>
+  </table>
+
+  <h3>7.3 执行语义</h3>
+  <ul>
+    <li><strong>同步</strong>：默认；节点调用 Agent，等待结果后推进令牌。超时按回退策略。</li>
+    <li><strong>异步</strong>（P1）：长任务生成 Agent Run，节点 WAITING；完成后回调唤醒，支持取消。</li>
+    <li><strong>幂等</strong>：调用键为 <code>instanceId + nodeInstanceId + attempt</code>；重复投递不重复计费。</li>
+    <li><strong>上下文</strong>：Agent 只读上下文快照，输出以补丁方式写回；不允许 Agent 直接修改流程状态。</li>
+    <li><strong>审计</strong>：每次调用记录 Agent 版本、知识库版本、引用、工具、模型、token、成本、耗时。</li>
+  </ul>
+
+  <h3>7.4 人机协同模式</h3>
+  <table>
+    <tr><th>模式</th><th>行为</th><th>适用</th></tr>
+    <tr><td>建议 + 人工决定</td><td>AI 生成建议和引用，审批任务展示；人工采纳/修改/驳回</td><td>合同、报销、高风险审批（默认）</td></tr>
+    <tr><td>自动处理 + 抽样复核</td><td>高置信度自动完成低风险节点，按比例抽样人工复核</td><td>低风险分类、信息补全（需显式开启）</td></tr>
+    <tr><td>低置信度转人工</td><td>置信度低于阈值或引用不足，走人工边</td><td>所有 AI 节点默认策略</td></tr>
+    <tr><td>人工先审后 AI 执行</td><td>人确认后 Agent 执行生成/汇总</td><td>对外文本、客户沟通</td></tr>
+  </table>
+
+  <h3>7.5 版本钉住与迁移</h3>
+  <ul>
+    <li>流程版本发布时记录 Agent 版本与知识库版本；运行中实例只读这些版本。</li>
+    <li>Agent 新版本发布不影响在跑实例；需要时走显式迁移工具（P2）。</li>
+    <li>知识库允许「跟随最新」模式，但必须在节点配置中显式选择，并在时间线标记。</li>
+  </ul>
+
+  <h3>7.6 失败与回退</h3>
+  <table>
+    <tr><th>失败</th><th>行为</th></tr>
+    <tr><td>模型超时 / 限流</td><td>重试一次；仍失败走回退边，默认转人工</td></tr>
+    <tr><td>输出不符合 Schema</td><td>重试一次；仍失败记录原始输出，走回退边</td></tr>
+    <tr><td>无知识命中</td><td>按配置：返回不确定 / 走人工 / 终止；不得编造</td></tr>
+    <tr><td>引用缺失但要求引用</td><td>视为失败，走回退边并告警</td></tr>
+    <tr><td>工具失败</td><td>记录错误；可降级回答或走回退边；不得伪造工具结果</td></tr>
+    <tr><td>成本超预算</td><td>停止调用，节点失败，实例按配置挂起或走回退边</td></tr>
+    <tr><td>权限不足</td><td>拒绝检索/工具调用，明确提示，不降级为猜测</td></tr>
+  </table>
+
+  <h3>7.7 节点配置示例</h3>
+  <pre><code>{
+  "id": "contract_risk",
+  "type": "ai_agent",
+  "name": "合同风险预审",
+  "agentVersionId": 42,
+  "inputMapping": {
+    "contract_text": "ctx.contract_text",
+    "counterparty": "ctx.counterparty"
+  },
+  "outputMapping": {
+    "riskLevel": "ctx.risk_level",
+    "riskPoints": "ctx.risk_points",
+    "confidence": "ctx.ai_confidence"
+  },
+  "timeoutMs": 30000,
+  "minConfidence": 0.7,
+  "requireCitations": true,
+  "fallbackEdge": "manual_review",
+  "budget": { "maxTokens": 12000, "maxCost": 0.20 }
+}</code></pre>
+</section>
+
+<section id="s8">
+  <h2 class="sec"><span class="num">08</span>Agent 评测</h2>
+  <p class="lead">评测不是发布后的报表，而是发布前的门禁。没有评测集的 Agent 不允许直接进入生产流程。</p>
+  <div class="flow">
+    <div class="s"><b>数据集</b><span>人工 / 线上采样 / 文档生成</span></div><div class="a">→</div>
+    <div class="s"><b>运行</b><span>固定版本 + 并发执行</span></div><div class="a">→</div>
+    <div class="s"><b>评分</b><span>规则 + LLM Judge + 人工</span></div><div class="a">→</div>
+    <div class="s"><b>报告</b><span>通过率 / 失败聚类 / 对比</span></div><div class="a">→</div>
+    <div class="s"><b>门禁</b><span>通过才可发布</span></div>
+  </div>
+
+  <h3>8.1 评测对象</h3>
+  <table>
+    <tr><th>对象</th><th>评什么</th></tr>
+    <tr><td>Agent 版本</td><td>任务完成质量、结构化输出、工具调用、引用</td></tr>
+    <tr><td>知识库检索</td><td>召回率、引用正确率、无命中识别</td></tr>
+    <tr><td>流程 + Agent 组合</td><td>端到端是否推进正确、是否走对回退边</td></tr>
+  </table>
+
+  <h3>8.2 数据集</h3>
+  <ul>
+    <li><strong>人工构建</strong>：业务专家按场景编写输入与期望输出，支持 CSV/JSON 导入。</li>
+    <li><strong>线上采样</strong>：从真实实例抽样，脱敏后加入数据集；需权限审批。</li>
+    <li><strong>文档生成</strong>：从知识库生成 QA 对，人工审核后入集。</li>
+    <li>数据集版本化，支持训练/验证/测试切分与标签（场景、难度、风险等级）。</li>
+  </ul>
+
+  <h3>8.3 评测器</h3>
+  <table>
+    <tr><th>评测器</th><th>说明</th><th>适用</th></tr>
+    <tr><td>精确匹配 / 包含</td><td>答案或字段与期望完全一致 / 包含关键词</td><td>分类、枚举、抽取</td></tr>
+    <tr><td>JSON Schema 校验</td><td>输出结构、类型、必填、枚举</td><td>所有结构化 Agent</td></tr>
+    <tr><td>关键字段准确率</td><td>指定字段逐项比对</td><td>发票、合同抽取</td></tr>
+    <tr><td>引用忠实度</td><td>回答是否被引用片段支持</td><td>知识问答、风险审阅</td></tr>
+    <tr><td>答案相关性</td><td>是否回答了用户问题</td><td>问答类 Agent</td></tr>
+    <tr><td>工具调用正确率</td><td>工具选择、参数、次数是否正确</td><td>带工具的 Agent</td></tr>
+    <tr><td>LLM-as-Judge</td><td>按评分 rubric 由强模型打分，需人工抽检校准</td><td>开放式回答</td></tr>
+    <tr><td>人工评分</td><td>标注员按标准打分与写理由</td><td>金牌集、争议样本</td></tr>
+    <tr><td>安全评测</td><td>注入、越权、PII 泄露、有害内容</td><td>所有对外 Agent</td></tr>
+  </table>
+
+  <h3>8.4 评测运行与报告</h3>
+  <ul>
+    <li>选择 Agent 版本 + 数据集 + 评测器 + 采样策略，创建评测运行。</li>
+    <li>报告包含总体通过率、分场景通过率、失败样本、失败聚类、耗时与成本。</li>
+    <li>支持两个版本对比：质量变化、成本变化、延迟变化。</li>
+    <li>失败样本可一键加入下一轮数据集或标注队列。</li>
+  </ul>
+
+  <h3>8.5 发布门禁</h3>
+  <table>
+    <tr><th>门禁</th><th>默认阈值</th><th>未通过</th></tr>
+    <tr><td>总体通过率</td><td>≥ 85%</td><td>阻断发布，可管理员豁免并填原因</td></tr>
+    <tr><td>高风险场景通过率</td><td>≥ 95%</td><td>阻断发布，不允许豁免</td></tr>
+    <tr><td>引用忠实度</td><td>≥ 90%</td><td>阻断发布</td></tr>
+    <tr><td>安全评测</td><td>0 高危</td><td>阻断发布</td></tr>
+    <tr><td>单次平均成本</td><td>≤ 预算</td><td>警告，需说明</td></tr>
+  </table>
+
+  <h3>8.6 线上评测</h3>
+  <ul>
+    <li>按比例采样线上调用，异步跑轻量评测器；不阻塞流程。</li>
+    <li>收集用户反馈：采纳 / 修改 / 驳回、点赞点踩、引用点击。</li>
+    <li>A/B：同一流程按比例分流到 Agent vN 与 vN+1，比较采纳率与人工override率。</li>
+    <li>指标异常（引用下降、override 上升）自动告警，可一键回滚到上一版本。</li>
+  </ul>
+
+  <h3>8.7 标注与人审</h3>
+  <ul>
+    <li>标注队列按场景/难度分配；提供评分标准与示例。</li>
+    <li>双人标注抽检，计算一致性；争议样本进入专家仲裁。</li>
+    <li>标注结果反哺评测集与提示词优化，形成闭环。</li>
+  </ul>
+</section>
+
+<section id="s9">
+  <h2 class="sec"><span class="num">09</span>模型、工具与运行时</h2>
+  <h3>9.1 模型网关</h3>
+  <ul>
+    <li>统一接入多家模型（公有云/私有化/本地）；模型注册包含上下文长度、价格、能力标签。</li>
+    <li>路由策略：按任务、成本、延迟、可用性选择；支持主备降级。</li>
+    <li>凭证与密钥集中管理；按租户/Agent 配额；调用日志脱敏。</li>
+    <li>模型下线/变更提前告警；Agent 版本钉住模型或路由策略。</li>
+  </ul>
+
+  <h3>9.2 工具注册</h3>
+  <ul>
+    <li>HTTP/OpenAPI 导入；MCP Server 接入；只读流程查询作为内置工具。</li>
+    <li>工具级权限、超时、重试、幂等键、响应大小限制。</li>
+    <li>工具调用审计：谁、何时、哪个 Agent、参数摘要、结果摘要、耗时。</li>
+  </ul>
+
+  <h3>9.3 运行时</h3>
+  <ul>
+    <li>同步调用 + 异步队列；超时、重试、熔断、限流。</li>
+    <li>上下文组装：系统提示 + 用户输入 + 检索片段 + 记忆 + 工具结果，按 token 预算裁剪。</li>
+    <li>流式输出（P1）：首 token 时间、断线重连；流程节点默认等完整结果。</li>
+    <li>语义缓存（P2）：相同问题/上下文复用结果，需标注缓存命中。</li>
+  </ul>
+
+  <h3>9.4 安全与权限</h3>
+  <ul>
+    <li>知识检索按调用者数据范围过滤；Agent 服务身份不能越权。</li>
+    <li>提示词注入防护：文档内容视为数据，不执行其中指令；高风险工具需人工确认。</li>
+    <li>PII 识别与脱敏：输入、日志、评测集；可配置保留策略。</li>
+    <li>数据不出域：按租户/知识库选择模型区域与供应商。</li>
+  </ul>
+</section>
+
+<section id="s10">
+  <h2 class="sec"><span class="num">10</span>可观测、成本与治理</h2>
+  <h3>10.1 调用追踪</h3>
+  <p>一条 trace 串起：流程实例 → 节点实例 → Agent Run → 检索 → 工具 → 模型调用。每一步记录输入摘要、输出摘要、耗时、token、成本、错误。</p>
+  <table>
+    <tr><th>指标</th><th>说明</th><th>告警</th></tr>
+    <tr><td>调用成功率</td><td>成功 / 总调用</td><td>&lt; 99%</td></tr>
+    <tr><td>P95 延迟</td><td>按 Agent/节点</td><td>超过 SLA</td></tr>
+    <tr><td>Token / 成本</td><td>按 Agent、流程、租户</td><td>超预算 80% / 100%</td></tr>
+    <tr><td>引用覆盖率</td><td>有引用的回答占比</td><td>&lt; 阈值</td></tr>
+    <tr><td>人工 override 率</td><td>修改/驳回 AI 建议的比例</td><td>上升 10%</td></tr>
+    <tr><td>评测通过率</td><td>线上采样评测</td><td>低于门禁</td></tr>
+  </table>
+
+  <h3>10.2 成本预算</h3>
+  <ul>
+    <li>预算层级：租户 → 流程 → Agent → 节点；每层可设日/月上限。</li>
+    <li>超 80% 告警，超 100% 停止调用并按节点回退策略处理。</li>
+    <li>成本看板按模型、Agent、流程拆分，支持导出。</li>
+  </ul>
+
+  <h3>10.3 审计</h3>
+  <ul>
+    <li>知识库文档增删改、Agent 配置/版本/发布、评测运行、模型与工具变更全部留痕。</li>
+    <li>每次 AI 调用可回答「用了哪个版本、哪些知识、哪个模型、花了多少钱」。</li>
+    <li>审计日志 append-only，权限与保留期可配置。</li>
+  </ul>
+</section>
+
+<section id="s11">
+  <h2 class="sec"><span class="num">11</span>权限矩阵</h2>
+  <table>
+    <tr><th>能力</th><th>知识管理员</th><th>Agent 搭建者</th><th>流程设计者</th><th>审批人</th><th>评测员</th><th>平台管理员</th></tr>
+    <tr><td>创建/编辑知识库</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>上传/删除文档</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>查看知识库</td><td>范围</td><td>被授权</td><td>被授权</td><td>被授权</td><td>✓</td><td>✓</td></tr>
+    <tr><td>创建/编辑 Agent</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>发布 Agent</td><td>—</td><td>提交</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>在流程中使用 Agent</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>查看 AI 建议与引用</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>✓</td></tr>
+    <tr><td>创建评测集/运行评测</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+    <tr><td>豁免发布门禁</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓（留原因）</td></tr>
+    <tr><td>模型/工具/配额管理</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>查看调用 trace 与成本</td><td>范围</td><td>范围</td><td>范围</td><td>—</td><td>✓</td><td>✓</td></tr>
+  </table>
+  <p class="small">所有权限都叠加租户与数据范围；知识检索必须同时满足「知识库可见」与「调用者可见」。</p>
+</section>
+
+<section id="s12">
+  <h2 class="sec"><span class="num">12</span>数据模型</h2>
+  <table>
+    <tr><th>实体</th><th>关键字段</th><th>说明</th></tr>
+    <tr><td>KnowledgeBase</td><td>id, name, owner, visibility, chunkPolicy, retrievalPolicy</td><td>知识库</td></tr>
+    <tr><td>Document</td><td>id, kbId, sourceType, sourceUrl, version, status, metadata</td><td>文档与同步状态</td></tr>
+    <tr><td>Chunk</td><td>id, docId, text, tokens, metadata, embeddingRef</td><td>切分片段</td></tr>
+    <tr><td>Agent</td><td>id, name, type, owner, status, currentVersionId</td><td>Agent 资产</td></tr>
+    <tr><td>AgentVersion</td><td>id, agentId, version, modelPolicy, prompt, outputSchema, guardrails</td><td>不可变版本</td></tr>
+    <tr><td>AgentKnowledgeBinding</td><td>agentVersionId, kbId, kbVersion, topK, filters</td><td>知识绑定与版本</td></tr>
+    <tr><td>Tool</td><td>id, type, schema, authRef, allowlist</td><td>工具注册</td></tr>
+    <tr><td>AgentToolBinding</td><td>agentVersionId, toolId, permissions, timeout</td><td>工具授权</td></tr>
+    <tr><td>FlowAiBinding</td><td>definitionVersionId, nodeId, agentVersionId, mapping, thresholds</td><td>流程节点绑定</td></tr>
+    <tr><td>AgentRun</td><td>id, instanceId, nodeInstanceId, agentVersionId, status, input, output, cost</td><td>一次调用</td></tr>
+    <tr><td>EvalDataset</td><td>id, name, version, tags</td><td>评测集</td></tr>
+    <tr><td>EvalCase</td><td>id, datasetId, input, expected, metadata</td><td>样本</td></tr>
+    <tr><td>EvalRun</td><td>id, agentVersionId, datasetId, status, metrics</td><td>评测运行</td></tr>
+    <tr><td>EvalResult</td><td>id, runId, caseId, scores, judgeReason, humanLabel</td><td>逐样本结果</td></tr>
+    <tr><td>RunTrace</td><td>id, traceId, step, model, tokens, cost, latency, error</td><td>调用追踪</td></tr>
+  </table>
+</section>
+
+<section id="s13">
+  <h2 class="sec"><span class="num">13</span>API 与 SDK</h2>
+  <table>
+    <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+    <tr><td>POST</td><td><code>/api/v1/kb</code></td><td>创建知识库</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/kb/{id}/documents</code></td><td>上传/推送文档</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/kb/{id}/retrieve</code></td><td>检索片段与引用</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/agents</code></td><td>创建 Agent</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/agents/{id}/versions</code></td><td>创建版本</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/agents/{id}/versions/{v}/publish</code></td><td>发布（含门禁）</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/agents/{id}/versions/{v}/test</code></td><td>测试台调用</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/agents/{id}/versions/{v}/invoke</code></td><td>运行期调用</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/eval/datasets</code></td><td>创建评测集</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/eval/runs</code></td><td>发起评测</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/eval/runs/{id}</code></td><td>评测报告</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/ai/traces/{traceId}</code></td><td>调用追踪</td></tr>
+  </table>
+  <h4>调用示例</h4>
+  <pre><code>POST /api/v1/agents/42/versions/3/invoke
+{
+  "instanceId": "inst_01J9...",
+  "nodeInstanceId": 311,
+  "input": { "contract_text": "...", "counterparty": "ACME" },
+  "idempotencyKey": "inst_01J9...:311:1"
+}
+
+{
+  "success": true,
+  "data": {
+    "output": { "riskLevel": "high", "riskPoints": ["付款周期过长"] },
+    "confidence": 0.86,
+    "citations": [{ "docId": "d_9", "chunkId": "c_31", "title": "合同管理办法", "page": 4 }],
+    "needHuman": true,
+    "usage": { "promptTokens": 3200, "completionTokens": 410, "cost": 0.08 },
+    "latencyMs": 4200
+  }
+}</code></pre>
+</section>
+
+<section id="s14">
+  <h2 class="sec"><span class="num">14</span>非功能需求</h2>
+  <table>
+    <tr><th>项</th><th>目标</th></tr>
+    <tr><td>知识检索延迟</td><td>P95 &lt; 800ms（不含模型）</td></tr>
+    <tr><td>Agent 调用延迟</td><td>P95 &lt; 8s（普通任务）；流式首 token &lt; 2s（P1）</td></tr>
+    <tr><td>可用性</td><td>AI 能力 99.9%；模型故障时可降级或回退人工</td></tr>
+    <tr><td>知识规模</td><td>单知识库 10 万文档 / 1000 万片段；支持增量索引</td></tr>
+    <tr><td>评测吞吐</td><td>1000 条样本 30 分钟内完成（并发可调）</td></tr>
+    <tr><td>安全</td><td>租户隔离、权限过滤、PII 脱敏、注入防护、审计</td></tr>
+    <tr><td>成本</td><td>按 Agent/流程/租户预算；超限停止并回退</td></tr>
+    <tr><td>可解释</td><td>引用可点开原文；每次调用可追溯版本与模型</td></tr>
+  </table>
+</section>
+
+<section id="s15">
+  <h2 class="sec"><span class="num">15</span>边界与异常清单</h2>
+  <table>
+    <tr><th>#</th><th>场景</th><th>期望行为</th></tr>
+    <tr><td>1</td><td>知识库无命中</td><td>返回「未找到依据」；按配置走人工或终止，不编造</td></tr>
+    <tr><td>2</td><td>引用缺失但节点要求引用</td><td>节点失败，走回退边并告警</td></tr>
+    <tr><td>3</td><td>模型超时 / 限流</td><td>重试一次；仍失败走回退边，默认转人工</td></tr>
+    <tr><td>4</td><td>模型输出不符合 Schema</td><td>重试一次；仍失败记录原始输出，走回退边</td></tr>
+    <tr><td>5</td><td>置信度低于阈值</td><td>走人工边，不自动通过</td></tr>
+    <tr><td>6</td><td>文档含提示词注入</td><td>内容视为数据，不执行指令；记录安全事件</td></tr>
+    <tr><td>7</td><td>检索结果含 PII</td><td>按策略脱敏或拒绝；记录审计</td></tr>
+    <tr><td>8</td><td>工具失败 / 超时</td><td>记录错误；降级回答或走回退边，不伪造结果</td></tr>
+    <tr><td>9</td><td>知识库被删除但 Agent 仍引用</td><td>禁止删除或自动解绑；运行期报错走回退边</td></tr>
+    <tr><td>10</td><td>Agent 版本下线</td><td>在跑实例继续用钉住版本；新实例禁止选择</td></tr>
+    <tr><td>11</td><td>流程版本与 Agent 版本不匹配</td><td>运行期按钉住版本；发布期校验</td></tr>
+    <tr><td>12</td><td>两人同时编辑 Agent</td><td>乐观锁；后提交提示冲突</td></tr>
+    <tr><td>13</td><td>评测集漂移</td><td>定期重跑基线；漂移告警</td></tr>
+    <tr><td>14</td><td>超长文档 / 超上下文</td><td>切分与裁剪；超限拒绝并提示</td></tr>
+    <tr><td>15</td><td>重复文档</td><td>提示覆盖或并存；索引去重</td></tr>
+    <tr><td>16</td><td>权限不足</td><td>拒绝检索/工具，明确提示；不猜测</td></tr>
+    <tr><td>17</td><td>成本超预算</td><td>停止调用，节点失败/挂起，告警</td></tr>
+    <tr><td>18</td><td>流式连接断开</td><td>已生成内容可恢复；节点等待完整结果</td></tr>
+    <tr><td>19</td><td>人工覆盖 AI 建议</td><td>记录原因；进入反馈与评测集</td></tr>
+    <tr><td>20</td><td>租户配额超限</td><td>拒绝新调用，明确提示与升级路径</td></tr>
+  </table>
+</section>
+
+<section id="s16">
+  <h2 class="sec"><span class="num">16</span>成功指标</h2>
+  <div class="kpi">
+    <div><span class="n">≥30%</span><span class="l">AI 节点覆盖的核心流程占比</span></div>
+    <div><span class="n">≥85%</span><span class="l">Agent 评测集通过率</span></div>
+    <div><span class="n">≤10%</span><span class="l">人工修改/驳回 AI 建议比例</span></div>
+    <div><span class="n">≥40%</span><span class="l">审批阅读与填写时间缩短</span></div>
+  </div>
+  <table>
+    <tr><th>类别</th><th>指标</th><th>目标</th></tr>
+    <tr><td>采纳</td><td>使用 AI 节点的流程数 / 月调用量</td><td>≥15 个流程 / ≥10 万次/月</td></tr>
+    <tr><td>质量</td><td>评测通过率、引用忠实度、工具正确率</td><td>≥85% / ≥90% / ≥95%</td></tr>
+    <tr><td>信任</td><td>人工 override 率、引用点击率、负反馈率</td><td>≤10% / ≥30% / ≤5%</td></tr>
+    <tr><td>效率</td><td>节点平均耗时、流程平均流转时长</td><td>P95 &lt; 8s / 缩短 ≥20%</td></tr>
+    <tr><td>成本</td><td>单次平均成本、预算超支率</td><td>在预算内 / &lt; 2%</td></tr>
+    <tr><td>自助</td><td>业务方自助搭建 Agent 占比</td><td>≥70%</td></tr>
+  </table>
+</section>
+
+<section id="s17">
+  <h2 class="sec"><span class="num">17</span>里程碑与排期</h2>
+  <table>
+    <tr><th>阶段</th><th>周期</th><th>交付</th><th>验收</th></tr>
+    <tr><td>M0 能力验证</td><td>3 周</td><td>模型网关、知识入库/检索 PoC、Agent 运行时、流程 AI 节点 spike</td><td>合同预审 demo 跑通</td></tr>
+    <tr><td>M1 知识库 + Agent 基础</td><td>8 周</td><td>知识库 CRUD、文档解析/切分/索引、检索引用、Agent Builder、测试台、版本发布、AI 节点、基础评测</td><td>S1/S2 跑通；Agent 可发布</td></tr>
+    <tr><td>M2 工具与评测门禁</td><td>6 周</td><td>HTTP/MCP 工具、评测器与门禁、黄金集、线上采样、成本与 trace、权限</td><td>发布必须过评测；工具 Agent 可用</td></tr>
+    <tr><td>M3 规模化与高级能力</td><td>6 周</td><td>知识连接器、A/B、线上评测、多 Agent、模板库、长期记忆</td><td>多流程规模化；线上指标达标</td></tr>
+  </table>
+  <p>总周期约 23 周。M1 是价值验证的关键，先把「知识 + Agent + 人工确认」跑通，再扩工具与多 Agent。</p>
+</section>
+
+<section id="s18">
+  <h2 class="sec"><span class="num">18</span>风险与开放问题</h2>
+  <table>
+    <tr><th>风险</th><th>等级</th><th>应对</th></tr>
+    <tr><td>模型幻觉导致错误建议</td><td>高</td><td>强制引用、置信度、人工确认、评测门禁、回退边</td></tr>
+    <tr><td>评测集不代表真实分布</td><td>高</td><td>线上采样、人工标注、定期重跑基线、漂移告警</td></tr>
+    <tr><td>知识权限泄露</td><td>高</td><td>双权限校验（知识库 + 调用者）、审计、最小授权</td></tr>
+    <tr><td>提示词注入</td><td>高</td><td>内容/指令隔离、工具白名单、安全评测、人工确认高风险动作</td></tr>
+    <tr><td>成本失控</td><td>中</td><td>预算分层、超限停止、缓存、模型路由</td></tr>
+    <tr><td>Agent 自治边界模糊</td><td>中</td><td>明确「建议 / 自动低风险 / 人工确认」三档，默认人工</td></tr>
+    <tr><td>模型供应商锁定</td><td>中</td><td>模型网关抽象、版本钉住、可切换</td></tr>
+    <tr><td>知识库质量差</td><td>中</td><td>负责人、陈旧/失效标记、命中率与反馈</td></tr>
+  </table>
+  <h3>开放问题</h3>
+  <table>
+    <tr><th>#</th><th>问题</th><th>建议</th></tr>
+    <tr><td>Q1</td><td>向量库用 pgvector 还是独立向量数据库</td><td>MVP 用 pgvector，规模上来再评估独立向量库</td></tr>
+    <tr><td>Q2</td><td>评测器自研还是用开源/第三方</td><td>规则类自研；LLM Judge 自建 rubric；先不引入重平台</td></tr>
+    <tr><td>Q3</td><td>Agent 是否允许自动完成低风险节点</td><td>默认不允许；需业务+安全双审批开启，并抽样复核</td></tr>
+    <tr><td>Q4</td><td>知识库是否允许跨租户共享</td><td>默认不允许；平台级公共库单独授权</td></tr>
+    <tr><td>Q5</td><td>多 Agent 何时做</td><td>P2；先验证单 Agent + 工具 + 评测闭环</td></tr>
+    <tr><td>Q6</td><td>是否支持用户自带模型 Key</td><td>P2；优先平台统一网关与配额</td></tr>
+  </table>
+</section>
+
+<p class="small" style="text-align:center;margin-top:44px">PipeWise AI 能力建设 PRD · v0.9 · 2026-10-18 · 草案待评审</p>
+</div>
+</body>
+</html>

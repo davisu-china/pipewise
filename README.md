@@ -11,6 +11,7 @@ AI 时代的流程引擎平台：**定义流程 → 发布版本 → 创建实�
 - **技术方案（Java 自研内核 + React）** → https://davisu-china.github.io/pipewise/tech-design/
   - 源文件：[docs/tech-design-self-built-java-react.html](docs/tech-design-self-built-java-react.html)
 - **学员分期开发计划（18 周 / 9 阶段）** → https://davisu-china.github.io/pipewise/dev-plan/
+- **AI 能力建设 PRD（知识库 / Agent / 评测）** → https://davisu-china.github.io/pipewise/ai-prd/
 
 ## 中间件（单机）
 
